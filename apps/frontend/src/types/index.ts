@@ -50,4 +50,4 @@ export interface HostListing {
   active: boolean;
 }
 
-export type View = 'home' | 'results' | 'detail' | 'host-dashboard' | 'host-new' | 'host-edit';
+export type View = 'home' | 'results' | 'detail' | 'host-dashboard' | 'host-new' | 'host-edit' | 'admin';

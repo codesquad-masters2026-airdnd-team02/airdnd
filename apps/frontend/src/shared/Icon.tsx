@@ -8,9 +8,16 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Plus,
   Minus,
   MapPin,
+  LayoutDashboard,
+  Users,
+  Building2,
+  CalendarCheck,
+  TrendingUp,
+  Shield,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -25,9 +32,16 @@ const ICONS: Record<string, LucideIcon> = {
   check: Check,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
+  'chevron-down': ChevronDown,
   plus: Plus,
   minus: Minus,
   'map-pin': MapPin,
+  'layout-dashboard': LayoutDashboard,
+  users: Users,
+  'building-2': Building2,
+  'calendar-check': CalendarCheck,
+  'trending-up': TrendingUp,
+  shield: Shield,
 };
 
 interface IconProps {

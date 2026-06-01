@@ -4,6 +4,7 @@ import { Results, LISTINGS } from './pages/Results';
 import { Detail } from './pages/Detail';
 import { HostDashboard } from './pages/host/HostDashboard';
 import { HostListingForm } from './pages/host/HostListingForm';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { Icon } from './shared/Icon';
 import type { SearchState, Listing, HostListing, View } from './types';
 
@@ -117,6 +118,7 @@ export default function App() {
           onChange={setSearch}
           onSearch={() => setView('results')}
           onHosting={() => setView('host-dashboard')}
+          onAdmin={() => setView('admin')}
         />
       )}
       {view === 'results' && (
@@ -126,6 +128,7 @@ export default function App() {
           onSearchPill={() => setView('home')}
           onOpen={openDetail}
           onHosting={() => setView('host-dashboard')}
+          onAdmin={() => setView('admin')}
         />
       )}
       {view === 'detail' && (
@@ -136,6 +139,7 @@ export default function App() {
           onBack={() => setView('results')}
           onReserve={() => setConfirm(true)}
           onHosting={() => setView('host-dashboard')}
+          onAdmin={() => setView('admin')}
         />
       )}
       {view === 'host-dashboard' && (
@@ -145,6 +149,11 @@ export default function App() {
           onNew={() => { setEditingListing(null); setView('host-new'); }}
           onEdit={openEdit}
           onToggleActive={toggleActive}
+        />
+      )}
+      {view === 'admin' && (
+        <AdminDashboard
+          onLogo={() => setView('home')}
         />
       )}
       {(view === 'host-new' || view === 'host-edit') && (

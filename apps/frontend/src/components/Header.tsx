@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Icon } from '../shared/Icon';
 import logoSvg from '../assets/logo.svg';
 import type { SearchState } from '../types';
@@ -8,10 +9,23 @@ interface HeaderProps {
   onLogo?: () => void;
   onSearchPill?: () => void;
   onHosting?: () => void;
+  onAdmin?: () => void;
 }
 
-export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting }: HeaderProps) {
+export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting, onAdmin }: HeaderProps) {
   const compact = mode === 'compact';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   return (
     <header
@@ -122,36 +136,88 @@ export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting 
         >
           호스팅 하기
         </button>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            height: 44,
-            padding: '4px 4px 4px 16px',
-            borderRadius: 60,
-            border: '1px solid var(--line-strong)',
-            background: '#fff',
-            cursor: 'pointer',
-          }}
-        >
-          <Icon name="menu" size={16} color="var(--ink-1)" />
-          <span
+        <div ref={menuRef} style={{ position: 'relative' }}>
+          <div
+            onClick={() => setMenuOpen(v => !v)}
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              background: 'var(--ink-2)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 8,
+              height: 44,
+              padding: '4px 4px 4px 16px',
+              borderRadius: 60,
+              border: '1px solid var(--line-strong)',
+              background: '#fff',
+              cursor: 'pointer',
             }}
           >
-            <Icon name="user" size={16} color="#fff" />
-          </span>
+            <Icon name="menu" size={16} color="var(--ink-1)" />
+            <span
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: 'var(--ink-2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon name="user" size={16} color="#fff" />
+            </span>
+          </div>
+
+          {menuOpen && (
+            <div
+              className="popover-enter"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: 200,
+                background: '#fff',
+                borderRadius: 14,
+                boxShadow: 'var(--shadow-pop)',
+                border: '1px solid var(--line)',
+                overflow: 'hidden',
+                zIndex: 60,
+              }}
+            >
+              <MenuItem onClick={() => { setMenuOpen(false); }} disabled>
+                마이 페이지
+                <span style={{ fontSize: 11, color: 'var(--ink-4)', marginLeft: 6 }}>준비 중</span>
+              </MenuItem>
+              <div style={{ height: 1, background: 'var(--line)' }} />
+              <MenuItem onClick={() => { setMenuOpen(false); onAdmin?.(); }}>
+                관리자 페이지
+              </MenuItem>
+            </div>
+          )}
         </div>
       </div>
     </header>
+  );
+}
+
+function MenuItem({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      onClick={disabled ? undefined : onClick}
+      style={{
+        padding: '13px 18px',
+        fontSize: 14,
+        fontWeight: 500,
+        color: disabled ? 'var(--ink-4)' : 'var(--ink-1)',
+        cursor: disabled ? 'default' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'background 100ms ease',
+      }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = 'var(--surface-alt-2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+    >
+      {children}
+    </div>
   );
 }
 
