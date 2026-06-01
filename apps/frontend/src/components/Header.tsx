@@ -7,9 +7,10 @@ interface HeaderProps {
   search?: SearchState;
   onLogo?: () => void;
   onSearchPill?: () => void;
+  onHosting?: () => void;
 }
 
-export function Header({ mode = 'full', search, onLogo, onSearchPill }: HeaderProps) {
+export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting }: HeaderProps) {
   const compact = mode === 'compact';
 
   return (
@@ -99,8 +100,28 @@ export function Header({ mode = 'full', search, onLogo, onSearchPill }: HeaderPr
         </nav>
       )}
 
-      {/* Right: account pill */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Right: hosting button + account pill */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+        <button
+          onClick={onHosting}
+          style={{
+            height: 40,
+            padding: '0 16px',
+            border: 'none',
+            background: 'transparent',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'var(--ink-1)',
+            cursor: 'pointer',
+            borderRadius: 8,
+            transition: 'background 120ms ease',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.06)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        >
+          호스팅 하기
+        </button>
         <div
           style={{
             display: 'flex',

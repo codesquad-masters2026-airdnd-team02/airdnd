@@ -23,9 +23,10 @@ interface DetailProps {
   onBack: () => void;
   onLogo: () => void;
   onReserve: () => void;
+  onHosting: () => void;
 }
 
-export function Detail({ listing, search, onBack, onLogo, onReserve }: DetailProps) {
+export function Detail({ listing, search, onBack, onLogo, onReserve, onHosting }: DetailProps) {
   const l = listing;
   const nights = 1;
   const fee = Math.round(l.price * 0.099);
@@ -37,7 +38,7 @@ export function Detail({ listing, search, onBack, onLogo, onReserve }: DetailPro
 
   return (
     <div>
-      <Header mode="compact" search={search} onSearchPill={onBack} onLogo={onLogo} />
+      <Header mode="compact" search={search} onSearchPill={onBack} onLogo={onLogo} onHosting={onHosting} />
       <div style={{ padding: '28px 80px 80px', maxWidth: 1320, margin: '0 auto' }}>
         {/* Back link */}
         <div

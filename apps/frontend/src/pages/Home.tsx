@@ -49,9 +49,10 @@ interface HomeProps {
   search: SearchState;
   onChange: (v: SearchState) => void;
   onSearch: () => void;
+  onHosting: () => void;
 }
 
-export function Home({ search, onChange, onSearch }: HomeProps) {
+export function Home({ search, onChange, onSearch, onHosting }: HomeProps) {
   return (
     <div>
       {/* Hero */}
@@ -63,7 +64,7 @@ export function Home({ search, onChange, onSearch }: HomeProps) {
             background: `url(${ASSET_MAP.hero}) center/cover`,
           }}
         />
-        <Header mode="full" onLogo={() => {}} />
+        <Header mode="full" onLogo={() => {}} onHosting={onHosting} />
         <div
           style={{
             position: 'absolute',

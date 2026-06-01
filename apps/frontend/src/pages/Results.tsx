@@ -76,14 +76,15 @@ interface ResultsProps {
   onOpen: (l: Listing) => void;
   onSearchPill: () => void;
   onLogo: () => void;
+  onHosting: () => void;
 }
 
-export function Results({ search, onOpen, onSearchPill, onLogo }: ResultsProps) {
+export function Results({ search, onOpen, onSearchPill, onLogo, onHosting }: ResultsProps) {
   const [liked, setLiked] = useState<Record<number, boolean>>({});
 
   return (
     <div>
-      <Header mode="compact" search={search} onSearchPill={onSearchPill} onLogo={onLogo} />
+      <Header mode="compact" search={search} onSearchPill={onSearchPill} onLogo={onLogo} onHosting={onHosting} />
       <div style={{ display: 'flex' }}>
         {/* Listing list */}
         <div

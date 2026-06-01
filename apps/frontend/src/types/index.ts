@@ -32,4 +32,22 @@ export interface Listing {
   y: number;
 }
 
-export type View = 'home' | 'results' | 'detail';
+export type RoomType = '집 전체' | '개인실' | '다인실';
+
+export interface HostListing {
+  id: string;
+  title: string;
+  loc: string;
+  roomType: RoomType;
+  description: string;
+  price: number;
+  maxGuests: number;
+  bedrooms: number;
+  beds: number;
+  bathrooms: number;
+  amenities: string[];
+  imageUrls: string[];
+  active: boolean;
+}
+
+export type View = 'home' | 'results' | 'detail' | 'host-dashboard' | 'host-new' | 'host-edit';
