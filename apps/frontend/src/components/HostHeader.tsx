@@ -1,7 +1,7 @@
 import logoSvg from '../assets/logo.svg';
 
 interface HostHeaderProps {
-  title: string;
+  title?: string;
   onLogo: () => void;
   action?: React.ReactNode;
 }
@@ -30,18 +30,20 @@ export function HostHeader({ title, onLogo, action }: HostHeaderProps) {
         style={{ height: 44, cursor: 'pointer', display: 'block', flexShrink: 0 }}
       />
 
-      <span
-        style={{
-          marginLeft: 24,
-          fontSize: 15,
-          color: 'var(--ink-3)',
-          paddingLeft: 24,
-          borderLeft: '1px solid var(--line)',
-          fontWeight: 500,
-        }}
-      >
-        {title}
-      </span>
+      {title && (
+        <span
+          style={{
+            marginLeft: 24,
+            fontSize: 15,
+            color: 'var(--ink-3)',
+            paddingLeft: 24,
+            borderLeft: '1px solid var(--line)',
+            fontWeight: 500,
+          }}
+        >
+          {title}
+        </span>
+      )}
 
       {action && <div style={{ marginLeft: 'auto' }}>{action}</div>}
     </header>

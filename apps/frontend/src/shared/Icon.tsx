@@ -18,6 +18,10 @@ import {
   CalendarCheck,
   TrendingUp,
   Shield,
+  Briefcase,
+  MessageCircle,
+  Clock,
+  Edit3,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -42,6 +46,10 @@ const ICONS: Record<string, LucideIcon> = {
   'calendar-check': CalendarCheck,
   'trending-up': TrendingUp,
   shield: Shield,
+  briefcase: Briefcase,
+  'message-circle': MessageCircle,
+  clock: Clock,
+  'edit-3': Edit3,
 };
 
 interface IconProps {

@@ -10,9 +10,10 @@ interface HeaderProps {
   onSearchPill?: () => void;
   onHosting?: () => void;
   onAdmin?: () => void;
+  onMyPage?: () => void;
 }
 
-export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting, onAdmin }: HeaderProps) {
+export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting, onAdmin, onMyPage }: HeaderProps) {
   const compact = mode === 'compact';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -183,9 +184,8 @@ export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting,
                 zIndex: 60,
               }}
             >
-              <MenuItem onClick={() => { setMenuOpen(false); }} disabled>
+              <MenuItem onClick={() => { setMenuOpen(false); onMyPage?.(); }}>
                 마이 페이지
-                <span style={{ fontSize: 11, color: 'var(--ink-4)', marginLeft: 6 }}>준비 중</span>
               </MenuItem>
               <div style={{ height: 1, background: 'var(--line)' }} />
               <MenuItem onClick={() => { setMenuOpen(false); onAdmin?.(); }}>
