@@ -38,4 +38,3 @@ out/
 
 # application-local.yaml 격리
 apps/backend/src/main/resources/application-local.yaml
-/docker/mysql/data/
