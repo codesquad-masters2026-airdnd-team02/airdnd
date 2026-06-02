@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: airdnd
+  profiles:
+    active: local
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        formant_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
