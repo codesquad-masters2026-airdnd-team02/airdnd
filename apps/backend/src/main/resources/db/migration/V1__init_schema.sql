@@ -37,7 +37,7 @@ CREATE TABLE listing
     detail_address  VARCHAR(255)   NOT NULL,
     zip_code        VARCHAR(10)    NOT NULL,
     host_id         BIGINT         NOT NULL,           -- 호스팅하는 Member
-    lat_lng         POINT          NOT NULL SRID 4326, -- WGS84 좌표계
+--     lat_lng         POINT          SRID 4326, -- WGS84 좌표계
     max_guests      INT            NOT NULL,
     bedrooms        INT            NOT NULL,
     beds            INT            NOT NULL,
@@ -45,8 +45,8 @@ CREATE TABLE listing
     price_per_night DECIMAL(12, 2) NOT NULL,
     state           VARCHAR(20)    NOT NULL,           -- 전송 / 검토 / 승인
     PRIMARY KEY (id),
-    SPATIAL KEY spat_listing_lat_lng (lat_lng),
-    KEY             idx_listing_host_id (host_id),
+--     SPATIAL KEY spat_listing_lat_lng (lat_lng),
+--     KEY             idx_listing_host_id (host_id),
     CONSTRAINT fk_listing_host
         FOREIGN KEY (host_id) REFERENCES member (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
