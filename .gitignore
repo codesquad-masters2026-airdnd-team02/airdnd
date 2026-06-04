@@ -24,6 +24,9 @@ pnpm-debug.log*
 # Dependencies
 node_modules/
 
+# Generated API client
+apps/frontend/src/shared/api/generated/
+
 # Build outputs
 dist/
 build/
