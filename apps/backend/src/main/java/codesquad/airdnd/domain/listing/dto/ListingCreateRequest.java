@@ -3,7 +3,9 @@ package codesquad.airdnd.domain.listing.dto;
 import java.math.BigDecimal;
 import java.util.Set;
 
+import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Amenity;
+import codesquad.airdnd.domain.listing.entity.Capacity;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.entity.RoomType;
 import codesquad.airdnd.domain.member.Member;
@@ -40,13 +42,16 @@ public record ListingCreateRequest(
 	Set<Amenity> amenities
 ) {
 	public Listing toListing(Member member) {
+		Address address = new Address(city, district, streetAddress, detailAddress, zipCode);
+		Capacity capacity = new Capacity(maxGuests, bedrooms, beds, bathrooms);
+
 		return Listing.builder()
 			.name(name)
 			.roomType(roomType)
 			.description(description)
-			.address(null)
+			.address(address)
 			.host(member)
-			.capacity(null)
+			.capacity(capacity)
 			.pricePerNight(pricePerNight)
 			.amenities(amenities)
 			.build();
