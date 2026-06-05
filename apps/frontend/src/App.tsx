@@ -7,6 +7,7 @@ import { HostDashboard } from './pages/host/HostDashboard';
 import { HostListingForm } from './pages/host/HostListingForm';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { MyPage } from './pages/mypage/MyPage';
+import { WishlistPage } from './pages/wishlist/WishlistPage';
 import { Icon } from './shared/Icon';
 import {
   getHostListingsOptions,
@@ -140,6 +141,13 @@ export default function App() {
       )}
       {view === 'mypage' && (
         <MyPage
+          onLogo={() => setView('home')}
+          onHosting={() => setView('host-dashboard')}
+          onWishlists={() => setView('wishlists')}
+        />
+      )}
+      {view === 'wishlists' && (
+        <WishlistPage
           onLogo={() => setView('home')}
           onHosting={() => setView('host-dashboard')}
         />
