@@ -20,9 +20,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Listing {
 	@Id
@@ -68,5 +70,21 @@ public class Listing {
 		this.pricePerNight = pricePerNight;
 		this.amenities = amenities;
 		this.state = ListingState.PENDING;
+	}
+
+	public void deactivate() {
+		state = ListingState.INACTIVE;
+	}
+
+	public void activate() {
+		state = ListingState.APPROVED;
+	}
+
+	public boolean isOwnedBy(Member host) {
+		return this.host.getId().equals(host.getId());
+	}
+
+	public boolean isApproved() {
+		return state == ListingState.APPROVED;
 	}
 }
