@@ -1,4 +1,4 @@
-package codesquad.airdnd.domain.listing.dto.request;
+package codesquad.airdnd.domain.listing.dto;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -16,27 +16,28 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record ListingCreateRequest(
-	@NotBlank(message = "숙소 이름을 입력해주세요.") String name,
+	@NotBlank String name,
 
-	@NotBlank(message = "시/도를 입력해주세요.") String city,
-	@NotBlank(message = "시/군/구를 입력해주세요.") String district,
-	@NotBlank(message = "도로명 주소를 입력해주세요.") String streetAddress,
-	@NotBlank(message = "상세 주소를 입력해주세요.") String detailAddress,
-	@NotBlank(message = "우편번호를 입력해주세요.") String zipCode,
+	@NotBlank String city,
+	@NotBlank String district,
+	@NotBlank String streetAddress,
+	@NotBlank String detailAddress,
+	@NotBlank String zipCode,
 
-	@NotNull(message = "숙소 유형을 선택해주세요.") RoomType roomType,
+	@NotNull RoomType roomType,
 
-	@Min(value = 1, message = "최대 인원은 1명 이상이어야 합니다.") int maxGuests,
-	@Min(value = 0, message = "침실 수는 0개 이상이어야 합니다.") int bedrooms,
-	@Min(value = 1, message = "침대 수는 1개 이상이어야 합니다.") int beds,
-	@Min(value = 0, message = "욕실 수는 0개 이상이어야 합니다.") int bathrooms,
+	@Min(1) int maxGuests,
+	@Min(0) int bedrooms,
+	@Min(0) int beds,
+	@Min(0) int bathrooms,
 
 	String description,
 
-	@NotNull(message = "1박 요금을 입력해주세요.")
-	@Positive(message = "1박 요금은 0원보다 커야 합니다.")
-	@Digits(integer = 10, fraction = 2, message = "1박 요금은 최대 10자리 정수, 소수점 2자리까지 입력 가능합니다.")
+	@NotNull
+	@Positive
+	@Digits(integer = 10, fraction = 2)
 	BigDecimal pricePerNight,
+
 
 	Set<Amenity> amenities
 ) {
