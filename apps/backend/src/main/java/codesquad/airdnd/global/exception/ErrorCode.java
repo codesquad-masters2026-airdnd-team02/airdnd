@@ -20,6 +20,8 @@ public enum ErrorCode {
 	LISTING_NOT_FOUND(HttpStatus.NOT_FOUND, "LISTING_001", "숙소를 찾을 수 없습니다."),
 	NOT_LISTING_OWNER(HttpStatus.FORBIDDEN, "LISTING_002" ,"숙소 접근 권한이 없습니다." ),
 	LISTING_NOT_APPROVED(HttpStatus.CONFLICT, "LISTING_003", "승인되지 않은 숙소입니다."),
+	INVALID_LOCATION(HttpStatus.BAD_REQUEST, "LISTING_004", "서비스 지역(대한민국) 외의 좌표입니다."),
+	GEOCODING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LISTING_005", "주소 변환에 실패했습니다."),
 	;
 	private final HttpStatus httpStatus;
 	private final String code;

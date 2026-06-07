@@ -142,7 +142,9 @@ class ListingTest {
 			.name("테스트 숙소")
 			.roomType(RoomType.ENTIRE_PLACE)
 			.description("설명")
-			.address(new Address("서울", "강남구", "테헤란로 1", "101호", "06100"))
+			.address(new Address("서울 강남구 테헤란로 152", "101호", "06236",
+				BigDecimal.valueOf(37.5012), BigDecimal.valueOf(127.0396),
+				"11", "11680"))
 			.host(owner)
 			.capacity(new Capacity(2, 1, 1, 1))
 			.pricePerNight(BigDecimal.valueOf(50000))

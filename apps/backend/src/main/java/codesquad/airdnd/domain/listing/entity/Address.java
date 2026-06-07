@@ -1,5 +1,7 @@
 package codesquad.airdnd.domain.listing.entity;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,13 +12,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Address {
-	private String city;
-	private String district;
-	private String streetAddress;
+	private String roadAddress;
 	private String detailAddress;
-	private String zipCode;
-
-	public String getSummary() {
-		return district + ", " + city;
-	}
+	private String postalCode;
+	private BigDecimal latitude;
+	private BigDecimal longitude;
+	private String sidoCode;
+	private String sigunguCode;
 }
