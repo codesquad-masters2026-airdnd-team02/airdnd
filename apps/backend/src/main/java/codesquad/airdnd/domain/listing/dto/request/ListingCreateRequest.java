@@ -24,7 +24,7 @@ public record ListingCreateRequest(
 	@NotBlank String detailAddress,
 	@NotBlank String zipCode,
 
-	@NotBlank RoomType roomType,
+	@NotNull RoomType roomType,
 
 	@Min(1) int maxGuests,
 	@Min(0) int bedrooms,
