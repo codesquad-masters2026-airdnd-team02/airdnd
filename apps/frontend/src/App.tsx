@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Home } from './pages/Home';
 import { Results, LISTINGS } from './pages/Results';
 import { Detail } from './pages/Detail';
@@ -7,6 +8,12 @@ import { HostListingForm } from './pages/host/HostListingForm';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { MyPage } from './pages/mypage/MyPage';
 import { Icon } from './shared/Icon';
+import {
+  getHostListingsOptions,
+  activateListingMutation,
+  deactivateListingMutation,
+} from './shared/api/generated/@tanstack/react-query.gen';
+import { toHostListing, HOST_STUB } from './shared/api/hostMapping';
 import type { SearchState, Listing, HostListing, View } from './types';
 
 const DEFAULT_SEARCH: SearchState = {
@@ -18,65 +25,60 @@ const DEFAULT_SEARCH: SearchState = {
   guestLabel: '',
 };
 
-const SAMPLE_HOST_LISTINGS: HostListing[] = [
-  {
-    id: '1',
-    title: 'Spacious and Comfortable cozy house #4',
-    loc: '서초구, 서울',
-    roomType: '집 전체',
-    description: '깨끗하고 아늑한 공간에서 여행을 살아보세요. 대중교통이 가깝고 주변에 카페와 편의시설이 많습니다.',
-    price: 82953,
-    maxGuests: 3,
-    bedrooms: 1,
-    beds: 1,
-    bathrooms: 1,
-    amenities: ['주방', '무선 인터넷', '에어컨', '헤어드라이어'],
-    imageUrls: [],
-    active: true,
-  },
-  {
-    id: '2',
-    title: '#자가격리 #공부 #강남 #선릉역3분',
-    loc: 'Yeoksam-dong, Gangnam-gu, 서울',
-    roomType: '집 전체',
-    description: '강남 중심가에 위치한 깔끔한 숙소입니다. 선릉역 도보 3분 거리입니다.',
-    price: 96095,
-    maxGuests: 4,
-    bedrooms: 1,
-    beds: 1,
-    bathrooms: 1,
-    amenities: ['주방', '무선 인터넷', '에어컨', 'TV'],
-    imageUrls: [],
-    active: false,
-  },
-  {
-    id: '3',
-    title: '[장기 임대 할인] 강남 양재천 실평수 30평',
-    loc: 'Yangjae-dong, Seocho-gu, 서울',
-    roomType: '집 전체',
-    description: '양재천 바로 옆 넓고 쾌적한 숙소입니다. 장기 투숙 시 할인 혜택을 드립니다.',
-    price: 115126,
-    maxGuests: 6,
-    bedrooms: 2,
-    beds: 3,
-    bathrooms: 1,
-    amenities: ['주방', '무선 인터넷', '에어컨', '세탁기', '무료 주차'],
-    imageUrls: [],
-    active: true,
-  },
-];
-
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [listing, setListing] = useState<Listing>(LISTINGS[0]);
   const [confirm, setConfirm] = useState(false);
   const [search, setSearch] = useState<SearchState>(DEFAULT_SEARCH);
-  const [hostListings, setHostListings] = useState<HostListing[]>(SAMPLE_HOST_LISTINGS);
   const [editingListing, setEditingListing] = useState<HostListing | null>(null);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [view]);
+
+  // ── 호스트 숙소 목록 조회 ──
+  const {
+    data: hostListingsData,
+    isLoading: isListingsLoading,
+    refetch: refetchListings,
+  } = useQuery(getHostListingsOptions({ query: { host: HOST_STUB } }));
+
+  const hostListings = hostListingsData?.data?.listings?.map(toHostListing) ?? [];
+
+  // ── 활성화 / 비활성화 ──
+  const activateMutation = useMutation(activateListingMutation());
+  const deactivateMutation = useMutation(deactivateListingMutation());
+
+  function toggleActive(id: string) {
+    const target = hostListings.find(l => l.id === id);
+    if (!target) return;
+
+    const listingsId = Number(id);
+
+    if (target.active) {
+      deactivateMutation.mutate(
+        { path: { listingsId }, query: { host: HOST_STUB } },
+        { onSuccess: () => refetchListings() },
+      );
+    } else {
+      activateMutation.mutate(
+        { path: { listingsId }, query: { host: HOST_STUB } },
+        {
+          onSuccess: () => refetchListings(),
+          onError: () => alert('활성화에 실패했습니다. 관리자 승인이 필요한 숙소입니다.'),
+        },
+      );
+    }
+  }
+
+  // 숙소 등록/수정 완료 후 대시보드로 복귀
+  function handleFormSave() {
+    setEditingListing(null);
+    refetchListings();
+    setView('host-dashboard');
+  }
 
   function openDetail(l: Listing) {
     setListing(l);
@@ -86,29 +88,6 @@ export default function App() {
   function openEdit(l: HostListing) {
     setEditingListing(l);
     setView('host-edit');
-  }
-
-  function saveHostListing(data: Omit<HostListing, 'id' | 'active'>) {
-    if (editingListing) {
-      setHostListings(prev =>
-        prev.map(l => l.id === editingListing.id ? { ...editingListing, ...data } : l)
-      );
-    } else {
-      const newListing: HostListing = {
-        ...data,
-        id: Date.now().toString(),
-        active: true,
-      };
-      setHostListings(prev => [...prev, newListing]);
-    }
-    setEditingListing(null);
-    setView('host-dashboard');
-  }
-
-  function toggleActive(id: string) {
-    setHostListings(prev =>
-      prev.map(l => l.id === id ? { ...l, active: !l.active } : l)
-    );
   }
 
   return (
@@ -149,6 +128,7 @@ export default function App() {
       {view === 'host-dashboard' && (
         <HostDashboard
           listings={hostListings}
+          isLoading={isListingsLoading}
           onLogo={() => setView('home')}
           onNew={() => { setEditingListing(null); setView('host-new'); }}
           onEdit={openEdit}
@@ -169,7 +149,7 @@ export default function App() {
       {(view === 'host-new' || view === 'host-edit') && (
         <HostListingForm
           listing={view === 'host-edit' ? editingListing : null}
-          onSave={saveHostListing}
+          onSave={handleFormSave}
           onBack={() => setView('host-dashboard')}
         />
       )}

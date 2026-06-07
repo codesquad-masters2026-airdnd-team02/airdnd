@@ -34,6 +34,8 @@ export interface Listing {
 
 export type RoomType = '집 전체' | '개인실' | '다인실';
 
+export type ListingState = 'PENDING' | 'APPROVED' | 'REJECTED' | 'INACTIVE';
+
 export interface HostListing {
   id: string;
   title: string;
@@ -48,6 +50,26 @@ export interface HostListing {
   amenities: string[];
   imageUrls: string[];
   active: boolean;
+  state?: ListingState;
+}
+
+/** 숙소 등록/수정 폼에서 사용하는 데이터 타입 (백엔드 ListingCreateRequest와 대응) */
+export interface ListingFormData {
+  title: string;
+  city: string;
+  district: string;
+  streetAddress: string;
+  detailAddress: string;
+  zipCode: string;
+  roomType: RoomType;
+  description: string;
+  price: number;
+  maxGuests: number;
+  bedrooms: number;
+  beds: number;
+  bathrooms: number;
+  amenities: string[];
+  imageUrls: string[];
 }
 
 export type View = 'home' | 'results' | 'detail' | 'host-dashboard' | 'host-new' | 'host-edit' | 'admin' | 'mypage';

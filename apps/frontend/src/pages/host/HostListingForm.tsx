@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { HostHeader } from '../../components/HostHeader';
 import { Icon } from '../../shared/Icon';
-import type { HostListing, RoomType } from '../../types';
+import { createListingMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
+import { toCreateRequest, HOST_STUB } from '../../shared/api/hostMapping';
+import type { HostListing, ListingFormData, RoomType } from '../../types';
 
 const ROOM_TYPES: RoomType[] = ['집 전체', '개인실', '다인실'];
 
@@ -11,17 +14,19 @@ const AMENITIES = [
   '반려동물 동반 가능', '조식 포함', '헬스장', '엘리베이터',
 ];
 
-type FormData = Omit<HostListing, 'id' | 'active'>;
-
 interface HostListingFormProps {
   listing?: HostListing | null;
-  onSave: (data: FormData) => void;
+  onSave: () => void;
   onBack: () => void;
 }
 
-const DEFAULT_FORM: FormData = {
+const DEFAULT_FORM: ListingFormData = {
   title: '',
-  loc: '',
+  city: '',
+  district: '',
+  streetAddress: '',
+  detailAddress: '',
+  zipCode: '',
   roomType: '집 전체',
   description: '',
   price: 0,
@@ -35,11 +40,13 @@ const DEFAULT_FORM: FormData = {
 
 export function HostListingForm({ listing, onSave, onBack }: HostListingFormProps) {
   const isEdit = !!listing;
-  const [form, setForm] = useState<FormData>(
+
+  const [form, setForm] = useState<ListingFormData>(
     listing
       ? {
           title: listing.title,
-          loc: listing.loc,
+          // 주소는 API 목록 응답에 summary만 포함되어 개별 필드 없음
+          city: '', district: '', streetAddress: '', detailAddress: '', zipCode: '',
           roomType: listing.roomType,
           description: listing.description,
           price: listing.price,
@@ -50,11 +57,14 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
           amenities: listing.amenities,
           imageUrls: listing.imageUrls.length > 0 ? listing.imageUrls : [''],
         }
-      : DEFAULT_FORM
+      : DEFAULT_FORM,
   );
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ListingFormData, string>>>({});
 
-  function set<K extends keyof FormData>(key: K, val: FormData[K]) {
+  const queryClient = useQueryClient();
+  const createMutation = useMutation(createListingMutation());
+
+  function set<K extends keyof ListingFormData>(key: K, val: ListingFormData[K]) {
     setForm(f => ({ ...f, [key]: val }));
     setErrors(e => ({ ...e, [key]: undefined }));
   }
@@ -90,7 +100,13 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
   function validate(): boolean {
     const e: typeof errors = {};
     if (!form.title.trim()) e.title = '숙소 이름을 입력해주세요.';
-    if (!form.loc.trim()) e.loc = '주소 또는 지역을 입력해주세요.';
+    if (!isEdit) {
+      if (!form.city.trim()) e.city = '시/도를 입력해주세요.';
+      if (!form.district.trim()) e.district = '시/군/구를 입력해주세요.';
+      if (!form.streetAddress.trim()) e.streetAddress = '도로명 주소를 입력해주세요.';
+      if (!form.detailAddress.trim()) e.detailAddress = '상세 주소를 입력해주세요.';
+      if (!form.zipCode.trim()) e.zipCode = '우편번호를 입력해주세요.';
+    }
     if (!form.description.trim()) e.description = '설명을 입력해주세요.';
     if (!form.price || form.price <= 0) e.price = '올바른 가격을 입력해주세요.';
     setErrors(e);
@@ -99,7 +115,25 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
 
   function handleSubmit() {
     if (!validate()) return;
-    onSave({ ...form, imageUrls: form.imageUrls.filter(u => u.trim()) });
+
+    if (isEdit) {
+      // 숙소 수정 API 미구현 - 뒤로 이동만 수행
+      onSave();
+      return;
+    }
+
+    createMutation.mutate(
+      {
+        body: toCreateRequest({ ...form, imageUrls: form.imageUrls.filter(u => u.trim()) }),
+        query: { host: HOST_STUB },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: [{ _id: 'getHostListings' }] });
+          onSave();
+        },
+      },
+    );
   }
 
   return (
@@ -119,15 +153,6 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
               placeholder="게스트에게 표시될 숙소 이름을 입력하세요"
               value={form.title}
               onChange={e => set('title', e.target.value)}
-            />
-          </Field>
-
-          <Field label="주소 또는 지역" required error={errors.loc}>
-            <input
-              className="host-input"
-              placeholder="예) 강남구 역삼동, 서울"
-              value={form.loc}
-              onChange={e => set('loc', e.target.value)}
             />
           </Field>
 
@@ -155,6 +180,53 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
                 </button>
               ))}
             </div>
+          </Field>
+        </Section>
+
+        {/* ── 주소 ── */}
+        <Section title="주소">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Field label="시/도" required={!isEdit} error={errors.city}>
+              <input
+                className="host-input"
+                placeholder="예) 서울, 경기"
+                value={form.city}
+                onChange={e => set('city', e.target.value)}
+              />
+            </Field>
+            <Field label="시/군/구" required={!isEdit} error={errors.district}>
+              <input
+                className="host-input"
+                placeholder="예) 강남구"
+                value={form.district}
+                onChange={e => set('district', e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="도로명 주소" required={!isEdit} error={errors.streetAddress}>
+            <input
+              className="host-input"
+              placeholder="예) 테헤란로 123"
+              value={form.streetAddress}
+              onChange={e => set('streetAddress', e.target.value)}
+            />
+          </Field>
+          <Field label="상세 주소" required={!isEdit} error={errors.detailAddress}>
+            <input
+              className="host-input"
+              placeholder="예) 101호"
+              value={form.detailAddress}
+              onChange={e => set('detailAddress', e.target.value)}
+            />
+          </Field>
+          <Field label="우편번호" required={!isEdit} error={errors.zipCode}>
+            <input
+              className="host-input"
+              placeholder="예) 06100"
+              value={form.zipCode}
+              onChange={e => set('zipCode', e.target.value)}
+              style={{ maxWidth: 200 }}
+            />
           </Field>
         </Section>
 
@@ -310,7 +382,6 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
                     onChange={e => setImageUrl(i, e.target.value)}
                   />
                 </div>
-                {/* Preview */}
                 {url.trim() && (
                   <img
                     src={url}
@@ -411,23 +482,28 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
           </button>
           <button
             onClick={handleSubmit}
+            disabled={createMutation.isPending}
             style={{
               height: 48,
               padding: '0 36px',
               borderRadius: 10,
               border: 'none',
-              background: 'var(--cta-dark)',
+              background: createMutation.isPending ? 'var(--ink-4)' : 'var(--cta-dark)',
               color: '#fff',
               fontFamily: 'var(--font-sans)',
               fontWeight: 700,
               fontSize: 15,
-              cursor: 'pointer',
+              cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
               transition: 'background 120ms ease',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#3a3a3a')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'var(--cta-dark)')}
+            onMouseEnter={e => {
+              if (!createMutation.isPending) e.currentTarget.style.background = '#3a3a3a';
+            }}
+            onMouseLeave={e => {
+              if (!createMutation.isPending) e.currentTarget.style.background = 'var(--cta-dark)';
+            }}
           >
-            {isEdit ? '수정 완료' : '숙소 등록'}
+            {createMutation.isPending ? '등록 중...' : isEdit ? '수정 완료' : '숙소 등록'}
           </button>
         </div>
       </div>
