@@ -61,6 +61,8 @@ export interface ListingFormData {
   streetAddress: string;
   detailAddress: string;
   zipCode: string;
+  latitude: number;
+  longitude: number;
   roomType: RoomType;
   description: string;
   price: number;

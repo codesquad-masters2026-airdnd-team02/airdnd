@@ -19,6 +19,11 @@ export const ROOM_TYPE_TO_API: Record<RoomType, 'ENTIRE_PLACE' | 'PRIVATE_ROOM' 
   '다인실': 'SHARED_ROOM',
 };
 
+export const TEMP_LISTING_COORDINATES = {
+  latitude: 37.5665,
+  longitude: 126.978,
+};
+
 export const AMENITY_TO_API = {
   '주방': 'KITCHEN',
   '무선 인터넷': 'WIFI',
@@ -58,11 +63,11 @@ export function toHostListing(s: HostListingSummary): HostListing {
 export function toCreateRequest(form: ListingFormData): ApiCreateRequest {
   return {
     name: form.title,
-    city: form.city,
-    district: form.district,
-    streetAddress: form.streetAddress,
+    roadAddress: form.streetAddress,
     detailAddress: form.detailAddress,
-    zipCode: form.zipCode,
+    postalCode: form.zipCode,
+    latitude: form.latitude || TEMP_LISTING_COORDINATES.latitude,
+    longitude: form.longitude || TEMP_LISTING_COORDINATES.longitude,
     roomType: ROOM_TYPE_TO_API[form.roomType],
     maxGuests: form.maxGuests,
     bedrooms: form.bedrooms,

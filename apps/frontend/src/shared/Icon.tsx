@@ -22,6 +22,7 @@ import {
   MessageCircle,
   Clock,
   Edit3,
+  Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -50,6 +51,7 @@ const ICONS: Record<string, LucideIcon> = {
   'message-circle': MessageCircle,
   clock: Clock,
   'edit-3': Edit3,
+  sparkles: Sparkles,
 };
 
 interface IconProps {
