@@ -1,6 +1,7 @@
 package codesquad.airdnd.domain.wishlist;
 
-import codesquad.airdnd.domain.wishlist.domain.Wishlist;
+import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
+import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -60,4 +61,17 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
                 order by wi.createdAt desc
     """)
     List<WishlistDetailQueryResult> findDetail(@Param("wishlistId") Long wishlistId);
+
+    @Query(
+    """
+        select new codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult(
+            l.id, l.name, l.pricePerNight, li.imageUrl
+        )
+                from Listing l
+                left join ListingImage li on li.listing = l
+                where l.id IN :listingIds
+                order by l.id, li.cover desc, li.sortOrder
+    """
+    )
+    List<WishlistDetailItemQueryResult> findDetailItem(@Param("listingIds") List<Long> listingIds);
 }

@@ -16,6 +16,9 @@ public enum ErrorCode {
     // ==== MEMBER ====
     MEMBER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "MEMBER_001", "존재하지 않는 회원입니다."),
 
+    // ==== Wishlist ====
+    WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "WISHLIST_001", "존재하지 않는 위시리스트 입니다."),
+
 	// ===== Listing =====
 	LISTING_NOT_FOUND(HttpStatus.NOT_FOUND, "LISTING_001", "숙소를 찾을 수 없습니다."),
 	NOT_LISTING_OWNER(HttpStatus.FORBIDDEN, "LISTING_002" ,"숙소 접근 권한이 없습니다." ),
