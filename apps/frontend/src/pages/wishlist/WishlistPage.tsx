@@ -6,9 +6,10 @@ import type { WishlistSummary } from '../../types';
 interface WishlistPageProps {
   onLogo: () => void;
   onHosting?: () => void;
+  onOpenWishlist?: (id: number) => void;
 }
 
-export function WishlistPage({ onLogo, onHosting }: WishlistPageProps) {
+export function WishlistPage({ onLogo, onHosting, onOpenWishlist }: WishlistPageProps) {
   const [wishlists, setWishlists] = useState<WishlistSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,7 +70,9 @@ export function WishlistPage({ onLogo, onHosting }: WishlistPageProps) {
             gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
             gap: 28,
           }}>
-            {wishlists.map(w => <WishlistCard key={w.id} wishlist={w} />)}
+            {wishlists.map(w => (
+              <WishlistCard key={w.id} wishlist={w} onClick={() => onOpenWishlist?.(w.id)} />
+            ))}
           </div>
         )}
       </main>
@@ -77,11 +80,12 @@ export function WishlistPage({ onLogo, onHosting }: WishlistPageProps) {
   );
 }
 
-function WishlistCard({ wishlist }: { wishlist: WishlistSummary }) {
+function WishlistCard({ wishlist, onClick }: { wishlist: WishlistSummary; onClick?: () => void }) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
+      onClick={onClick}
       style={{ cursor: 'pointer' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

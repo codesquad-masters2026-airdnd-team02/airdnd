@@ -8,6 +8,7 @@ import { HostListingForm } from './pages/host/HostListingForm';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { MyPage } from './pages/mypage/MyPage';
 import { WishlistPage } from './pages/wishlist/WishlistPage';
+import { WishlistDetailPage } from './pages/wishlist/WishlistDetailPage';
 import { Icon } from './shared/Icon';
 import {
   getHostListingsOptions,
@@ -32,6 +33,7 @@ export default function App() {
   const [confirm, setConfirm] = useState(false);
   const [search, setSearch] = useState<SearchState>(DEFAULT_SEARCH);
   const [editingListing, setEditingListing] = useState<HostListing | null>(null);
+  const [selectedWishlistId, setSelectedWishlistId] = useState<number | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -148,6 +150,15 @@ export default function App() {
       )}
       {view === 'wishlists' && (
         <WishlistPage
+          onLogo={() => setView('home')}
+          onHosting={() => setView('host-dashboard')}
+          onOpenWishlist={(id) => { setSelectedWishlistId(id); setView('wishlist-detail'); }}
+        />
+      )}
+      {view === 'wishlist-detail' && selectedWishlistId !== null && (
+        <WishlistDetailPage
+          wishlistId={selectedWishlistId}
+          onBack={() => setView('wishlists')}
           onLogo={() => setView('home')}
           onHosting={() => setView('host-dashboard')}
         />
