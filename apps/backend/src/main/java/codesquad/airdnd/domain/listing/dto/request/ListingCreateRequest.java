@@ -17,24 +17,26 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 public record ListingCreateRequest(
 	@NotBlank(message = "숙소 이름을 입력해주세요.") String name,
 
 	@NotBlank(message = "도로명 주소를 입력해주세요.") String roadAddress,
-	@NotBlank(message = "상세 주소를 입력해주세요.") String detailAddress,
+	@NotBlank(message = "상세 주소를 입력해주세요.")
+	@Size(max = 50, message = "상세 주소는 50자 이하로 입력해주세요.") String detailAddress,
 	@NotBlank(message = "우편번호를 입력해주세요.")
 	@Pattern(regexp = "\\d{5}", message = "우편번호는 5자리 숫자여야 합니다.") String postalCode,
 
-	@NotNull(message = "위도를 입력해주세요.")
+	@NotNull
 	@DecimalMin(value = "-90.0", message = "위도는 -90 이상이어야 합니다.")
 	@DecimalMax(value = "90.0", message = "위도는 90 이하여야 합니다.")
-	BigDecimal latitude,
+	Double latitude,
 
-	@NotNull(message = "경도를 입력해주세요.")
+	@NotNull
 	@DecimalMin(value = "-180.0", message = "경도는 -180 이상이어야 합니다.")
 	@DecimalMax(value = "180.0", message = "경도는 180 이하여야 합니다.")
-	BigDecimal longitude,
+	Double longitude,
 
 	@NotNull(message = "숙소 유형을 선택해주세요.") RoomType roomType,
 

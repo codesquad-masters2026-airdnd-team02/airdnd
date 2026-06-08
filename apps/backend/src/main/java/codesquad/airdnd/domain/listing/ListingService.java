@@ -1,8 +1,10 @@
 package codesquad.airdnd.domain.listing;
 
-import java.math.BigDecimal;
 import java.util.List;
 
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
+import codesquad.airdnd.global.geocoding.KakaoGeocodingService;
+import codesquad.airdnd.global.geocoding.KakaoRegionInfo;
 import codesquad.airdnd.global.region.RegionCodeService;
 import lombok.RequiredArgsConstructor;
 
@@ -23,12 +27,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListingService {
 
-	private static final BigDecimal LAT_MIN = BigDecimal.valueOf(33.0);
-	private static final BigDecimal LAT_MAX = BigDecimal.valueOf(38.9);
-	private static final BigDecimal LON_MIN = BigDecimal.valueOf(124.6);
-	private static final BigDecimal LON_MAX = BigDecimal.valueOf(131.9);
+	private static final double LAT_MIN = 33.0;
+	private static final double LAT_MAX = 38.9;
+	private static final double LON_MIN = 124.6;
+	private static final double LON_MAX = 131.9;
 
 	private final ListingRepository listingRepository;
+	private final KakaoGeocodingService kakaoGeocodingService;
 	private final RegionCodeService regionCodeService;
 
 	public void submitListing(Member host, ListingCreateRequest request) {
@@ -73,19 +78,25 @@ public class ListingService {
 		listing.deactivate();
 	}
 
-	private void validateKoreanBounds(BigDecimal latitude, BigDecimal longitude) {
-		boolean outOfBounds = latitude.compareTo(LAT_MIN) < 0 || latitude.compareTo(LAT_MAX) > 0
-			|| longitude.compareTo(LON_MIN) < 0 || longitude.compareTo(LON_MAX) > 0;
+	private void validateKoreanBounds(double latitude, double longitude) {
+		boolean outOfBounds = latitude < LAT_MIN || latitude > LAT_MAX
+			|| longitude < LON_MIN || longitude > LON_MAX;
 		if (outOfBounds) {
 			throw new BusinessException(ErrorCode.INVALID_LOCATION);
 		}
 	}
 
 	private Address buildAddress(ListingCreateRequest request) {
+		KakaoRegionInfo region = kakaoGeocodingService.reverseGeocode(request.latitude(), request.longitude());
+
+		GeometryFactory factory = new GeometryFactory();
+
+		Point point = factory.createPoint(
+			new Coordinate(request.longitude(), request.latitude()));
+
 		return new Address(
 			request.roadAddress(), request.detailAddress(), request.postalCode(),
-			request.latitude(), request.longitude(),
-			"11", "11680"
+			point, region.sidoCode(), region.sigunguCode()
 		);
 	}
 

@@ -1,3 +1,7 @@
+kakao:
+  rest-api:
+    key: test-placeholder
+
 spring:
   flyway:
     enabled: false

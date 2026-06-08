@@ -9,6 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 
 import codesquad.airdnd.domain.member.Member;
 
@@ -143,12 +146,16 @@ class ListingTest {
 			.roomType(RoomType.ENTIRE_PLACE)
 			.description("설명")
 			.address(new Address("서울 강남구 테헤란로 152", "101호", "06236",
-				BigDecimal.valueOf(37.5012), BigDecimal.valueOf(127.0396),
+				point(37.5012, 127.0396),
 				"11", "11680"))
 			.host(owner)
 			.capacity(new Capacity(2, 1, 1, 1))
 			.pricePerNight(BigDecimal.valueOf(50000))
 			.amenities(Set.of())
 			.build();
+	}
+
+	private Point point(double lat, double lng) {
+		return new GeometryFactory().createPoint(new Coordinate(lng, lat));
 	}
 }

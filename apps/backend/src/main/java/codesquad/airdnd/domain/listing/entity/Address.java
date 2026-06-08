@@ -1,6 +1,9 @@
 package codesquad.airdnd.domain.listing.entity;
 
-import java.math.BigDecimal;
+import org.locationtech.jts.geom.Point;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
@@ -11,12 +14,22 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties("latLng")
 public class Address {
 	private String roadAddress;
 	private String detailAddress;
 	private String postalCode;
-	private BigDecimal latitude;
-	private BigDecimal longitude;
+	private Point latLng;
 	private String sidoCode;
 	private String sigunguCode;
+
+	@JsonProperty("latitude")
+	public Double getLatitude() {
+		return latLng == null ? null : latLng.getY();
+	}
+
+	@JsonProperty("longitude")
+	public Double getLongitude() {
+		return latLng == null ? null : latLng.getX();
+	}
 }
