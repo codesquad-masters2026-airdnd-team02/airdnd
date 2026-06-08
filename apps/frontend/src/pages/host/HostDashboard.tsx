@@ -1,7 +1,7 @@
 import { HostHeader } from '../../components/HostHeader';
 import { Icon } from '../../shared/Icon';
 import { won } from '../../shared/utils';
-import type { HostListing } from '../../types';
+import type { HostListing, ListingState } from '../../types';
 
 import listing1 from '../../assets/listing-1.png';
 import listing2 from '../../assets/listing-2.png';
@@ -10,15 +10,23 @@ import listing4 from '../../assets/listing-4.png';
 
 const FALLBACK_IMAGES = [listing1, listing2, listing3, listing4];
 
+const STATE_BADGE: Record<ListingState, { text: string; bg: string }> = {
+  APPROVED: { text: '활성',    bg: 'rgba(17,137,23,0.9)' },
+  INACTIVE: { text: '비활성',  bg: 'rgba(0,0,0,0.5)' },
+  PENDING:  { text: '검토 중', bg: 'rgba(180,120,0,0.9)' },
+  REJECTED: { text: '반려됨',  bg: 'rgba(180,0,0,0.9)' },
+};
+
 interface HostDashboardProps {
   listings: HostListing[];
+  isLoading?: boolean;
   onLogo: () => void;
   onNew: () => void;
   onEdit: (l: HostListing) => void;
   onToggleActive: (id: string) => void;
 }
 
-export function HostDashboard({ listings, onLogo, onNew, onEdit, onToggleActive }: HostDashboardProps) {
+export function HostDashboard({ listings, isLoading, onLogo, onNew, onEdit, onToggleActive }: HostDashboardProps) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface-alt)' }}>
       <HostHeader
@@ -53,7 +61,9 @@ export function HostDashboard({ listings, onLogo, onNew, onEdit, onToggleActive 
       />
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 48px 80px' }}>
-        {listings.length === 0 ? (
+        {isLoading ? (
+          <LoadingState />
+        ) : listings.length === 0 ? (
           <EmptyState onNew={onNew} />
         ) : (
           <>
@@ -106,6 +116,8 @@ function ListingCard({
   onToggleActive: () => void;
 }) {
   const imgSrc = l.imageUrls[0] || fallbackImg;
+  const badge = STATE_BADGE[l.state ?? (l.active ? 'APPROVED' : 'INACTIVE')];
+  const canToggle = l.state === 'APPROVED' || l.state === 'INACTIVE' || l.state == null;
 
   return (
     <div style={{
@@ -128,7 +140,7 @@ function ListingCard({
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           onError={e => { (e.currentTarget as HTMLImageElement).src = fallbackImg; }}
         />
-        {/* Status badge */}
+        {/* State badge */}
         <span style={{
           position: 'absolute',
           top: 14,
@@ -137,11 +149,11 @@ function ListingCard({
           borderRadius: 30,
           fontSize: 12,
           fontWeight: 700,
-          background: l.active ? 'rgba(17,137,23,0.9)' : 'rgba(0,0,0,0.5)',
+          background: badge.bg,
           color: '#fff',
           backdropFilter: 'blur(4px)',
         }}>
-          {l.active ? '활성' : '비활성'}
+          {badge.text}
         </span>
         {/* Room type badge */}
         <span style={{
@@ -210,27 +222,37 @@ function ListingCard({
             >
               수정하기
             </button>
-            <button
-              onClick={onToggleActive}
-              style={{
-                flex: 1,
-                height: 38,
-                border: 'none',
-                borderRadius: 8,
-                background: l.active ? 'var(--surface-alt-2)' : 'var(--cta-dark)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: l.active ? 'var(--ink-2)' : '#fff',
-                cursor: 'pointer',
-                transition: 'all 120ms ease',
-              }}
-            >
-              {l.active ? '비활성화' : '활성화'}
-            </button>
+            {canToggle && (
+              <button
+                onClick={onToggleActive}
+                style={{
+                  flex: 1,
+                  height: 38,
+                  border: 'none',
+                  borderRadius: 8,
+                  background: l.active ? 'var(--surface-alt-2)' : 'var(--cta-dark)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: l.active ? 'var(--ink-2)' : '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 120ms ease',
+                }}
+              >
+                {l.active ? '비활성화' : '활성화'}
+              </button>
+            )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--ink-3)', fontSize: 16 }}>
+      숙소 목록을 불러오는 중...
     </div>
   );
 }
