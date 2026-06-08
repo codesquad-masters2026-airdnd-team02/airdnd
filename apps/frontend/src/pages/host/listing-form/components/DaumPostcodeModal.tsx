@@ -15,16 +15,27 @@ interface DaumPostcodeModalProps {
 export function DaumPostcodeModal({ onComplete, onClose }: DaumPostcodeModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!containerRef.current) return;
+    const container = containerRef.current;
 
     new window.kakao.Postcode({
       oncomplete(data: DaumPostcodeData) {
-        onComplete(data);
-        onClose();
+        onCompleteRef.current(data);
+        setTimeout(() => onCloseRef.current(), 0);
       },
-    }).embed(containerRef.current);
-  }, [onComplete, onClose]);
+    }).embed(container);
+
+    // StrictMode 이중 실행 시 기존 iframe 제거
+    return () => {
+      container.innerHTML = '';
+    };
+  }, []);
 
   return (
     <div

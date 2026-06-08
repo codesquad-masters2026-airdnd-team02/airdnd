@@ -17,21 +17,6 @@ import { DescriptionStep } from './listing-form/steps/DescriptionStep';
 import { ImagesStep } from './listing-form/steps/ImagesStep';
 import { PricingStep } from './listing-form/steps/PricingStep';
 
-declare global {
-  interface Window {
-    kakao: {
-      Postcode: new (options: {
-        oncomplete: (data: {
-          zonecode: string;
-          roadAddress: string;
-          sido: string;
-          sigungu: string;
-        }) => void;
-      }) => { open: () => void; embed: (element: HTMLElement) => void };
-    };
-  }
-}
-
 interface HostListingFormProps {
   listing?: HostListing | null;
   onSave: () => void;
@@ -235,6 +220,10 @@ export function HostListingForm({ listing, onSave, onBack }: HostListingFormProp
             isEdit={isEdit}
             onSearchAddress={() => setIsPostcodeOpen(true)}
             onDetailAddressChange={value => setField('detailAddress', value)}
+            onCoordinatesChange={(lat, lng) => {
+              setField('latitude', lat);
+              setField('longitude', lng);
+            }}
           />
         )}
         {currentStep === 2 && (

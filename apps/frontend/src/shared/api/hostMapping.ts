@@ -74,7 +74,7 @@ export function toCreateRequest(form: ListingFormData): ApiCreateRequest {
     beds: form.beds,
     bathrooms: form.bathrooms,
     description: form.description,
-    pricePerNight: form.price,
+    pricePerNight: Math.round(form.price * 100) / 100,
     amenities: form.amenities
       .map(a => AMENITY_TO_API[a as keyof typeof AMENITY_TO_API])
       .filter((a): a is NonNullable<typeof a> => a != null),

@@ -3,8 +3,9 @@ export function formatCurrency(value: number) {
   return value.toLocaleString('ko-KR');
 }
 
+/** 백엔드 @Digits(integer=10, fraction=2)에 맞춰 정수 최대 10자리로 제한 */
 export function parseCurrencyInput(value: string) {
-  const digits = value.replace(/[^\d]/g, '');
+  const digits = value.replace(/[^\d]/g, '').slice(0, 10);
   return digits ? Number(digits) : 0;
 }
 

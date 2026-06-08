@@ -1,5 +1,5 @@
-import { TEMP_LISTING_COORDINATES } from '../../../../shared/api/hostMapping';
 import { Field, Section } from '../components/FormLayout';
+import { KakaoMap } from '../components/KakaoMap';
 import type { ListingFormData } from '../../../../types';
 import type { ListingFormErrors } from '../types';
 
@@ -9,12 +9,14 @@ export function AddressStep({
   isEdit,
   onSearchAddress,
   onDetailAddressChange,
+  onCoordinatesChange,
 }: {
   form: ListingFormData;
   errors: ListingFormErrors;
   isEdit: boolean;
   onSearchAddress: () => void;
   onDetailAddressChange: (value: string) => void;
+  onCoordinatesChange: (lat: number, lng: number) => void;
 }) {
   return (
     <Section title="주소">
@@ -58,6 +60,14 @@ export function AddressStep({
           style={{ background: 'var(--surface-alt)', cursor: 'default' }}
         />
       </Field>
+
+      {form.streetAddress && (
+        <KakaoMap
+          address={form.streetAddress}
+          onCoordinatesChange={onCoordinatesChange}
+        />
+      )}
+
       <Field label="상세 주소" required={!isEdit} error={errors.detailAddress}>
         <input
           className="host-input"
@@ -66,17 +76,6 @@ export function AddressStep({
           onChange={e => onDetailAddressChange(e.target.value)}
         />
       </Field>
-      <div style={{
-        padding: '14px 16px',
-        borderRadius: 10,
-        background: 'var(--surface-alt)',
-        color: 'var(--ink-3)',
-        fontSize: 13,
-        lineHeight: 1.6,
-      }}>
-        좌표는 다음 단계에서 카카오 JS 연동으로 확정 예정입니다. 현재는 임시 좌표
-        ({TEMP_LISTING_COORDINATES.latitude}, {TEMP_LISTING_COORDINATES.longitude})를 함께 전송합니다.
-      </div>
     </Section>
   );
 }
