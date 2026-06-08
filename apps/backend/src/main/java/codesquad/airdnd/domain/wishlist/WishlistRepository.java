@@ -1,6 +1,8 @@
 package codesquad.airdnd.domain.wishlist;
 
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistGroupResponse;
+import codesquad.airdnd.domain.wishlist.domain.Wishlist;
+import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
+import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +11,7 @@ import java.util.List;
 
 public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
 
+    // TODO: 한방 쿼리 -> 분할 쿼리로 개선 필요 + 메서드명도 더 간결하게 변경 -> findByMember
     @Query(value = """
         WITH latest_item AS (
                 SELECT wishlist_id, listing_id
@@ -45,5 +48,16 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
             WHERE w.member_id = :memberId
             GROUP BY w.id, w.name, bi.image_url
         """, nativeQuery = true)
-    List<WishlistGroupResponse> findWishlistsByMember(@Param("memberId") Long memberId);
+    List<WishlistResponse> findWishlistsByMember(@Param("memberId") Long memberId);
+
+    @Query("""
+        select new codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult(
+            w.id, w.name, wi.note, wi.listing.id
+            )
+                from Wishlist w
+                left join WishlistItem wi on wi.wishlist = w
+                where w.id = :wishlistId
+                order by wi.createdAt desc
+    """)
+    List<WishlistDetailQueryResult> findDetail(@Param("wishlistId") Long wishlistId);
 }
