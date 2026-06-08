@@ -1,3 +1,7 @@
+kakao:
+  rest-api:
+    key: ${KAKAO_REST_API_KEY:placeholder}
+
 spring:
   application:
     name: airdnd

@@ -1,5 +1,10 @@
 package codesquad.airdnd.domain.listing.entity;
 
+import org.locationtech.jts.geom.Point;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,14 +14,22 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties("latLng")
 public class Address {
-	private String city;
-	private String district;
-	private String streetAddress;
+	private String roadAddress;
 	private String detailAddress;
-	private String zipCode;
+	private String postalCode;
+	private Point latLng;
+	private String sidoCode;
+	private String sigunguCode;
 
-	public String getSummary() {
-		return district + ", " + city;
+	@JsonProperty("latitude")
+	public Double getLatitude() {
+		return latLng == null ? null : latLng.getY();
+	}
+
+	@JsonProperty("longitude")
+	public Double getLongitude() {
+		return latLng == null ? null : latLng.getX();
 	}
 }

@@ -12,6 +12,9 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -81,7 +84,8 @@ class HostControllerTest {
 	@DisplayName("name이 빈 문자열이면 400 응답과 COMMON_002 코드를 반환한다")
 	void createListing_failsWhenNameIsBlank() throws Exception {
 		ListingCreateRequest request = new ListingCreateRequest(
-			"", "서울", "강남구", "테헤란로 1", "101호", "06100",
+			"", "서울 강남구 테헤란로 152", "101호", "06236",
+			37.5012, 127.0396,
 			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
 			BigDecimal.valueOf(50000), Set.of()
 		);
@@ -98,7 +102,8 @@ class HostControllerTest {
 	@DisplayName("roomType이 null이면 400 응답을 반환한다")
 	void createListing_failsWhenRoomTypeIsNull() throws Exception {
 		ListingCreateRequest request = new ListingCreateRequest(
-			"테스트 숙소", "서울", "강남구", "테헤란로 1", "101호", "06100",
+			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
+			37.5012, 127.0396,
 			null, 2, 1, 1, 1, "설명",
 			BigDecimal.valueOf(50000), Set.of()
 		);
@@ -114,7 +119,8 @@ class HostControllerTest {
 	@DisplayName("pricePerNight가 음수이면 400 응답을 반환한다")
 	void createListing_failsWhenPriceIsNegative() throws Exception {
 		ListingCreateRequest request = new ListingCreateRequest(
-			"테스트 숙소", "서울", "강남구", "테헤란로 1", "101호", "06100",
+			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
+			37.5012, 127.0396,
 			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
 			BigDecimal.valueOf(-1), Set.of()
 		);
@@ -130,7 +136,8 @@ class HostControllerTest {
 	@DisplayName("maxGuests가 0이면 400 응답을 반환한다")
 	void createListing_failsWhenMaxGuestsIsZero() throws Exception {
 		ListingCreateRequest request = new ListingCreateRequest(
-			"테스트 숙소", "서울", "강남구", "테헤란로 1", "101호", "06100",
+			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
+			37.5012, 127.0396,
 			RoomType.ENTIRE_PLACE, 0, 1, 1, 1, "설명",
 			BigDecimal.valueOf(50000), Set.of()
 		);
@@ -180,7 +187,9 @@ class HostControllerTest {
 	void getHostListingDetail_success() throws Exception {
 		ListingDetail detail = new ListingDetail(
 			1L, "테스트 숙소", RoomType.ENTIRE_PLACE, "멋진 숙소",
-			new Address("서울", "강남구", "테헤란로 1", "101호", "06100"),
+			new Address("서울 강남구 테헤란로 152", "101호", "06236",
+				point(37.5012, 127.0396),
+				"11", "11680"),
 			"testHost", new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000), Set.of()
 		);
 		given(listingService.getListingDetail(any(Member.class), eq(1L))).willReturn(detail);
@@ -292,9 +301,14 @@ class HostControllerTest {
 
 	private ListingCreateRequest validCreateRequest() {
 		return new ListingCreateRequest(
-			"테스트 숙소", "서울", "강남구", "테헤란로 1", "101호", "06100",
+			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
+			37.5012, 127.0396,
 			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "멋진 숙소입니다",
 			BigDecimal.valueOf(50000), Set.of(Amenity.WIFI)
 		);
+	}
+
+	private Point point(double lat, double lng) {
+		return new GeometryFactory().createPoint(new Coordinate(lng, lat));
 	}
 }

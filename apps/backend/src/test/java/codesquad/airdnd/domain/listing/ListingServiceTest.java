@@ -14,6 +14,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,12 +33,21 @@ import codesquad.airdnd.domain.listing.entity.RoomType;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
+import codesquad.airdnd.global.geocoding.KakaoGeocodingService;
+import codesquad.airdnd.global.geocoding.KakaoRegionInfo;
+import codesquad.airdnd.global.region.RegionCodeService;
 
 @ExtendWith(MockitoExtension.class)
 class ListingServiceTest {
 
 	@Mock
 	private ListingRepository listingRepository;
+
+	@Mock
+	private KakaoGeocodingService kakaoGeocodingService;
+
+	@Mock
+	private RegionCodeService regionCodeService;
 
 	@InjectMocks
 	private ListingService listingService;
@@ -66,6 +78,7 @@ class ListingServiceTest {
 		void savesListingToRepository() {
 			// given
 			ListingCreateRequest request = validCreateRequest();
+			given(kakaoGeocodingService.reverseGeocode(anyDouble(), anyDouble())).willReturn(seoulGangnamRegion());
 			given(listingRepository.save(any(Listing.class))).willAnswer(inv -> inv.getArgument(0));
 
 			// when
@@ -80,6 +93,7 @@ class ListingServiceTest {
 		void newListingStateIsPending() {
 			// given
 			ListingCreateRequest request = validCreateRequest();
+			given(kakaoGeocodingService.reverseGeocode(anyDouble(), anyDouble())).willReturn(seoulGangnamRegion());
 			given(listingRepository.save(any(Listing.class))).willAnswer(inv -> {
 				Listing saved = inv.getArgument(0);
 				assertThat(saved.getState()).isEqualTo(ListingState.PENDING);
@@ -88,6 +102,26 @@ class ListingServiceTest {
 
 			// when & then
 			listingService.submitListing(host, request);
+		}
+
+		@Test
+		@DisplayName("한국 서비스 영역 밖의 좌표로 등록하면 INVALID_LOCATION 예외가 발생한다")
+		void throwsExceptionWhenOutOfKoreanBounds() {
+			// given - 도쿄 좌표
+			ListingCreateRequest request = new ListingCreateRequest(
+				"테스트 숙소", "도쿄도 신주쿠구 1", "101호", "16001",
+				35.6895, 139.6917,
+				RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
+				BigDecimal.valueOf(50000), Set.of()
+			);
+
+			// when & then
+			assertThatThrownBy(() -> listingService.submitListing(host, request))
+				.isInstanceOf(BusinessException.class)
+				.extracting(e -> ((BusinessException) e).getErrorCode())
+				.isEqualTo(ErrorCode.INVALID_LOCATION);
+
+			then(kakaoGeocodingService).should(never()).reverseGeocode(anyDouble(), anyDouble());
 		}
 	}
 
@@ -134,6 +168,7 @@ class ListingServiceTest {
 			// given
 			Listing listing = pendingListing(host);
 			given(listingRepository.findAllByHost(host)).willReturn(List.of(listing));
+			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
 
 			// when
 			HostListingsList result = listingService.getHostListings(host);
@@ -340,17 +375,17 @@ class ListingServiceTest {
 			.name("테스트 숙소")
 			.roomType(RoomType.ENTIRE_PLACE)
 			.description("설명")
-			.address(new Address("서울", "강남구", "테헤란로 1", "101호", "06100"))
+			.address(seoulGangnamAddress())
 			.host(owner)
 			.capacity(new Capacity(2, 1, 1, 1))
 			.pricePerNight(BigDecimal.valueOf(50000))
 			.amenities(Set.of())
-			.build(); // 초기 state = PENDING
+			.build();
 	}
 
 	private Listing approvedListing(Member owner) {
 		Listing listing = pendingListing(owner);
-		listing.activate(); // state = APPROVED
+		listing.activate();
 		return listing;
 	}
 
@@ -362,9 +397,26 @@ class ListingServiceTest {
 
 	private ListingCreateRequest validCreateRequest() {
 		return new ListingCreateRequest(
-			"테스트 숙소", "서울", "강남구", "테헤란로 1", "101호", "06100",
+			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
+			37.5012, 127.0396,
 			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
 			BigDecimal.valueOf(50000), Set.of()
 		);
+	}
+
+	private Address seoulGangnamAddress() {
+		return new Address(
+			"서울 강남구 테헤란로 152", "101호", "06236",
+			point(37.5012, 127.0396),
+			"11", "11680"
+		);
+	}
+
+	private Point point(double lat, double lng) {
+		return new GeometryFactory().createPoint(new Coordinate(lng, lat));
+	}
+
+	private KakaoRegionInfo seoulGangnamRegion() {
+		return new KakaoRegionInfo("11", "11680");
 	}
 }

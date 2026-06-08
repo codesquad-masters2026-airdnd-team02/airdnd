@@ -119,6 +119,13 @@ h1, h2, h3 {
   color: var(--ink-4);
 }
 
+@media (max-width: 720px) {
+  .host-capacity-grid,
+  .host-amenities-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Popover entrance animation */
 @keyframes popover-in {
   from { opacity: 0; transform: translateY(-8px); }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Home } from './pages/Home';
 import { Results, LISTINGS } from './pages/Results';
 import { Detail } from './pages/Detail';
@@ -31,8 +31,6 @@ export default function App() {
   const [confirm, setConfirm] = useState(false);
   const [search, setSearch] = useState<SearchState>(DEFAULT_SEARCH);
   const [editingListing, setEditingListing] = useState<HostListing | null>(null);
-
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     window.scrollTo(0, 0);

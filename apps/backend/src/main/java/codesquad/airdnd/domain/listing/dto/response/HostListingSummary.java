@@ -16,10 +16,15 @@ public record HostListingSummary(
 	BigDecimal pricePerNight,
 	ListingState state
 ) {
-	public static HostListingSummary from(Listing listing) {
-		String addressSummary = listing.getAddress().getSummary();
-
-		return new HostListingSummary(listing.getId(), listing.getName(), listing.getRoomType(), addressSummary,
-			listing.getCapacity(), listing.getPricePerNight(), listing.getState());
+	public static HostListingSummary from(Listing listing, String addressSummary) {
+		return new HostListingSummary(
+			listing.getId(),
+			listing.getName(),
+			listing.getRoomType(),
+			addressSummary,
+			listing.getCapacity(),
+			listing.getPricePerNight(),
+			listing.getState()
+		);
 	}
 }
