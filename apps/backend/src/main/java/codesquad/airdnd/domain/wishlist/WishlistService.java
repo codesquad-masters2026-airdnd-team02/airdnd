@@ -3,14 +3,18 @@ package codesquad.airdnd.domain.wishlist;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
+import codesquad.airdnd.domain.wishlist.dto.request.WishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.response.WishlistAddResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailItemResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
+import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import codesquad.airdnd.global.auth.AuthUtils;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -98,5 +102,17 @@ public class WishlistService {
                             imageByListing.getOrDefault(lid, List.of())
                     );
                 }).toList();
+    }
+
+    @Transactional
+    public WishlistAddResponse addWishlist(WishlistAddRequest wishlistAddRequest){
+        Member currentMember = authUtils.getCurrentMember();
+        Wishlist wishlist = Wishlist.builder()
+                .member(currentMember)
+                .name(wishlistAddRequest.name())
+                .build();
+
+        Wishlist result = wishlistRepository.save(wishlist);
+        return WishlistAddResponse.from(result);
     }
 }

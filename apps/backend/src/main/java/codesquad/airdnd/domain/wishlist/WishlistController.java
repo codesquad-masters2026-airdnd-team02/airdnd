@@ -1,15 +1,16 @@
 package codesquad.airdnd.domain.wishlist;
 
+import codesquad.airdnd.domain.wishlist.dto.request.WishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.response.WishlistAddResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
 import codesquad.airdnd.global.ApiResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,9 +28,18 @@ public class WishlistController {
     }
 
     @GetMapping("/{wishlistId}")
-    public ApiResponse<WishlistDetailResponse> getWishlist(
+    public ApiResponse<WishlistDetailResponse> getWishlistDetail(
             @PathVariable @Min(1) Long wishlistId){
 
         return ApiResponse.success(wishlistService.getWishlist(wishlistId));
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<WishlistAddResponse> addWishlist(
+            @RequestBody @Valid WishlistAddRequest wishlistAddRequest
+    ){
+
+        return ApiResponse.success(wishlistService.addWishlist(wishlistAddRequest));
     }
 }
