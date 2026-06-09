@@ -53,3 +53,6 @@ uploads/
 .pnpm-store/
 
 docker/
+
+# 테스트용 sql 파일
+seed.sql

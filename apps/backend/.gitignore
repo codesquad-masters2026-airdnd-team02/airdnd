@@ -37,4 +37,7 @@ out/
 .vscode/
 
 # application-local.yaml 격리
-apps/backend/src/main/resources/application-local.yaml
+src/main/resources/application-local.yml
+
+# QueryDSL generated Q-classes
+src/main/generated

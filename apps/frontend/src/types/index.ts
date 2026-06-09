@@ -74,4 +74,25 @@ export interface ListingFormData {
   imageUrls: string[];
 }
 
-export type View = 'home' | 'results' | 'detail' | 'host-dashboard' | 'host-new' | 'host-edit' | 'admin' | 'mypage';
+export type View = 'home' | 'results' | 'detail' | 'host-dashboard' | 'host-new' | 'host-edit' | 'admin' | 'mypage' | 'wishlists' | 'wishlist-detail';
+
+export interface WishlistSummary {
+  id: number;
+  name: string;
+  itemCount: number;
+  imgUrl: string | null;
+}
+
+export interface WishlistDetailItem {
+  listingId: number;
+  listingName: string;
+  pricePerNight: number;
+  note: string | null;
+  imageUrls: string[];
+}
+
+export interface WishlistDetail {
+  id: number;
+  name: string;
+  items: WishlistDetailItem[];
+}

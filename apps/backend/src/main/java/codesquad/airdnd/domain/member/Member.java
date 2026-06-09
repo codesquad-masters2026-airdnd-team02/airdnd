@@ -7,8 +7,6 @@ import lombok.*;
 @Table(name = "member")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
 
     @Id
@@ -34,4 +32,18 @@ public class Member {
 
     @Column(name = "refresh_token")
     private String refreshToken;
+
+    @Builder
+    protected Member(
+            String userId, String password, String nickname, String oauthProvider,
+            String oauthId, String profileUrl, String refreshToken) {
+
+        this.userId = userId;
+        this.password = password;
+        this.nickname = nickname;
+        this.oauthProvider = oauthProvider;
+        this.oauthId = oauthId;
+        this.profileUrl = profileUrl;
+        this.refreshToken = refreshToken;
+    }
 }

@@ -95,9 +95,10 @@ const NAV_ITEMS: { key: MyPageTab; label: string }[] = [
 interface MyPageProps {
   onLogo: () => void;
   onHosting?: () => void;
+  onWishlists?: () => void;
 }
 
-export function MyPage({ onLogo, onHosting }: MyPageProps) {
+export function MyPage({ onLogo, onHosting, onWishlists }: MyPageProps) {
   const [tab, setTab] = useState<MyPageTab>('profile');
 
   return (
@@ -115,6 +116,17 @@ export function MyPage({ onLogo, onHosting }: MyPageProps) {
               }}
             >
               호스팅 하기
+            </button>
+            <button
+              onClick={onWishlists}
+              style={{
+                height: 40, padding: '0 18px', borderRadius: 10,
+                border: '1px solid var(--line-strong)', background: '#fff',
+                fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600,
+                color: 'var(--ink-2)', cursor: 'pointer',
+              }}
+            >
+              위시리스트
             </button>
             <button
               onClick={onLogo}
