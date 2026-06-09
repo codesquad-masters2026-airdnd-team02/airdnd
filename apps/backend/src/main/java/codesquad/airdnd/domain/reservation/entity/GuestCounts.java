@@ -1,4 +1,4 @@
-package codesquad.airdnd.domain.reservation;
+package codesquad.airdnd.domain.reservation.entity;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;

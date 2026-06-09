@@ -1,4 +1,4 @@
-package codesquad.airdnd.domain.reservation;
+package codesquad.airdnd.domain.reservation.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
