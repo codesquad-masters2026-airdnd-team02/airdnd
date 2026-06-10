@@ -25,6 +25,8 @@ public class ApiResponse<T> {
 		return new ApiResponse<>(true, "SUCCESS", data, null, null);
 	}
 
+    public static ApiResponse<Void> success(){ return new ApiResponse<>(true, "SUCCESS", null, null, null); }
+
 	public static ApiResponse<Void> error(ErrorCode ec) {
 		return new ApiResponse<>(false, ec.getCode(), null, ec.getMessage(), null);
 	}

@@ -55,4 +55,11 @@ public class WishlistController {
 
         return ApiResponse.success(wishlistService.addItemInExistingWishlist(wishlistId, request));
     }
+
+    @DeleteMapping("/{wishlistId}")
+    public ApiResponse<Void> deleteWishlist(@PathVariable @Min(1) Long wishlistId){
+        wishlistService.deleteWishlist(wishlistId);
+
+        return ApiResponse.success();
+    }
 }

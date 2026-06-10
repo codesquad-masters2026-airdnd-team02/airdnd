@@ -141,4 +141,14 @@ public class WishlistService {
 
         return ExistingWishlistAddResponse.of(wishlist, listing);
     }
+
+    @Transactional
+    public void deleteWishlist(Long wishlistId){
+        Member currentMember = authUtils.getCurrentMember();
+
+        Wishlist wishlist = wishlistRepository.findByIdAndMember_Id(wishlistId, currentMember.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
+
+        wishlistRepository.delete(wishlist);
+    }
 }
