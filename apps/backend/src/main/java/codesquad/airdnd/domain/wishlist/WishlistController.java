@@ -40,6 +40,6 @@ public class WishlistController {
             @RequestBody @Valid WishlistAddRequest wishlistAddRequest
     ){
 
-        return ApiResponse.success(wishlistService.addWishlist(wishlistAddRequest));
+        return ApiResponse.success(wishlistService.addItemInNewWishlist(wishlistAddRequest));
     }
 }
