@@ -62,3 +62,20 @@ export function createWishlistWithItem(listingId: number, name: string): Promise
     body: JSON.stringify({ listingId, name }),
   });
 }
+
+/** PATCH /api/wishlists/{wishlistId}/items/{listingId} — 항목 메모 수정 (빈 메모 허용) */
+export interface WishlistItemPatchResult {
+  wishlistId: number;
+  listingId: number;
+  note: string | null;
+}
+export function updateWishlistItemNote(
+  wishlistId: number,
+  listingId: number,
+  note: string,
+): Promise<WishlistItemPatchResult> {
+  return request<WishlistItemPatchResult>(`/api/wishlists/${wishlistId}/items/${listingId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ note }),
+  });
+}

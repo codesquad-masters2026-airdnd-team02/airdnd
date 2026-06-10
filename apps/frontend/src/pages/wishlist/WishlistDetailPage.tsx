@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { HostHeader } from '../../components/HostHeader';
+import { EditNoteModal } from '../../components/EditNoteModal';
 import { Icon } from '../../shared/Icon';
+import { updateWishlistItemNote, ApiError } from '../../shared/api/wishlist';
 import type { WishlistDetail, WishlistDetailItem } from '../../types';
 
 interface WishlistDetailPageProps {
@@ -14,6 +16,11 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
   const [detail, setDetail] = useState<WishlistDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 메모 수정 모달: 대상 항목 + 제출/에러 상태
+  const [editing, setEditing] = useState<WishlistDetailItem | null>(null);
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+
   useEffect(() => {
     setLoading(true);
     fetch(`http://localhost:8080/api/wishlists/${wishlistId}`)
@@ -24,6 +31,36 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
   }, [wishlistId]);
 
   const items = detail?.items ?? [];
+
+  const openNote = (item: WishlistDetailItem) => {
+    setNoteError(null);
+    setEditing(item);
+  };
+
+  const saveNote = (note: string) => {
+    if (!editing) return;
+    setSavingNote(true);
+    setNoteError(null);
+    updateWishlistItemNote(wishlistId, editing.listingId, note)
+      .then(result => {
+        // 로컬 상태만 갱신 — 전체 재요청 없이 해당 항목의 메모를 교체
+        setDetail(prev =>
+          prev
+            ? {
+                ...prev,
+                items: prev.items.map(it =>
+                  it.listingId === editing.listingId ? { ...it, note: result.note } : it,
+                ),
+              }
+            : prev,
+        );
+        setEditing(null);
+      })
+      .catch(e =>
+        setNoteError(e instanceof ApiError ? e.message : '메모 저장에 실패했어요'),
+      )
+      .finally(() => setSavingNote(false));
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff' }}>
@@ -93,10 +130,22 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: 28,
           }}>
-            {items.map(item => <ListingCard key={item.listingId} item={item} />)}
+            {items.map(item => (
+              <ListingCard key={item.listingId} item={item} onEditNote={() => openNote(item)} />
+            ))}
           </div>
         )}
       </main>
+
+      <EditNoteModal
+        open={editing != null}
+        listingName={editing?.listingName ?? ''}
+        initialNote={editing?.note ?? ''}
+        submitting={savingNote}
+        error={noteError}
+        onClose={() => setEditing(null)}
+        onSave={saveNote}
+      />
     </div>
   );
 }
@@ -116,7 +165,7 @@ function PillButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ListingCard({ item }: { item: WishlistDetailItem }) {
+function ListingCard({ item, onEditNote }: { item: WishlistDetailItem; onEditNote: () => void }) {
   const [hovered, setHovered] = useState(false);
   const cover = item.imageUrls?.[0];
 
@@ -167,15 +216,21 @@ function ListingCard({ item }: { item: WishlistDetailItem }) {
           ₩{item.pricePerNight.toLocaleString()} <span style={{ color: 'var(--ink-3)' }}>/박</span>
         </div>
 
-        <div style={{
-          marginTop: 12, padding: '10px 14px',
-          borderRadius: 12, border: '1px solid var(--line)',
-          fontSize: 13,
-          color: item.note ? 'var(--ink-1)' : 'var(--ink-3)',
-          cursor: 'pointer',
-        }}>
+        <button
+          onClick={onEditNote}
+          style={{
+            display: 'block', width: '100%', textAlign: 'left',
+            marginTop: 12, padding: '10px 14px',
+            borderRadius: 12, border: '1px solid var(--line)',
+            background: '#fff', fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            color: item.note ? 'var(--ink-1)' : 'var(--ink-3)',
+            cursor: 'pointer',
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}
+        >
           {item.note ? item.note : '메모 추가'}
-        </div>
+        </button>
       </div>
     </div>
   );
