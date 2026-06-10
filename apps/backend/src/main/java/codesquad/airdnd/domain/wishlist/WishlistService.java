@@ -1,5 +1,7 @@
 package codesquad.airdnd.domain.wishlist;
 
+import codesquad.airdnd.domain.listing.ListingRepository;
+import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
@@ -9,6 +11,8 @@ import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailItemResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
 import codesquad.airdnd.domain.wishlist.entity.Wishlist;
+import codesquad.airdnd.domain.wishlistItem.WishlistItem;
+import codesquad.airdnd.domain.wishlistItem.WishlistItemRepository;
 import codesquad.airdnd.global.auth.AuthUtils;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
@@ -25,6 +29,8 @@ public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
     private final AuthUtils authUtils;
+    private final ListingRepository listingRepository;
+    private final WishlistItemRepository wishlistItemRepository;
 
     public List<WishlistResponse> getWishlists(){
         Member member = authUtils.getCurrentMember(); // TODO: Stub
@@ -104,15 +110,27 @@ public class WishlistService {
                 }).toList();
     }
 
+    /**
+        예외 처리 필요
+        -> 하나의 숙소는 하나의 wishlist 안에만 존재해야 한다.
+     **/
     @Transactional
-    public WishlistAddResponse addWishlist(WishlistAddRequest wishlistAddRequest){
+    public WishlistAddResponse addItemInNewWishlist(WishlistAddRequest wishlistAddRequest){
         Member currentMember = authUtils.getCurrentMember();
-        Wishlist wishlist = Wishlist.builder()
-                .member(currentMember)
-                .name(wishlistAddRequest.name())
-                .build();
 
-        Wishlist result = wishlistRepository.save(wishlist);
-        return WishlistAddResponse.from(result);
+        Listing listing = listingRepository.findById(wishlistAddRequest.listingId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.LISTING_NOT_FOUND));
+
+        if(wishlistItemRepository.existByMemberIdAndListingId(currentMember.getId(), listing.getId())){
+            throw new BusinessException(ErrorCode.WISHLIST_ITEM_ALREADY_EXISTS);
+        }
+
+        Wishlist wishlist = wishlistRepository.save(
+                Wishlist.builder().member(currentMember).name(wishlistAddRequest.name()).build());
+
+        WishlistItem wishlistItem = wishlistItemRepository.save(
+                WishlistItem.builder().wishlist(wishlist).listing(listing).build());
+
+        return WishlistAddResponse.from(wishlist, wishlistItem);
     }
 }

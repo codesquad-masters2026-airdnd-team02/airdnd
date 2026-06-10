@@ -18,6 +18,7 @@ public enum ErrorCode {
 
     // ==== Wishlist ====
     WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "WISHLIST_001", "존재하지 않는 위시리스트 입니다."),
+    WISHLIST_ITEM_ALREADY_EXISTS(HttpStatus.CONFLICT, "WISHLIST_001", "이미 위시리스트에 담긴 숙소입니다."),
 
 	// ===== Listing =====
 	LISTING_NOT_FOUND(HttpStatus.NOT_FOUND, "LISTING_001", "숙소를 찾을 수 없습니다."),

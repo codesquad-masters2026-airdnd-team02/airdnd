@@ -1,6 +1,7 @@
-package codesquad.airdnd.domain.wishlist.entity;
+package codesquad.airdnd.domain.wishlistItem;
 
 import codesquad.airdnd.domain.listing.entity.Listing;
+import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
