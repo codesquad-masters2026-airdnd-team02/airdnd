@@ -79,3 +79,25 @@ export function updateWishlistItemNote(
     body: JSON.stringify({ note }),
   });
 }
+
+/** PATCH /api/wishlists/{wishlistId} — 위시리스트 이름 변경 */
+export interface WishlistPatchResult {
+  id: number;
+  name: string;
+}
+export function renameWishlist(wishlistId: number, name: string): Promise<WishlistPatchResult> {
+  return request<WishlistPatchResult>(`/api/wishlists/${wishlistId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  });
+}
+
+/** DELETE /api/wishlists/{wishlistId} — 위시리스트 전체 삭제 */
+export function deleteWishlist(wishlistId: number): Promise<unknown> {
+  return request(`/api/wishlists/${wishlistId}`, { method: 'DELETE' });
+}
+
+/** DELETE /api/wishlists/{wishlistId}/items/{listingId} — 위시리스트에서 숙소 제거 */
+export function removeWishlistItem(wishlistId: number, listingId: number): Promise<unknown> {
+  return request(`/api/wishlists/${wishlistId}/items/${listingId}`, { method: 'DELETE' });
+}

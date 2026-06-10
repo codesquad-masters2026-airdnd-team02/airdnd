@@ -97,6 +97,11 @@ h1, h2, h3 {
   background: #3a3a3a !important;
 }
 
+/* Wishlist 환경설정 메뉴 행 hover */
+.wl-menu-row:hover {
+  background: var(--surface-alt-2) !important;
+}
+
 /* Host form inputs */
 .host-input {
   width: 100%;

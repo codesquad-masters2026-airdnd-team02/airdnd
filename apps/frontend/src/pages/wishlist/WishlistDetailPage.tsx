@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
 import { HostHeader } from '../../components/HostHeader';
 import { EditNoteModal } from '../../components/EditNoteModal';
+import { RenameWishlistModal } from '../../components/RenameWishlistModal';
+import { WishlistSettingsMenu } from '../../components/WishlistSettingsMenu';
+import { ConfirmDeleteWishlistModal } from '../../components/ConfirmDeleteWishlistModal';
 import { Icon } from '../../shared/Icon';
-import { updateWishlistItemNote, ApiError } from '../../shared/api/wishlist';
+import {
+  updateWishlistItemNote,
+  renameWishlist,
+  deleteWishlist,
+  removeWishlistItem,
+  ApiError,
+} from '../../shared/api/wishlist';
 import type { WishlistDetail, WishlistDetailItem } from '../../types';
 
 interface WishlistDetailPageProps {
@@ -21,6 +30,18 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
   const [savingNote, setSavingNote] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
 
+  // 하트 클릭으로 제거 중인 항목 listingId (중복 클릭 방지)
+  const [removingId, setRemovingId] = useState<number | null>(null);
+
+  // 환경설정("...") 메뉴 + 이름 변경 / 삭제
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     setLoading(true);
     fetch(`http://localhost:8080/api/wishlists/${wishlistId}`)
@@ -35,6 +56,20 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
   const openNote = (item: WishlistDetailItem) => {
     setNoteError(null);
     setEditing(item);
+  };
+
+  // 하트 클릭: DELETE /api/wishlists/{wishlistId}/items/{listingId} → 목록에서 제거
+  const removeItem = (listingId: number) => {
+    if (removingId != null) return;
+    setRemovingId(listingId);
+    removeWishlistItem(wishlistId, listingId)
+      .then(() => {
+        setDetail(prev =>
+          prev ? { ...prev, items: prev.items.filter(it => it.listingId !== listingId) } : prev,
+        );
+      })
+      .catch(() => {})
+      .finally(() => setRemovingId(null));
   };
 
   const saveNote = (note: string) => {
@@ -60,6 +95,33 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
         setNoteError(e instanceof ApiError ? e.message : '메모 저장에 실패했어요'),
       )
       .finally(() => setSavingNote(false));
+  };
+
+  // 이름 변경: PATCH /api/wishlists/{wishlistId}
+  const saveName = (name: string) => {
+    setSavingName(true);
+    setNameError(null);
+    renameWishlist(wishlistId, name)
+      .then(result => {
+        setDetail(prev => (prev ? { ...prev, name: result.name } : prev));
+        setRenaming(false);
+      })
+      .catch(e =>
+        setNameError(e instanceof ApiError ? e.message : '이름 변경에 실패했어요'),
+      )
+      .finally(() => setSavingName(false));
+  };
+
+  // 삭제: DELETE /api/wishlists/{wishlistId} → 목록으로 복귀
+  const removeWishlist = () => {
+    setDeleting(true);
+    setDeleteError(null);
+    deleteWishlist(wishlistId)
+      .then(() => onBack())
+      .catch(e => {
+        setDeleteError(e instanceof ApiError ? e.message : '삭제에 실패했어요');
+        setDeleting(false);
+      });
   };
 
   return (
@@ -94,18 +156,55 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
       />
 
       <main style={{ maxWidth: 1040, margin: '0 auto', padding: '32px 40px 100px' }}>
-        <button
-          onClick={onBack}
-          aria-label="뒤로"
-          style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 40, height: 40, borderRadius: '50%',
-            border: 'none', background: 'none', cursor: 'pointer',
-            marginLeft: -8, marginBottom: 4,
-          }}
-        >
-          <Icon name="chevron-left" size={24} color="var(--ink-1)" />
-        </button>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 4,
+        }}>
+          <button
+            onClick={onBack}
+            aria-label="뒤로"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 40, height: 40, borderRadius: '50%',
+              border: 'none', background: 'none', cursor: 'pointer',
+              marginLeft: -8,
+            }}
+          >
+            <Icon name="chevron-left" size={24} color="var(--ink-1)" />
+          </button>
+
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMenuOpen(v => !v)}
+              aria-label="환경설정"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 40, height: 40, borderRadius: '50%',
+                border: 'none', background: 'none', cursor: 'pointer',
+                marginRight: -8,
+              }}
+            >
+              <Icon name="more-horizontal" size={24} color="var(--ink-1)" />
+            </button>
+
+            <WishlistSettingsMenu
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              onRename={() => {
+                setMenuOpen(false);
+                setNameError(null);
+                setRenaming(true);
+              }}
+              onDelete={() => {
+                setMenuOpen(false);
+                setDeleteError(null);
+                setConfirmDelete(true);
+              }}
+            />
+          </div>
+        </div>
 
         <h1 style={{
           fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 700,
@@ -131,7 +230,13 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
             gap: 28,
           }}>
             {items.map(item => (
-              <ListingCard key={item.listingId} item={item} onEditNote={() => openNote(item)} />
+              <ListingCard
+                key={item.listingId}
+                item={item}
+                removing={removingId === item.listingId}
+                onEditNote={() => openNote(item)}
+                onRemove={() => removeItem(item.listingId)}
+              />
             ))}
           </div>
         )}
@@ -145,6 +250,24 @@ export function WishlistDetailPage({ wishlistId, onBack, onLogo, onHosting }: Wi
         error={noteError}
         onClose={() => setEditing(null)}
         onSave={saveNote}
+      />
+
+      <RenameWishlistModal
+        open={renaming}
+        initialName={detail?.name ?? ''}
+        submitting={savingName}
+        error={nameError}
+        onClose={() => setRenaming(false)}
+        onSave={saveName}
+      />
+
+      <ConfirmDeleteWishlistModal
+        open={confirmDelete}
+        name={detail?.name ?? ''}
+        deleting={deleting}
+        error={deleteError}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={removeWishlist}
       />
     </div>
   );
@@ -165,7 +288,14 @@ function PillButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ListingCard({ item, onEditNote }: { item: WishlistDetailItem; onEditNote: () => void }) {
+function ListingCard({
+  item, removing, onEditNote, onRemove,
+}: {
+  item: WishlistDetailItem;
+  removing: boolean;
+  onEditNote: () => void;
+  onRemove: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   const cover = item.imageUrls?.[0];
 
@@ -199,13 +329,21 @@ function ListingCard({ item, onEditNote }: { item: WishlistDetailItem; onEditNot
           )}
         </div>
 
-        <div style={{
-          position: 'absolute', top: 12, right: 12,
-          width: 30, height: 30, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
+        <button
+          aria-label="위시리스트에서 제거"
+          disabled={removing}
+          onClick={onRemove}
+          style={{
+            position: 'absolute', top: 12, right: 12,
+            width: 30, height: 30, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: 'none', background: 'none', padding: 0,
+            cursor: removing ? 'default' : 'pointer',
+            opacity: removing ? 0.5 : 1,
+          }}
+        >
           <Icon name="heart" size={26} color="#fff" fill="var(--brand-coral)" strokeWidth={1.6} />
-        </div>
+        </button>
       </div>
 
       <div style={{ marginTop: 14 }}>
