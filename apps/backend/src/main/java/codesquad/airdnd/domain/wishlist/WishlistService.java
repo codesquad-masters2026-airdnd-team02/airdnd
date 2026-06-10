@@ -6,6 +6,7 @@ import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistDeleteRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.response.*;
 import codesquad.airdnd.domain.wishlist.entity.Wishlist;
@@ -150,5 +151,17 @@ public class WishlistService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
 
         wishlistRepository.delete(wishlist);
+    }
+
+    @Transactional
+    public void deleteItemInWishlist(Long wishlistId, ExistingWishlistDeleteRequest request){
+        Member currentMember = authUtils.getCurrentMember();
+
+        Wishlist wishlist = wishlistRepository.findByIdAndMember_Id(wishlistId, currentMember.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
+
+        wishlistItemRepository.delete(
+                wishlistItemRepository.findByWishlist_IdAndListing_Id(wishlist.getId(), request.listingId())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_ITEM_NOT_FOUND)));
     }
 }

@@ -1,6 +1,7 @@
 package codesquad.airdnd.domain.wishlist;
 
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistDeleteRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.response.ExistingWishlistAddResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.NewWishlistAddResponse;
@@ -59,6 +60,16 @@ public class WishlistController {
     @DeleteMapping("/{wishlistId}")
     public ApiResponse<Void> deleteWishlist(@PathVariable @Min(1) Long wishlistId){
         wishlistService.deleteWishlist(wishlistId);
+
+        return ApiResponse.success();
+    }
+
+    @DeleteMapping("/{wishlistId}/items")
+    public ApiResponse<Void> deleteItemInWishlist(
+            @PathVariable @Min(1) Long wishlistId,
+            @RequestBody @Valid ExistingWishlistDeleteRequest request
+    ){
+        wishlistService.deleteItemInWishlist(wishlistId, request);
 
         return ApiResponse.success();
     }
