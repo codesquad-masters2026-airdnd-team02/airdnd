@@ -2,9 +2,12 @@ package codesquad.airdnd.domain.reservation.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
+import codesquad.airdnd.global.exception.BusinessException;
+import codesquad.airdnd.global.exception.ErrorCode;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,8 +18,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reservation {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,4 +49,53 @@ public class Reservation {
 	private GuestCounts guestCounts;
 
 	private BigDecimal totalPrice;
+
+	@Builder(access = AccessLevel.PRIVATE)
+	private Reservation(
+		Member guest,
+		Listing listing,
+		LocalDate checkInDate,
+		LocalDate checkOutDate,
+		GuestCounts guestCounts,
+		ReservationState state,
+		BigDecimal totalPrice
+	) {
+		this.guest = guest;
+		this.listing = listing;
+		this.checkInDate = checkInDate;
+		this.checkOutDate = checkOutDate;
+		this.guestCounts = guestCounts;
+		this.state = state;
+		this.totalPrice = totalPrice;
+	}
+
+	public static Reservation create(
+		Member guest, Listing listing, LocalDate checkInDate, LocalDate checkOutDate, GuestCounts guestCounts
+	) {
+		validateDates(checkInDate, checkOutDate);
+
+		long nights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+		BigDecimal pricePerNight = listing.getPricePerNight();
+		BigDecimal totalPrice = calculateTotalPrice(nights, pricePerNight);
+
+		return Reservation.builder()
+			.guest(guest)
+			.listing(listing)
+			.checkInDate(checkInDate)
+			.checkOutDate(checkOutDate)
+			.guestCounts(guestCounts)
+			.state(ReservationState.PENDING)
+			.totalPrice(totalPrice)
+			.build();
+	}
+
+	private static void validateDates(LocalDate checkInDate, LocalDate checkOutDate) {
+		if (!checkOutDate.isAfter(checkInDate)) {
+			throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);
+		}
+	}
+
+	private static BigDecimal calculateTotalPrice(long nights, BigDecimal pricePerNight) {
+		return pricePerNight.multiply(BigDecimal.valueOf(nights));
+	}
 }

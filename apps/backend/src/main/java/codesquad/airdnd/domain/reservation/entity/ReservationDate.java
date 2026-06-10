@@ -1,14 +1,21 @@
 package codesquad.airdnd.domain.reservation.entity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReservationDate {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,4 +29,23 @@ public class ReservationDate {
 
 	@Column(nullable = false)
 	private Long reservationId;
+
+	private ReservationDate(Long listingId, LocalDate stayDate, Long reservationId) {
+		this.listingId = listingId;
+		this.stayDate = stayDate;
+		this.reservationId = reservationId;
+	}
+
+	public static List<ReservationDate> from(Reservation reservation) {
+		List<ReservationDate> dates = new ArrayList<>();
+		for (LocalDate d = reservation.getCheckInDate(); d.isBefore(reservation.getCheckOutDate()); d = d.plusDays(1)) {
+
+			dates.add(new ReservationDate(
+				reservation.getListing().getId(),
+				d,
+				reservation.getReservationId()
+			));
+		}
+		return dates;
+	}
 }

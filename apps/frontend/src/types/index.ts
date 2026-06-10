@@ -2,6 +2,7 @@ export interface GuestCounts {
   adult: number;
   child: number;
   infant: number;
+  pet: number;
 }
 
 export interface DateRange {
@@ -19,6 +20,7 @@ export interface SearchState {
 }
 
 export interface Listing {
+  id: number;
   img: string;
   loc: string;
   title: string;

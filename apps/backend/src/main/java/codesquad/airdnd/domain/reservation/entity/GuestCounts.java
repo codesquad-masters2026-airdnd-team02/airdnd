@@ -14,4 +14,8 @@ public class GuestCounts {
 	private int childGuestNum;
 	private int babyGuestNum;
 	private int petGuestNum;
+
+	public static GuestCounts create(int adultGuestNum, int childGuestNum, int babyGuestNum, int petGuestNum) {
+		return new GuestCounts(adultGuestNum, childGuestNum, babyGuestNum, petGuestNum);
+	}
 }

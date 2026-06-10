@@ -1,5 +1,11 @@
+import { useState, useRef, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Header } from '../components/Header';
 import { Icon } from '../shared/Icon';
+import { CalendarModal } from '../components/panels/CalendarModal';
+import { GuestPanel } from '../components/panels/GuestPanel';
+import { createReservationMutation } from '../shared/api/generated/@tanstack/react-query.gen';
+import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../shared/api/reservationMapping';
 import { won } from '../shared/utils';
 import type { Listing, SearchState } from '../types';
 
@@ -20,6 +26,7 @@ const AMENITIES = ['주방', '무선 인터넷', '에어컨', '헤어드라이�
 interface DetailProps {
   listing: Listing;
   search: SearchState;
+  onChange: (v: SearchState) => void;
   onBack: () => void;
   onLogo: () => void;
   onReserve: () => void;
@@ -28,12 +35,48 @@ interface DetailProps {
   onMyPage?: () => void;
 }
 
-export function Detail({ listing, search, onBack, onLogo, onReserve, onHosting, onAdmin, onMyPage }: DetailProps) {
+type Panel = 'date' | 'guest' | null;
+
+export function Detail({ listing, search, onChange, onBack, onLogo, onReserve, onHosting, onAdmin, onMyPage }: DetailProps) {
   const l = listing;
   const nights = 1;
   const fee = Math.round(l.price * 0.099);
   const tax = Math.round(l.price * 0.014);
   const total = l.price * nights + fee + tax;
+
+  const [panel, setPanel] = useState<Panel>(null);
+  const [error, setError] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const reserveMutation = useMutation(createReservationMutation());
+
+  function handleReserve() {
+    setError(null);
+    let body;
+    try {
+      body = toReservationRequest(search);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
+      return;
+    }
+    reserveMutation.mutate(
+      { path: { listingId: l.id }, query: { guest: GUEST_STUB }, body },
+      {
+        onSuccess: () => onReserve(),
+        onError: (err) => setError(reservationErrorMessage(err)),
+      },
+    );
+  }
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setPanel(null);
+      }
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
 
   const checkin = search.dates ? search.dates.split(' – ')[0] : '날짜 입력';
   const checkout = search.dates ? search.dates.split(' – ')[1] : '날짜 입력';
@@ -162,9 +205,10 @@ export function Detail({ listing, search, onBack, onLogo, onReserve, onHosting, 
           </div>
 
           {/* Right: reservation cost card */}
-          <div style={{ flex: '0 0 360px', position: 'sticky', top: 100 }}>
+          <div ref={cardRef} style={{ flex: '0 0 360px', position: 'sticky', top: 100 }}>
             <div
               style={{
+                position: 'relative',
                 background: '#fff',
                 border: '1px solid var(--line)',
                 borderRadius: 16,
@@ -185,22 +229,57 @@ export function Detail({ listing, search, onBack, onLogo, onReserve, onHosting, 
               {/* Date + guest field group */}
               <div
                 style={{
-                  border: '1px solid var(--line-strong)',
-                  borderRadius: 10,
+                  position: 'relative',
                   margin: '16px 0',
                 }}
               >
-                <div style={{ display: 'flex' }}>
-                  <FieldCell label="체크인" val={checkin} borderRight />
-                  <FieldCell label="체크아웃" val={checkout} />
+                <div
+                  style={{
+                    border: '1px solid var(--line-strong)',
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ display: 'flex' }}>
+                    <FieldCell
+                      label="체크인"
+                      val={checkin}
+                      active={panel === 'date'}
+                      onClick={() => setPanel(panel === 'date' ? null : 'date')}
+                      borderRight
+                    />
+                    <FieldCell
+                      label="체크아웃"
+                      val={checkout}
+                      active={panel === 'date'}
+                      onClick={() => setPanel(panel === 'date' ? null : 'date')}
+                    />
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--line-strong)' }}>
+                    <FieldCell
+                      label="인원"
+                      val={search.guestLabel || '게스트 1명'}
+                      active={panel === 'guest'}
+                      onClick={() => setPanel(panel === 'guest' ? null : 'guest')}
+                    />
+                  </div>
                 </div>
-                <div style={{ borderTop: '1px solid var(--line-strong)' }}>
-                  <FieldCell label="인원" val={search.guestLabel || '게스트 1명'} />
-                </div>
+
+                {panel === 'date' && (
+                  <DetailPopover width={720} right>
+                    <CalendarModal value={search} onChange={onChange} />
+                  </DetailPopover>
+                )}
+                {panel === 'guest' && (
+                  <DetailPopover width={360} right>
+                    <GuestPanel value={search} onChange={onChange} />
+                  </DetailPopover>
+                )}
               </div>
 
               <button
-                onClick={onReserve}
+                onClick={handleReserve}
+                disabled={reserveMutation.isPending}
                 className="reserve-btn"
                 style={{
                   width: '100%',
@@ -212,12 +291,19 @@ export function Detail({ listing, search, onBack, onLogo, onReserve, onHosting, 
                   fontFamily: 'var(--font-sans)',
                   fontWeight: 700,
                   fontSize: 16,
-                  cursor: 'pointer',
+                  cursor: reserveMutation.isPending ? 'default' : 'pointer',
+                  opacity: reserveMutation.isPending ? 0.6 : 1,
                   transition: 'background 120ms ease',
                 }}
               >
-                예약하기
+                {reserveMutation.isPending ? '예약 중...' : '예약하기'}
               </button>
+
+              {error && (
+                <div style={{ marginTop: 12, fontSize: 13, color: 'var(--brand-coral)', textAlign: 'center' }}>
+                  {error}
+                </div>
+              )}
 
               <div
                 style={{
@@ -259,22 +345,60 @@ export function Detail({ listing, search, onBack, onLogo, onReserve, onHosting, 
 function FieldCell({
   label,
   val,
+  active,
+  onClick,
   borderRight,
 }: {
   label: string;
   val: string;
+  active?: boolean;
+  onClick?: () => void;
   borderRight?: boolean;
 }) {
   return (
     <div
+      onClick={onClick}
       style={{
         flex: 1,
         padding: '11px 14px',
+        cursor: onClick ? 'pointer' : 'default',
+        background: active ? 'var(--surface-alt-2)' : 'transparent',
         borderRight: borderRight ? '1px solid var(--line-strong)' : 'none',
+        transition: 'background 120ms ease',
       }}
     >
       <div style={{ fontSize: 11, fontWeight: 700 }}>{label}</div>
       <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 3 }}>{val}</div>
+    </div>
+  );
+}
+
+function DetailPopover({
+  children,
+  width,
+  right,
+}: {
+  children: React.ReactNode;
+  width: number;
+  right?: boolean;
+}) {
+  return (
+    <div
+      className="popover-enter"
+      style={{
+        position: 'absolute',
+        top: 'calc(100% + 12px)',
+        left: right ? 'auto' : 0,
+        right: right ? 0 : 'auto',
+        width,
+        background: '#fff',
+        borderRadius: 24,
+        boxShadow: 'var(--shadow-pop)',
+        padding: 28,
+        zIndex: 50,
+      }}
+    >
+      {children}
     </div>
   );
 }

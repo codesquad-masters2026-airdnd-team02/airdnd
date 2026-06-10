@@ -6,6 +6,7 @@ const ROWS: [keyof GuestCounts, string, string][] = [
   ['adult', '성인', '만 13세 이상'],
   ['child', '어린이', '만 2~12세'],
   ['infant', '유아', '만 2세 미만'],
+  ['pet', '반려동물', '보조동물을 동반하시나요?'],
 ];
 
 interface GuestPanelProps {
@@ -15,7 +16,7 @@ interface GuestPanelProps {
 
 export function GuestPanel({ value, onChange }: GuestPanelProps) {
   const [g, setG] = useState<GuestCounts>(
-    value.guests ?? { adult: 1, child: 0, infant: 0 }
+    value.guests ?? { adult: 1, child: 0, infant: 0, pet: 0 }
   );
 
   function adjust(key: keyof GuestCounts, delta: number) {
@@ -25,7 +26,7 @@ export function GuestPanel({ value, onChange }: GuestPanelProps) {
     const total = next.adult + next.child;
     const label =
       total > 0
-        ? `게스트 ${total}명${next.infant ? `, 유아 ${next.infant}명` : ''}`
+        ? `게스트 ${total}명${next.infant ? `, 유아 ${next.infant}명` : ''}${next.pet ? `, 반려동물 ${next.pet}마리` : ''}`
         : '게스트 추가';
     onChange({ ...value, guests: next, guestLabel: label });
   }
