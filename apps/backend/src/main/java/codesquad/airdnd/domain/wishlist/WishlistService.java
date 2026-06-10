@@ -6,8 +6,8 @@ import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
-import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistDeleteRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.WishlistItemPatchRequest;
 import codesquad.airdnd.domain.wishlist.dto.response.*;
 import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import codesquad.airdnd.domain.wishlistItem.WishlistItem;
@@ -154,14 +154,28 @@ public class WishlistService {
     }
 
     @Transactional
-    public void deleteItemInWishlist(Long wishlistId, ExistingWishlistDeleteRequest request){
+    public void deleteItemInWishlist(Long wishlistId, Long listingId){
         Member currentMember = authUtils.getCurrentMember();
 
         Wishlist wishlist = wishlistRepository.findByIdAndMember_Id(wishlistId, currentMember.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
 
-        wishlistItemRepository.delete(
-                wishlistItemRepository.findByWishlist_IdAndListing_Id(wishlist.getId(), request.listingId())
-                        .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_ITEM_NOT_FOUND)));
+        WishlistItem wishlistItem = wishlistItemRepository.findByWishlist_IdAndListing_Id(wishlist.getId(), listingId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_ITEM_NOT_FOUND));
+        wishlistItemRepository.delete(wishlistItem);
+    }
+
+    @Transactional
+    public WishlistItemPatchResponse patchItemInWishlist(Long wishlistId, Long listingId, WishlistItemPatchRequest request){
+        Member currentMember = authUtils.getCurrentMember();
+
+        Wishlist wishlist = wishlistRepository.findByIdAndMember_Id(wishlistId, currentMember.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
+        WishlistItem wishlistItem = wishlistItemRepository.findByWishlist_IdAndListing_Id(wishlist.getId(), listingId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_ITEM_NOT_FOUND));
+
+        wishlistItem.updateNote(request.note());
+
+        return WishlistItemPatchResponse.from(wishlistItem);
     }
 }

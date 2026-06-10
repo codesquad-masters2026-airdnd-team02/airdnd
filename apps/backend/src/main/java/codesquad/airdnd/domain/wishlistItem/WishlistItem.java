@@ -40,4 +40,8 @@ public class WishlistItem {
         this.listing = listing;
         this.note = note;
     }
+
+    public void updateNote(String note){
+        this.note = note;
+    }
 }

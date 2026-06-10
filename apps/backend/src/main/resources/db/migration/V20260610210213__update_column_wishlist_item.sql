@@ -1,0 +1,2 @@
+ALTER TABLE wishlist_item
+    MODIFY COLUMN note VARCHAR(50) NULL

@@ -1,12 +1,9 @@
 package codesquad.airdnd.domain.wishlist;
 
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
-import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistDeleteRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
-import codesquad.airdnd.domain.wishlist.dto.response.ExistingWishlistAddResponse;
-import codesquad.airdnd.domain.wishlist.dto.response.NewWishlistAddResponse;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailResponse;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
+import codesquad.airdnd.domain.wishlist.dto.request.WishlistItemPatchRequest;
+import codesquad.airdnd.domain.wishlist.dto.response.*;
 import codesquad.airdnd.global.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -64,13 +61,23 @@ public class WishlistController {
         return ApiResponse.success();
     }
 
-    @DeleteMapping("/{wishlistId}/items")
+    @DeleteMapping("/{wishlistId}/items/{listingId}")
     public ApiResponse<Void> deleteItemInWishlist(
             @PathVariable @Min(1) Long wishlistId,
-            @RequestBody @Valid ExistingWishlistDeleteRequest request
+            @PathVariable @Min(1) Long listingId
     ){
-        wishlistService.deleteItemInWishlist(wishlistId, request);
+        wishlistService.deleteItemInWishlist(wishlistId, listingId);
 
         return ApiResponse.success();
+    }
+
+    @PatchMapping("/{wishlistId}/items/{listingId}")
+    public ApiResponse<WishlistItemPatchResponse> patchItem(
+            @PathVariable @Min(1) Long wishlistId,
+            @PathVariable @Min(1) Long listingId,
+            @RequestBody @Valid WishlistItemPatchRequest request
+    ){
+
+        return ApiResponse.success(wishlistService.patchItemInWishlist(wishlistId, listingId, request));
     }
 }
