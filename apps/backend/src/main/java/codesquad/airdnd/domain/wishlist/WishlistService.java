@@ -8,6 +8,7 @@ import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.WishlistItemPatchRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.WishlistPatchRequest;
 import codesquad.airdnd.domain.wishlist.dto.response.*;
 import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import codesquad.airdnd.domain.wishlistItem.WishlistItem;
@@ -163,6 +164,18 @@ public class WishlistService {
         WishlistItem wishlistItem = wishlistItemRepository.findByWishlist_IdAndListing_Id(wishlist.getId(), listingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_ITEM_NOT_FOUND));
         wishlistItemRepository.delete(wishlistItem);
+    }
+
+    @Transactional
+    public WishlistPatchResponse patchWishlist(Long wishlistId, WishlistPatchRequest request){
+        Member currentMember = authUtils.getCurrentMember();
+
+        Wishlist wishlist = wishlistRepository.findByIdAndMember_Id(wishlistId, currentMember.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
+
+        wishlist.updateName(request.name());
+
+        return WishlistPatchResponse.from(wishlist);
     }
 
     @Transactional

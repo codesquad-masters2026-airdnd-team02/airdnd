@@ -37,4 +37,9 @@ public class Wishlist {
         this.member = member;
         this.name = name;
     }
+
+    public void updateName(String name){
+        this.name = name;
+    }
+
 }

@@ -3,6 +3,7 @@ package codesquad.airdnd.domain.wishlist;
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.WishlistItemPatchRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.WishlistPatchRequest;
 import codesquad.airdnd.domain.wishlist.dto.response.*;
 import codesquad.airdnd.global.ApiResponse;
 import jakarta.validation.Valid;
@@ -30,7 +31,6 @@ public class WishlistController {
     @GetMapping("/{wishlistId}")
     public ApiResponse<WishlistDetailResponse> getWishlistDetail(
             @PathVariable @Min(1) Long wishlistId){
-
         return ApiResponse.success(wishlistService.getWishlist(wishlistId));
     }
 
@@ -39,7 +39,6 @@ public class WishlistController {
     public ApiResponse<NewWishlistAddResponse> addItemInNewWishlist(
             @RequestBody @Valid NewWishlistAddRequest request
     ){
-
         return ApiResponse.success(wishlistService.addItemInNewWishlist(request));
     }
 
@@ -50,14 +49,12 @@ public class WishlistController {
             @PathVariable @Min(value = 1, message = "최소 1 이상의 값이어야 합니다.") Long wishlistId,
             @RequestBody @Valid ExistingWishlistAddRequest request
     ){
-
         return ApiResponse.success(wishlistService.addItemInExistingWishlist(wishlistId, request));
     }
 
     @DeleteMapping("/{wishlistId}")
     public ApiResponse<Void> deleteWishlist(@PathVariable @Min(1) Long wishlistId){
         wishlistService.deleteWishlist(wishlistId);
-
         return ApiResponse.success();
     }
 
@@ -67,17 +64,23 @@ public class WishlistController {
             @PathVariable @Min(1) Long listingId
     ){
         wishlistService.deleteItemInWishlist(wishlistId, listingId);
-
         return ApiResponse.success();
     }
 
+    @PatchMapping("/{wishlistId}")
+    public ApiResponse<WishlistPatchResponse> patchWishlist(
+            @PathVariable @Min(1) Long wishlistId,
+            @RequestBody @Valid WishlistPatchRequest request
+    ){
+        return ApiResponse.success(wishlistService.patchWishlist(wishlistId, request));
+    }
+
     @PatchMapping("/{wishlistId}/items/{listingId}")
-    public ApiResponse<WishlistItemPatchResponse> patchItem(
+    public ApiResponse<WishlistItemPatchResponse> patchItemInWishlist(
             @PathVariable @Min(1) Long wishlistId,
             @PathVariable @Min(1) Long listingId,
             @RequestBody @Valid WishlistItemPatchRequest request
     ){
-
         return ApiResponse.success(wishlistService.patchItemInWishlist(wishlistId, listingId, request));
     }
 }
