@@ -3,6 +3,7 @@ package codesquad.airdnd.domain.listing;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.lenient;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,6 +32,7 @@ import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.entity.ListingState;
 import codesquad.airdnd.domain.listing.entity.RoomType;
 import codesquad.airdnd.domain.member.Member;
+import codesquad.airdnd.domain.member.MemberRepository;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 import codesquad.airdnd.global.geocoding.KakaoGeocodingService;
@@ -49,22 +51,32 @@ class ListingServiceTest {
 	@Mock
 	private RegionCodeService regionCodeService;
 
+	@Mock
+	private MemberRepository memberRepository;
+
 	@InjectMocks
 	private ListingService listingService;
+
+	private static final Long HOST_ID = 1L;
+	private static final Long OTHER_ID = 2L;
 
 	private Member host;
 	private Member otherMember;
 
 	@BeforeEach
 	void setUp() {
-		host = Member.builder()
-			.id(1L)
-			.nickname("testHost")
+		host = member(HOST_ID, "testHost");
+		otherMember = member(OTHER_ID, "other");
+		lenient().when(memberRepository.getReferenceById(HOST_ID)).thenReturn(host);
+		lenient().when(memberRepository.getReferenceById(OTHER_ID)).thenReturn(otherMember);
+	}
+
+	private Member member(Long id, String nickname) {
+		Member member = Member.builder()
+			.nickname(nickname)
 			.build();
-		otherMember = Member.builder()
-			.id(2L)
-			.nickname("other")
-			.build();
+		ReflectionTestUtils.setField(member, "id", id);
+		return member;
 	}
 
 	// ===== submitListing =====
@@ -82,7 +94,7 @@ class ListingServiceTest {
 			given(listingRepository.save(any(Listing.class))).willAnswer(inv -> inv.getArgument(0));
 
 			// when
-			listingService.submitListing(host, request);
+			listingService.submitListing(HOST_ID, request);
 
 			// then
 			then(listingRepository).should(times(1)).save(any(Listing.class));
@@ -101,7 +113,7 @@ class ListingServiceTest {
 			});
 
 			// when & then
-			listingService.submitListing(host, request);
+			listingService.submitListing(HOST_ID, request);
 		}
 
 		@Test
@@ -116,7 +128,7 @@ class ListingServiceTest {
 			);
 
 			// when & then
-			assertThatThrownBy(() -> listingService.submitListing(host, request))
+			assertThatThrownBy(() -> listingService.submitListing(HOST_ID, request))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.INVALID_LOCATION);
@@ -142,7 +154,7 @@ class ListingServiceTest {
 			given(listingRepository.findAllByHost(host)).willReturn(List.of(listing1, listing2));
 
 			// when
-			HostListingsList result = listingService.getHostListings(host);
+			HostListingsList result = listingService.getHostListings(HOST_ID);
 
 			// then
 			assertThat(result.listings()).hasSize(2);
@@ -156,7 +168,7 @@ class ListingServiceTest {
 			given(listingRepository.findAllByHost(host)).willReturn(List.of());
 
 			// when
-			HostListingsList result = listingService.getHostListings(host);
+			HostListingsList result = listingService.getHostListings(HOST_ID);
 
 			// then
 			assertThat(result.listings()).isEmpty();
@@ -171,7 +183,7 @@ class ListingServiceTest {
 			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
 
 			// when
-			HostListingsList result = listingService.getHostListings(host);
+			HostListingsList result = listingService.getHostListings(HOST_ID);
 
 			// then
 			assertThat(result.listings().get(0).addressSummary()).isEqualTo("강남구, 서울");
@@ -193,7 +205,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when
-			ListingDetail result = listingService.getListingDetail(host, 1L);
+			ListingDetail result = listingService.getListingDetail(HOST_ID, 1L);
 
 			// then
 			assertThat(result.listingId()).isEqualTo(1L);
@@ -210,7 +222,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when & then
-			assertThatThrownBy(() -> listingService.getListingDetail(otherMember, 1L))
+			assertThatThrownBy(() -> listingService.getListingDetail(OTHER_ID, 1L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.NOT_LISTING_OWNER);
@@ -223,7 +235,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
 
 			// when & then
-			assertThatThrownBy(() -> listingService.getListingDetail(host, 99L))
+			assertThatThrownBy(() -> listingService.getListingDetail(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -244,7 +256,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when
-			listingService.activate(host, 1L);
+			listingService.activate(HOST_ID, 1L);
 
 			// then
 			assertThat(listing.getState()).isEqualTo(ListingState.APPROVED);
@@ -258,7 +270,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when & then
-			assertThatThrownBy(() -> listingService.activate(otherMember, 1L))
+			assertThatThrownBy(() -> listingService.activate(OTHER_ID, 1L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.NOT_LISTING_OWNER);
@@ -272,7 +284,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when & then
-			assertThatThrownBy(() -> listingService.activate(host, 1L))
+			assertThatThrownBy(() -> listingService.activate(HOST_ID, 1L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.LISTING_NOT_APPROVED);
@@ -286,7 +298,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when & then
-			assertThatThrownBy(() -> listingService.activate(host, 1L))
+			assertThatThrownBy(() -> listingService.activate(HOST_ID, 1L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.LISTING_NOT_APPROVED);
@@ -299,7 +311,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
 
 			// when & then
-			assertThatThrownBy(() -> listingService.activate(host, 99L))
+			assertThatThrownBy(() -> listingService.activate(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -320,7 +332,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when
-			listingService.deactivate(host, 1L);
+			listingService.deactivate(HOST_ID, 1L);
 
 			// then
 			assertThat(listing.getState()).isEqualTo(ListingState.INACTIVE);
@@ -334,7 +346,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when & then
-			assertThatThrownBy(() -> listingService.deactivate(otherMember, 1L))
+			assertThatThrownBy(() -> listingService.deactivate(OTHER_ID, 1L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.NOT_LISTING_OWNER);
@@ -348,7 +360,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
 
 			// when & then
-			assertThatThrownBy(() -> listingService.deactivate(host, 1L))
+			assertThatThrownBy(() -> listingService.deactivate(HOST_ID, 1L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.LISTING_NOT_APPROVED);
@@ -361,7 +373,7 @@ class ListingServiceTest {
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
 
 			// when & then
-			assertThatThrownBy(() -> listingService.deactivate(host, 99L))
+			assertThatThrownBy(() -> listingService.deactivate(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);

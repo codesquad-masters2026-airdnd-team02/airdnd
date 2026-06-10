@@ -14,7 +14,8 @@ import codesquad.airdnd.domain.listing.dto.response.HostListingsList;
 import codesquad.airdnd.domain.listing.dto.response.ListingDetail;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.global.ApiResponse;
-import codesquad.airdnd.global.auth.Login;
+import codesquad.airdnd.global.auth.CurrentMember;
+import codesquad.airdnd.global.auth.CurrentMemberInfo;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -26,34 +27,45 @@ public class HostController {
 
 	@PostMapping
 	public ResponseEntity<ApiResponse<Void>> createListing(
-		@Login Member host, @RequestBody @Valid ListingCreateRequest request
+		@CurrentMember CurrentMemberInfo memberInfo, @RequestBody @Valid ListingCreateRequest request
 	) {
-		listingService.submitListing(host, request);
+		listingService.submitListing(memberInfo.id(), request);
 		return ResponseEntity.ok(ApiResponse.success(null));
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<HostListingsList>> getHostListings(@Login Member host) {
-		HostListingsList hostListings = listingService.getHostListings(host);
+	public ResponseEntity<ApiResponse<HostListingsList>> getHostListings(
+		@CurrentMember CurrentMemberInfo memberInfo
+	) {
+		HostListingsList hostListings = listingService.getHostListings(memberInfo.id());
 
 		return ResponseEntity.ok(ApiResponse.success(hostListings));
 	}
 
 	@GetMapping("/{listingsId}")
-	public ResponseEntity<ApiResponse<ListingDetail>> getHostListingDetail(@Login Member host, @PathVariable Long listingsId) {
-		ListingDetail listingDetail = listingService.getListingDetail(host, listingsId);
+	public ResponseEntity<ApiResponse<ListingDetail>> getHostListingDetail(
+		@CurrentMember CurrentMemberInfo memberInfo,
+		@PathVariable Long listingsId
+	) {
+		ListingDetail listingDetail = listingService.getListingDetail(memberInfo.id(), listingsId);
 		return ResponseEntity.ok(ApiResponse.success(listingDetail));
 	}
 
 	@PatchMapping("/{listingsId}/activate")
-	public ResponseEntity<ApiResponse<Void>> activateListing(@Login Member host, @PathVariable Long listingsId) {
-		listingService.activate(host, listingsId);
+	public ResponseEntity<ApiResponse<Void>> activateListing(
+		@CurrentMember CurrentMemberInfo memberInfo,
+		@PathVariable Long listingsId
+	) {
+		listingService.activate(memberInfo.id(), listingsId);
 		return ResponseEntity.ok(ApiResponse.success(null));
 	}
 
 	@PatchMapping("/{listingsId}/deactivate")
-	public ResponseEntity<ApiResponse<Void>> deactivateListing(@Login Member host, @PathVariable Long listingsId) {
-		listingService.deactivate(host, listingsId);
+	public ResponseEntity<ApiResponse<Void>> deactivateListing(
+		@CurrentMember CurrentMemberInfo memberInfo,
+		@PathVariable Long listingsId
+	) {
+		listingService.deactivate(memberInfo.id(), listingsId);
 		return ResponseEntity.ok(ApiResponse.success(null));
 	}
 }

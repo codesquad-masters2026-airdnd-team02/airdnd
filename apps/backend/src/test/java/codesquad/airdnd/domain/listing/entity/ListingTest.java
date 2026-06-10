@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import codesquad.airdnd.domain.member.Member;
 
@@ -22,14 +23,16 @@ class ListingTest {
 
 	@BeforeEach
 	void setUp() {
-		host = Member.builder()
-			.id(1L)
-			.nickname("host")
+		host = member(1L, "host");
+		otherMember = member(2L, "other");
+	}
+
+	private Member member(Long id, String nickname) {
+		Member member = Member.builder()
+			.nickname(nickname)
 			.build();
-		otherMember = Member.builder()
-			.id(2L)
-			.nickname("other")
-			.build();
+		ReflectionTestUtils.setField(member, "id", id);
+		return member;
 	}
 
 	@Nested
