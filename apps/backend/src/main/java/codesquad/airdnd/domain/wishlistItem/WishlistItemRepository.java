@@ -10,5 +10,5 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Wish
         from WishlistItem wi
         where wi.wishlist.member.id = :memberId and wi.listing.id = :listingId
     """)
-    boolean existByMemberIdAndListingId(Long memberId, Long listingId);
+    boolean existsByMemberIdAndListingId(Long memberId, Long listingId);
 }

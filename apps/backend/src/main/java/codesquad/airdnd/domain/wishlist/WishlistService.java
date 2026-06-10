@@ -5,11 +5,9 @@ import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
-import codesquad.airdnd.domain.wishlist.dto.request.WishlistAddRequest;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistAddResponse;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailItemResponse;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailResponse;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
+import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.response.*;
 import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import codesquad.airdnd.domain.wishlistItem.WishlistItem;
 import codesquad.airdnd.domain.wishlistItem.WishlistItemRepository;
@@ -110,27 +108,37 @@ public class WishlistService {
                 }).toList();
     }
 
-    /**
-        예외 처리 필요
-        -> 하나의 숙소는 하나의 wishlist 안에만 존재해야 한다.
-     **/
     @Transactional
-    public WishlistAddResponse addItemInNewWishlist(WishlistAddRequest wishlistAddRequest){
+    public NewWishlistAddResponse addItemInNewWishlist(NewWishlistAddRequest newWishlistAddRequest){
         Member currentMember = authUtils.getCurrentMember();
-
-        Listing listing = listingRepository.findById(wishlistAddRequest.listingId())
+        Listing listing = listingRepository.findById(newWishlistAddRequest.listingId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.LISTING_NOT_FOUND));
 
-        if(wishlistItemRepository.existByMemberIdAndListingId(currentMember.getId(), listing.getId())){
+        if(wishlistItemRepository.existsByMemberIdAndListingId(currentMember.getId(), listing.getId())){
             throw new BusinessException(ErrorCode.WISHLIST_ITEM_ALREADY_EXISTS);
         }
 
         Wishlist wishlist = wishlistRepository.save(
-                Wishlist.builder().member(currentMember).name(wishlistAddRequest.name()).build());
+                Wishlist.builder().member(currentMember).name(newWishlistAddRequest.name()).build());
+        wishlistItemRepository.save(WishlistItem.builder().wishlist(wishlist).listing(listing).build());
 
-        WishlistItem wishlistItem = wishlistItemRepository.save(
-                WishlistItem.builder().wishlist(wishlist).listing(listing).build());
+        return NewWishlistAddResponse.of(wishlist, listing);
+    }
 
-        return WishlistAddResponse.from(wishlist, wishlistItem);
+    @Transactional
+    public ExistingWishlistAddResponse addItemInExistingWishlist(Long wishlistId, ExistingWishlistAddRequest request){
+        Member currentMember = authUtils.getCurrentMember();
+        Listing listing = listingRepository.findById(request.listingId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.LISTING_NOT_FOUND));
+        Wishlist wishlist = wishlistRepository.findByIdAndMember_Id(wishlistId, currentMember.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
+
+        if(wishlistItemRepository.existsByMemberIdAndListingId(currentMember.getId(), listing.getId())){
+            throw new BusinessException(ErrorCode.WISHLIST_ITEM_ALREADY_EXISTS);
+        }
+
+        wishlistItemRepository.save(WishlistItem.builder().wishlist(wishlist).listing(listing).build());
+
+        return ExistingWishlistAddResponse.of(wishlist, listing);
     }
 }

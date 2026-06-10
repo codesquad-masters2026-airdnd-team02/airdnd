@@ -1,7 +1,9 @@
 package codesquad.airdnd.domain.wishlist;
 
-import codesquad.airdnd.domain.wishlist.dto.request.WishlistAddRequest;
-import codesquad.airdnd.domain.wishlist.dto.response.WishlistAddResponse;
+import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
+import codesquad.airdnd.domain.wishlist.dto.response.ExistingWishlistAddResponse;
+import codesquad.airdnd.domain.wishlist.dto.response.NewWishlistAddResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistDetailResponse;
 import codesquad.airdnd.domain.wishlist.dto.response.WishlistResponse;
 import codesquad.airdnd.global.ApiResponse;
@@ -34,12 +36,23 @@ public class WishlistController {
         return ApiResponse.success(wishlistService.getWishlist(wishlistId));
     }
 
-    @PostMapping
+    @PostMapping("/items")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<WishlistAddResponse> addWishlist(
-            @RequestBody @Valid WishlistAddRequest wishlistAddRequest
+    public ApiResponse<NewWishlistAddResponse> addItemInNewWishlist(
+            @RequestBody @Valid NewWishlistAddRequest request
     ){
 
-        return ApiResponse.success(wishlistService.addItemInNewWishlist(wishlistAddRequest));
+        return ApiResponse.success(wishlistService.addItemInNewWishlist(request));
+    }
+
+    // TODO: ConstraintViolationException 전역 에러 처리 필요 (Validated)
+    @PostMapping("/{wishlistId}/items")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<ExistingWishlistAddResponse> addItemInExistingWishlist(
+            @PathVariable @Min(value = 1, message = "최소 1 이상의 값이어야 합니다.") Long wishlistId,
+            @RequestBody @Valid ExistingWishlistAddRequest request
+    ){
+
+        return ApiResponse.success(wishlistService.addItemInExistingWishlist(wishlistId, request));
     }
 }
