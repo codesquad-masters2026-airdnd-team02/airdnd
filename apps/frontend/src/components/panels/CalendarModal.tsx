@@ -4,11 +4,21 @@ import type { SearchState, DateRange } from '../../types';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 
-// Fixed months matching the source Figma: May 2021 (starts Sat=6) and June 2021 (starts Tue=2)
-const MONTHS = [
-  { y: 2021, m: 5, first: 6, days: 31 },
-  { y: 2021, m: 6, first: 2, days: 30 },
-];
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
+const TODAY_KEY = dateKey(TODAY.getFullYear(), TODAY.getMonth() + 1, TODAY.getDate());
+
+function dateKey(y: number, m: number, d: number) {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+// Month descriptor for the given offset from the current month
+function monthAt(offset: number) {
+  const base = new Date(TODAY.getFullYear(), TODAY.getMonth() + offset, 1);
+  const y = base.getFullYear();
+  const m = base.getMonth() + 1;
+  return { y, m, first: base.getDay(), days: new Date(y, m, 0).getDate() };
+}
 
 interface CalendarModalProps {
   value: SearchState;
@@ -17,6 +27,13 @@ interface CalendarModalProps {
 
 export function CalendarModal({ value, onChange }: CalendarModalProps) {
   const [range, setRange] = useState<DateRange>(value.range ?? { a: null, b: null });
+  const [offset, setOffset] = useState(0);
+  const [hover, setHover] = useState<string | null>(null);
+
+  const months = [monthAt(offset), monthAt(offset + 1)];
+
+  // Tentative end date for the hover preview band (only while picking the second date)
+  const previewEnd = range.a && !range.b && hover && hover > range.a ? hover : null;
 
   function pick(key: string) {
     let next: DateRange;
@@ -35,22 +52,30 @@ export function CalendarModal({ value, onChange }: CalendarModalProps) {
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }} onMouseLeave={() => setHover(null)}>
       <div style={{ display: 'flex', gap: 48, justifyContent: 'center' }}>
-        <ChevronBtn dir="left" />
-        {MONTHS.map((mo) => (
-          <Month key={mo.m} mo={mo} range={range} onPick={pick} />
+        <ChevronBtn dir="left" disabled={offset <= 0} onClick={() => setOffset((o) => Math.max(0, o - 1))} />
+        {months.map((mo) => (
+          <Month
+            key={`${mo.y}-${mo.m}`}
+            mo={mo}
+            range={range}
+            previewEnd={previewEnd}
+            onPick={pick}
+            onHover={setHover}
+          />
         ))}
-        <ChevronBtn dir="right" />
+        <ChevronBtn dir="right" onClick={() => setOffset((o) => o + 1)} />
       </div>
     </div>
   );
 }
 
-function ChevronBtn({ dir }: { dir: 'left' | 'right' }) {
+function ChevronBtn({ dir, disabled, onClick }: { dir: 'left' | 'right'; disabled?: boolean; onClick: () => void }) {
   return (
     <div
       className="cal-chev"
+      onClick={disabled ? undefined : onClick}
       style={{
         position: 'absolute',
         top: 0,
@@ -58,7 +83,9 @@ function ChevronBtn({ dir }: { dir: 'left' | 'right' }) {
         width: 36,
         height: 36,
         borderRadius: '50%',
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: disabled ? 0.3 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -77,27 +104,31 @@ function ChevronBtn({ dir }: { dir: 'left' | 'right' }) {
 interface MonthProps {
   mo: { y: number; m: number; first: number; days: number };
   range: DateRange;
+  previewEnd: string | null;
   onPick: (key: string) => void;
+  onHover: (key: string | null) => void;
 }
 
-function Month({ mo, range, onPick }: MonthProps) {
+function Month({ mo, range, previewEnd, onPick, onHover }: MonthProps) {
   const cells: (number | null)[] = [];
   for (let i = 0; i < mo.first; i++) cells.push(null);
   for (let d = 1; d <= mo.days; d++) cells.push(d);
 
   // Zero-pad month and day so string comparison works correctly (e.g. "09" < "16")
-  const key = (d: number) =>
-    `${mo.y}-${String(mo.m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const key = (d: number) => dateKey(mo.y, mo.m, d);
+
+  // Effective end: real second date, or hovered date while picking
+  const effEnd = range.b ?? previewEnd;
 
   const isStart = (d: number) => key(d) === range.a;
-  const isEnd   = (d: number) => key(d) === range.b;
+  const isEnd   = (d: number) => key(d) === effEnd;
   const inRange = (d: number) => {
-    if (!range.a || !range.b) return false;
+    if (!range.a || !effEnd) return false;
     const k = key(d);
-    return k > range.a && k < range.b;
+    return k > range.a && k < effEnd;
   };
-  // Crude "past" disabling: May 1–15 shown muted like the source
-  const isPast = (d: number) => mo.m === 5 && d <= 15;
+  // Disable any day before today
+  const isPast = (d: number) => key(d) < TODAY_KEY;
 
   return (
     <div style={{ width: 300 }}>
@@ -130,7 +161,7 @@ function Month({ mo, range, onPick }: MonthProps) {
           let bandBg = 'transparent';
           if (rng) {
             bandBg = 'var(--surface-alt-2)';
-          } else if (start && range.b) {
+          } else if (start && effEnd) {
             // right half only (band extends rightward from start)
             bandBg = 'linear-gradient(to right, transparent 50%, var(--surface-alt-2) 50%)';
           } else if (end && range.a) {
@@ -141,6 +172,7 @@ function Month({ mo, range, onPick }: MonthProps) {
           return (
             <div
               key={i}
+              onMouseEnter={() => !dis && onHover(key(d))}
               style={{
                 height: 42,
                 background: bandBg,

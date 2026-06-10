@@ -25,6 +25,10 @@ public enum ErrorCode {
 	LISTING_NOT_APPROVED(HttpStatus.CONFLICT, "LISTING_003", "승인되지 않은 숙소입니다."),
 	INVALID_LOCATION(HttpStatus.BAD_REQUEST, "LISTING_004", "서비스 지역(대한민국) 외의 좌표입니다."),
 	GEOCODING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LISTING_005", "주소 변환에 실패했습니다."),
+
+	// ===== Reservation =====
+	INVALID_RESERVATION_DATE(HttpStatus.BAD_REQUEST, "RESERVATION_001", "예약 날짜가 올바르지 않습니다."),
+	ALREADY_RESERVED(HttpStatus.CONFLICT, "RESERVATION_002", "선택하신 날짜는 이미 예약되었습니다."),
 	;
 	private final HttpStatus httpStatus;
 	private final String code;

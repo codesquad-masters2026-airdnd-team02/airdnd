@@ -18,6 +18,7 @@ const ASSET_MAP: Record<string, string> = {
 
 export const LISTINGS: Listing[] = [
   {
+    id: 1,
     img: 'listing-1',
     loc: '서초구의 아파트 전체',
     title: 'Spacious and Comfortable cozy house #4',
@@ -31,6 +32,7 @@ export const LISTINGS: Listing[] = [
     y: 26,
   },
   {
+    id: 2,
     img: 'listing-2',
     loc: 'Yeoksam-dong, Gangnam-gu의 아파트 전체',
     title: '#자가격리 #공부 #강남 #선릉역3분',
@@ -44,6 +46,7 @@ export const LISTINGS: Listing[] = [
     y: 44,
   },
   {
+    id: 3,
     img: 'listing-3',
     loc: 'Yeoksam-dong, Gangnam-gu의 아파트 전체',
     title: '#자가격리 #역삼역1분 #파티 #삼성',
@@ -57,6 +60,7 @@ export const LISTINGS: Listing[] = [
     y: 58,
   },
   {
+    id: 4,
     img: 'listing-4',
     loc: 'Yangjae-dong, Seocho-gu의 아파트 전체',
     title: '[장기 임대 할인] 강남 양재천 실평수 30평',

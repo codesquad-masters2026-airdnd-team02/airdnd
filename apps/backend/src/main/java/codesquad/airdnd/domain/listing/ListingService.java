@@ -15,6 +15,7 @@ import codesquad.airdnd.domain.listing.dto.response.ListingDetail;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
+import codesquad.airdnd.domain.member.MemberRepository;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 import codesquad.airdnd.global.geocoding.KakaoGeocodingService;
@@ -33,18 +34,24 @@ public class ListingService {
 	private static final double LON_MAX = 131.9;
 
 	private final ListingRepository listingRepository;
+	private final MemberRepository memberRepository;
+
 	private final KakaoGeocodingService kakaoGeocodingService;
 	private final RegionCodeService regionCodeService;
 
-	public void submitListing(Member host, ListingCreateRequest request) {
+	public void submitListing(Long hostId, ListingCreateRequest request) {
 		validateKoreanBounds(request.latitude(), request.longitude());
+
 		Address address = buildAddress(request);
+		Member host = memberRepository.getReferenceById(hostId);
 		Listing listing = request.toListing(host, address);
+
 		listingRepository.save(listing);
 	}
 
 	@Transactional(readOnly = true)
-	public HostListingsList getHostListings(Member host) {
+	public HostListingsList getHostListings(Long hostId) {
+		Member host = memberRepository.getReferenceById(hostId);
 		List<Listing> listings = listingRepository.findAllByHost(host);
 
 		return new HostListingsList(
@@ -58,23 +65,32 @@ public class ListingService {
 	}
 
 	@Transactional(readOnly = true)
-	public ListingDetail getListingDetail(Member host, Long listingsId) {
+	public ListingDetail getListingDetail(Long hostId, Long listingsId) {
+		Member host = memberRepository.getReferenceById(hostId);
 		Listing listing = findById(listingsId);
+
 		validateOwner(listing, host);
+
 		return ListingDetail.from(listing);
 	}
 
-	public void activate(Member host, Long listingsId) {
+	public void activate(Long hostId, Long listingsId) {
+		Member host = memberRepository.getReferenceById(hostId);
 		Listing listing = findById(listingsId);
+
 		validateOwner(listing, host);
 		validateApproved(listing);
+
 		listing.activate();
 	}
 
-	public void deactivate(Member host, Long listingsId) {
+	public void deactivate(Long hostId, Long listingsId) {
+		Member host = memberRepository.getReferenceById(hostId);
 		Listing listing = findById(listingsId);
+
 		validateOwner(listing, host);
 		validateApproved(listing);
+
 		listing.deactivate();
 	}
 
