@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { Header } from '../components/Header';
 import { Icon } from '../shared/Icon';
 import { CalendarModal } from '../components/panels/CalendarModal';
 import { GuestPanel } from '../components/panels/GuestPanel';
-import { createReservationMutation } from '../shared/api/generated/@tanstack/react-query.gen';
-import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../shared/api/reservationMapping';
+import { toReservationRequest } from '../shared/api/reservationMapping';
 import { won } from '../shared/utils';
 import type { Listing, SearchState } from '../types';
 
@@ -48,24 +46,16 @@ export function Detail({ listing, search, onChange, onBack, onLogo, onReserve, o
   const [error, setError] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const reserveMutation = useMutation(createReservationMutation());
-
   function handleReserve() {
     setError(null);
-    let body;
     try {
-      body = toReservationRequest(search);
+      // 날짜·인원 유효성 검증 (예약 생성은 결제 단계에서 처리)
+      toReservationRequest(search);
     } catch (e) {
       setError(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
       return;
     }
-    reserveMutation.mutate(
-      { path: { listingId: l.id }, query: { guest: GUEST_STUB }, body },
-      {
-        onSuccess: () => onReserve(),
-        onError: (err) => setError(reservationErrorMessage(err)),
-      },
-    );
+    onReserve();
   }
 
   useEffect(() => {
@@ -279,7 +269,6 @@ export function Detail({ listing, search, onChange, onBack, onLogo, onReserve, o
 
               <button
                 onClick={handleReserve}
-                disabled={reserveMutation.isPending}
                 className="reserve-btn"
                 style={{
                   width: '100%',
@@ -291,12 +280,11 @@ export function Detail({ listing, search, onChange, onBack, onLogo, onReserve, o
                   fontFamily: 'var(--font-sans)',
                   fontWeight: 700,
                   fontSize: 16,
-                  cursor: reserveMutation.isPending ? 'default' : 'pointer',
-                  opacity: reserveMutation.isPending ? 0.6 : 1,
+                  cursor: 'pointer',
                   transition: 'background 120ms ease',
                 }}
               >
-                {reserveMutation.isPending ? '예약 중...' : '예약하기'}
+                예약하기
               </button>
 
               {error && (

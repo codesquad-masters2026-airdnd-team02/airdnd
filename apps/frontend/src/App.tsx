@@ -3,6 +3,9 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Home } from './pages/Home';
 import { Results, LISTINGS } from './pages/Results';
 import { Detail } from './pages/Detail';
+import { Checkout } from './pages/reservation/Checkout';
+import { StayPending } from './pages/reservation/StayPending';
+import { TripsPage } from './pages/trips/TripsPage';
 import { HostDashboard } from './pages/host/HostDashboard';
 import { HostListingForm } from './pages/host/HostListingForm';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -121,7 +124,36 @@ export default function App() {
           onChange={setSearch}
           onLogo={() => setView('home')}
           onBack={() => setView('results')}
-          onReserve={() => setConfirm(true)}
+          onReserve={() => setView('checkout')}
+          onHosting={() => setView('host-dashboard')}
+          onAdmin={() => setView('admin')}
+          onMyPage={() => setView('mypage')}
+        />
+      )}
+      {view === 'checkout' && (
+        <Checkout
+          listing={listing}
+          search={search}
+          onChange={setSearch}
+          onBack={() => setView('detail')}
+          onLogo={() => setView('home')}
+          onConfirm={() => setView('stay-pending')}
+        />
+      )}
+      {view === 'stay-pending' && (
+        <StayPending
+          listing={listing}
+          search={search}
+          onDone={() => setView('trips')}
+          onLogo={() => setView('home')}
+        />
+      )}
+      {view === 'trips' && (
+        <TripsPage
+          listing={listing}
+          search={search}
+          onLogo={() => setView('home')}
+          onViewListing={() => setView('detail')}
           onHosting={() => setView('host-dashboard')}
           onAdmin={() => setView('admin')}
           onMyPage={() => setView('mypage')}

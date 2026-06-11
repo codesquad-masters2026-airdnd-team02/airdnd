@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  CreditCard,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -62,6 +63,7 @@ const ICONS: Record<string, LucideIcon> = {
   'more-horizontal': MoreHorizontal,
   pencil: Pencil,
   'trash-2': Trash2,
+  'credit-card': CreditCard,
 };
 
 interface IconProps {
