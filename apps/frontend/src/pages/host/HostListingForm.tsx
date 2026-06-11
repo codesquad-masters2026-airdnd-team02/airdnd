@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { HostHeader } from '../../components/HostHeader';
 import { createListingMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
 import { toCreateRequest, HOST_STUB, TEMP_LISTING_COORDINATES } from '../../shared/api/hostMapping';
+import { useHostListings } from '../../shared/useHostListings';
 import type { HostListing, ListingFormData } from '../../types';
 import { FormActions } from './listing-form/components/FormActions';
 import { WizardProgress } from './listing-form/components/FormLayout';
@@ -16,12 +18,6 @@ import { CapacityStep } from './listing-form/steps/CapacityStep';
 import { DescriptionStep } from './listing-form/steps/DescriptionStep';
 import { ImagesStep } from './listing-form/steps/ImagesStep';
 import { PricingStep } from './listing-form/steps/PricingStep';
-
-interface HostListingFormProps {
-  listing?: HostListing | null;
-  onSave: () => void;
-  onBack: () => void;
-}
 
 function toInitialForm(listing?: HostListing | null): ListingFormData {
   if (!listing) return DEFAULT_FORM;
@@ -48,9 +44,21 @@ function toInitialForm(listing?: HostListing | null): ListingFormData {
   };
 }
 
-export function HostListingForm({ listing, onSave, onBack }: HostListingFormProps) {
-  const isEdit = !!listing;
+export function HostListingForm() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { listings } = useHostListings();
+  const listing = id ? listings.find((l) => l.id === id) ?? null : null;
+  const onSave = () => navigate('/host');
+  const onBack = () => navigate('/host');
+
+  const isEdit = !!id;
   const [form, setForm] = useState<ListingFormData>(() => toInitialForm(listing));
+
+  useEffect(() => {
+    if (listing) setForm(toInitialForm(listing));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing?.id]);
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<ListingFormErrors>({});
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
