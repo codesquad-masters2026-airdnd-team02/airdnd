@@ -1,4 +1,4 @@
-package codesquad.airdnd.global.auth;
+package codesquad.airdnd.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
