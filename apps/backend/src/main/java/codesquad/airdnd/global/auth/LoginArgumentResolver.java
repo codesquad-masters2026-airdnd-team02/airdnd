@@ -17,14 +17,14 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
-		return parameter.hasParameterAnnotation(Login.class)
-			&& parameter.getParameterType().equals(Member.class);
+		return parameter.hasParameterAnnotation(CurrentMember.class)
+			&& parameter.getParameterType().equals(CurrentMemberInfo.class);
 	}
 
 	@Override
-	public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+	public CurrentMemberInfo resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
 		NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
 
-		return authUtils.getCurrentMember();
+		return new CurrentMemberInfo(1L);
 	}
 }

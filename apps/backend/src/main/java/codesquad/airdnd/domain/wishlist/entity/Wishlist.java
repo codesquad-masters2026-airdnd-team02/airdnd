@@ -23,7 +23,7 @@ public class Wishlist {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String name;
 
     @Column(name = "created_at", insertable = false, updatable = false)
@@ -37,4 +37,9 @@ public class Wishlist {
         this.member = member;
         this.name = name;
     }
+
+    public void updateName(String name){
+        this.name = name;
+    }
+
 }

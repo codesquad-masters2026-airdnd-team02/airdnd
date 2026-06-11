@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
@@ -33,7 +32,6 @@ import codesquad.airdnd.domain.listing.entity.Amenity;
 import codesquad.airdnd.domain.listing.entity.Capacity;
 import codesquad.airdnd.domain.listing.entity.ListingState;
 import codesquad.airdnd.domain.listing.entity.RoomType;
-import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.global.auth.AuthUtils;
 import codesquad.airdnd.global.auth.LoginArgumentResolver;
 import codesquad.airdnd.global.exception.BusinessException;
@@ -55,23 +53,12 @@ class HostControllerTest {
 	@MockitoBean
 	private AuthUtils authUtils;
 
-	private Member host;
-
-	@BeforeEach
-	void setUp() {
-		host = Member.builder()
-			.id(1L)
-			.nickname("testHost")
-			.build();
-		given(authUtils.getCurrentMember()).willReturn(host);
-	}
-
 	// ===== POST /api/host/listings =====
 
 	@Test
 	@DisplayName("유효한 요청으로 숙소를 등록하면 200 응답과 success=true를 반환한다")
 	void createListing_success() throws Exception {
-		willDoNothing().given(listingService).submitListing(any(Member.class), any(ListingCreateRequest.class));
+		willDoNothing().given(listingService).submitListing(anyLong(), any(ListingCreateRequest.class));
 
 		mockMvc.perform(post("/api/host/listings")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -158,7 +145,7 @@ class HostControllerTest {
 			new HostListingSummary(1L, "테스트 숙소", RoomType.ENTIRE_PLACE, "강남구, 서울",
 				new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000), ListingState.APPROVED)
 		));
-		given(listingService.getHostListings(any(Member.class))).willReturn(response);
+		given(listingService.getHostListings(anyLong())).willReturn(response);
 
 		mockMvc.perform(get("/api/host/listings"))
 			.andExpect(status().isOk())
@@ -172,7 +159,7 @@ class HostControllerTest {
 	@Test
 	@DisplayName("등록된 숙소가 없는 호스트 조회 시 빈 목록을 반환한다")
 	void getHostListings_returnsEmptyList() throws Exception {
-		given(listingService.getHostListings(any(Member.class))).willReturn(new HostListingsList(List.of()));
+		given(listingService.getHostListings(anyLong())).willReturn(new HostListingsList(List.of()));
 
 		mockMvc.perform(get("/api/host/listings"))
 			.andExpect(status().isOk())
@@ -192,7 +179,7 @@ class HostControllerTest {
 				"11", "11680"),
 			"testHost", new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000), Set.of()
 		);
-		given(listingService.getListingDetail(any(Member.class), eq(1L))).willReturn(detail);
+		given(listingService.getListingDetail(anyLong(), eq(1L))).willReturn(detail);
 
 		mockMvc.perform(get("/api/host/listings/1"))
 			.andExpect(status().isOk())
@@ -206,7 +193,7 @@ class HostControllerTest {
 	@DisplayName("본인 소유가 아닌 숙소 상세 조회 시 403 응답과 LISTING_002 코드를 반환한다")
 	void getHostListingDetail_failsWhenNotOwner() throws Exception {
 		willThrow(new BusinessException(ErrorCode.NOT_LISTING_OWNER))
-			.given(listingService).getListingDetail(any(Member.class), eq(1L));
+			.given(listingService).getListingDetail(anyLong(), eq(1L));
 
 		mockMvc.perform(get("/api/host/listings/1"))
 			.andExpect(status().isForbidden())
@@ -218,7 +205,7 @@ class HostControllerTest {
 	@DisplayName("존재하지 않는 숙소 상세 조회 시 500 응답을 반환한다")
 	void getHostListingDetail_failsWhenNotFound() throws Exception {
 		willThrow(new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR))
-			.given(listingService).getListingDetail(any(Member.class), eq(99L));
+			.given(listingService).getListingDetail(anyLong(), eq(99L));
 
 		mockMvc.perform(get("/api/host/listings/99"))
 			.andExpect(status().isInternalServerError())
@@ -230,7 +217,7 @@ class HostControllerTest {
 	@Test
 	@DisplayName("승인된 본인 숙소를 활성화하면 200 응답과 success=true를 반환한다")
 	void activateListing_success() throws Exception {
-		willDoNothing().given(listingService).activate(any(Member.class), eq(1L));
+		willDoNothing().given(listingService).activate(anyLong(), eq(1L));
 
 		mockMvc.perform(patch("/api/host/listings/1/activate"))
 			.andExpect(status().isOk())
@@ -241,7 +228,7 @@ class HostControllerTest {
 	@DisplayName("본인 소유가 아닌 숙소 활성화 시 403 응답과 LISTING_002 코드를 반환한다")
 	void activateListing_failsWhenNotOwner() throws Exception {
 		willThrow(new BusinessException(ErrorCode.NOT_LISTING_OWNER))
-			.given(listingService).activate(any(Member.class), eq(1L));
+			.given(listingService).activate(anyLong(), eq(1L));
 
 		mockMvc.perform(patch("/api/host/listings/1/activate"))
 			.andExpect(status().isForbidden())
@@ -253,7 +240,7 @@ class HostControllerTest {
 	@DisplayName("승인되지 않은 숙소 활성화 시 409 응답과 LISTING_003 코드를 반환한다")
 	void activateListing_failsWhenNotApproved() throws Exception {
 		willThrow(new BusinessException(ErrorCode.LISTING_NOT_APPROVED))
-			.given(listingService).activate(any(Member.class), eq(1L));
+			.given(listingService).activate(anyLong(), eq(1L));
 
 		mockMvc.perform(patch("/api/host/listings/1/activate"))
 			.andExpect(status().isConflict())
@@ -266,7 +253,7 @@ class HostControllerTest {
 	@Test
 	@DisplayName("승인된 본인 숙소를 비활성화하면 200 응답과 success=true를 반환한다")
 	void deactivateListing_success() throws Exception {
-		willDoNothing().given(listingService).deactivate(any(Member.class), eq(1L));
+		willDoNothing().given(listingService).deactivate(anyLong(), eq(1L));
 
 		mockMvc.perform(patch("/api/host/listings/1/deactivate"))
 			.andExpect(status().isOk())
@@ -277,7 +264,7 @@ class HostControllerTest {
 	@DisplayName("본인 소유가 아닌 숙소 비활성화 시 403 응답과 LISTING_002 코드를 반환한다")
 	void deactivateListing_failsWhenNotOwner() throws Exception {
 		willThrow(new BusinessException(ErrorCode.NOT_LISTING_OWNER))
-			.given(listingService).deactivate(any(Member.class), eq(1L));
+			.given(listingService).deactivate(anyLong(), eq(1L));
 
 		mockMvc.perform(patch("/api/host/listings/1/deactivate"))
 			.andExpect(status().isForbidden())
@@ -289,7 +276,7 @@ class HostControllerTest {
 	@DisplayName("승인되지 않은 숙소 비활성화 시 409 응답과 LISTING_003 코드를 반환한다")
 	void deactivateListing_failsWhenNotApproved() throws Exception {
 		willThrow(new BusinessException(ErrorCode.LISTING_NOT_APPROVED))
-			.given(listingService).deactivate(any(Member.class), eq(1L));
+			.given(listingService).deactivate(anyLong(), eq(1L));
 
 		mockMvc.perform(patch("/api/host/listings/1/deactivate"))
 			.andExpect(status().isConflict())

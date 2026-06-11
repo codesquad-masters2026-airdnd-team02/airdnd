@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { Header } from '../components/Header';
 import { Icon } from '../shared/Icon';
 import { won } from '../shared/utils';
+import { SaveToWishlistModal } from '../components/SaveToWishlistModal';
 import type { Listing, SearchState } from '../types';
+
+// TODO(API): 데모 LISTINGS엔 실제 listingId가 없어 임시로 매핑한다(인덱스 → listing id).
+// 백엔드 DB에 존재하는 listing id로 맞춰야 POST가 성공함. 없는 id면 404(LISTING_NOT_FOUND).
+const DEMO_LISTING_IDS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 import listing1 from '../assets/listing-1.png';
 import listing2 from '../assets/listing-2.png';
@@ -18,6 +23,7 @@ const ASSET_MAP: Record<string, string> = {
 
 export const LISTINGS: Listing[] = [
   {
+    id: 1,
     img: 'listing-1',
     loc: '서초구의 아파트 전체',
     title: 'Spacious and Comfortable cozy house #4',
@@ -31,6 +37,7 @@ export const LISTINGS: Listing[] = [
     y: 26,
   },
   {
+    id: 2,
     img: 'listing-2',
     loc: 'Yeoksam-dong, Gangnam-gu의 아파트 전체',
     title: '#자가격리 #공부 #강남 #선릉역3분',
@@ -44,6 +51,7 @@ export const LISTINGS: Listing[] = [
     y: 44,
   },
   {
+    id: 3,
     img: 'listing-3',
     loc: 'Yeoksam-dong, Gangnam-gu의 아파트 전체',
     title: '#자가격리 #역삼역1분 #파티 #삼성',
@@ -57,6 +65,7 @@ export const LISTINGS: Listing[] = [
     y: 58,
   },
   {
+    id: 4,
     img: 'listing-4',
     loc: 'Yangjae-dong, Seocho-gu의 아파트 전체',
     title: '[장기 임대 할인] 강남 양재천 실평수 30평',
@@ -83,6 +92,10 @@ interface ResultsProps {
 
 export function Results({ search, onOpen, onSearchPill, onLogo, onHosting, onAdmin, onMyPage }: ResultsProps) {
   const [liked, setLiked] = useState<Record<number, boolean>>({});
+  // 하트 클릭 시 저장 모달을 띄울 대상 리스팅 인덱스 (null이면 닫힘)
+  const [saveFor, setSaveFor] = useState<number | null>(null);
+  // 저장 성공 토스트 메시지
+  const [toast, setToast] = useState<string | null>(null);
 
   return (
     <div>
@@ -142,7 +155,7 @@ export function Results({ search, onOpen, onSearchPill, onLogo, onHosting, onAdm
                   <span
                     onClick={(e) => {
                       e.stopPropagation();
-                      setLiked((prev) => ({ ...prev, [i]: !prev[i] }));
+                      setSaveFor(i);
                     }}
                     style={{ cursor: 'pointer', padding: 4 }}
                   >
@@ -276,6 +289,39 @@ export function Results({ search, onOpen, onSearchPill, onLogo, onHosting, onAdm
           </div>
         </div>
       </div>
+
+      <SaveToWishlistModal
+        open={saveFor !== null}
+        listingId={saveFor !== null ? DEMO_LISTING_IDS[saveFor] ?? null : null}
+        onClose={() => setSaveFor(null)}
+        onSaved={(wishlistName) => {
+          if (saveFor !== null) setLiked((prev) => ({ ...prev, [saveFor]: true }));
+          setSaveFor(null);
+          setToast(`'${wishlistName}'에 저장했어요`);
+          window.setTimeout(() => setToast(null), 2200);
+        }}
+      />
+
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 32,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--cta-dark)',
+            color: '#fff',
+            padding: '12px 20px',
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow: 'var(--shadow-pop)',
+            zIndex: 300,
+          }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

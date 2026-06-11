@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ArrowLeft,
+  Image,
   Plus,
   Minus,
   MapPin,
@@ -23,6 +25,9 @@ import {
   Clock,
   Edit3,
   Sparkles,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -38,6 +43,8 @@ const ICONS: Record<string, LucideIcon> = {
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
   'chevron-down': ChevronDown,
+  'arrow-left': ArrowLeft,
+  image: Image,
   plus: Plus,
   minus: Minus,
   'map-pin': MapPin,
@@ -52,6 +59,9 @@ const ICONS: Record<string, LucideIcon> = {
   clock: Clock,
   'edit-3': Edit3,
   sparkles: Sparkles,
+  'more-horizontal': MoreHorizontal,
+  pencil: Pencil,
+  'trash-2': Trash2,
 };
 
 interface IconProps {

@@ -23,7 +23,7 @@ const DEFAULT_SEARCH: SearchState = {
   range: null,
   price: null,
   priceLabel: '',
-  guests: { adult: 1, child: 0, infant: 0 },
+  guests: { adult: 1, child: 0, infant: 0, pet: 0 },
   guestLabel: '',
 };
 
@@ -118,6 +118,7 @@ export default function App() {
         <Detail
           listing={listing}
           search={search}
+          onChange={setSearch}
           onLogo={() => setView('home')}
           onBack={() => setView('results')}
           onReserve={() => setConfirm(true)}
