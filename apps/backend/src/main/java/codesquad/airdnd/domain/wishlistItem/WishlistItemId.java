@@ -1,4 +1,4 @@
-package codesquad.airdnd.domain.wishlist.entity;
+package codesquad.airdnd.domain.wishlistItem;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

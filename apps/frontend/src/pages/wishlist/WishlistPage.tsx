@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { HostHeader } from '../../components/HostHeader';
 import { Icon } from '../../shared/Icon';
+import { ConfirmDeleteWishlistModal } from '../../components/ConfirmDeleteWishlistModal';
+import { deleteWishlist, ApiError } from '../../shared/api/wishlist';
 import type { WishlistSummary } from '../../types';
 
 interface WishlistPageProps {
@@ -12,6 +14,10 @@ interface WishlistPageProps {
 export function WishlistPage({ onLogo, onHosting, onOpenWishlist }: WishlistPageProps) {
   const [wishlists, setWishlists] = useState<WishlistSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  // 삭제 확인 모달: 대상 위시리스트 + 제출/에러 상태
+  const [target, setTarget] = useState<WishlistSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('http://localhost:8080/api/wishlists')
@@ -20,6 +26,21 @@ export function WishlistPage({ onLogo, onHosting, onOpenWishlist }: WishlistPage
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // 확인 모달의 "삭제": DELETE /api/wishlists/{wishlistId} → 성공 시 목록에서 제거
+  const confirmDelete = () => {
+    if (!target) return;
+    const id = target.id;
+    setDeleting(true);
+    setDeleteError(null);
+    deleteWishlist(id)
+      .then(() => {
+        setWishlists(prev => prev.filter(w => w.id !== id));
+        setTarget(null);
+      })
+      .catch(e => setDeleteError(e instanceof ApiError ? e.message : '삭제에 실패했어요'))
+      .finally(() => setDeleting(false));
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff' }}>
@@ -71,26 +92,52 @@ export function WishlistPage({ onLogo, onHosting, onOpenWishlist }: WishlistPage
             gap: 28,
           }}>
             {wishlists.map(w => (
-              <WishlistCard key={w.id} wishlist={w} onClick={() => onOpenWishlist?.(w.id)} />
+              <WishlistCard
+                key={w.id}
+                wishlist={w}
+                deleting={deleting && target?.id === w.id}
+                onClick={() => onOpenWishlist?.(w.id)}
+                onDelete={() => {
+                  setDeleteError(null);
+                  setTarget(w);
+                }}
+              />
             ))}
           </div>
         )}
       </main>
+
+      <ConfirmDeleteWishlistModal
+        open={target != null}
+        name={target?.name ?? ''}
+        deleting={deleting}
+        error={deleteError}
+        onClose={() => setTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
 
-function WishlistCard({ wishlist, onClick }: { wishlist: WishlistSummary; onClick?: () => void }) {
+function WishlistCard({
+  wishlist, deleting, onClick, onDelete,
+}: {
+  wishlist: WishlistSummary;
+  deleting: boolean;
+  onClick?: () => void;
+  onDelete: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
       onClick={onClick}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', opacity: deleting ? 0.5 : 1 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div style={{
+        position: 'relative',
         width: '100%', aspectRatio: '1 / 1',
         borderRadius: 16, overflow: 'hidden',
         background: 'var(--surface-alt-2)',
@@ -113,6 +160,25 @@ function WishlistCard({ wishlist, onClick }: { wishlist: WishlistSummary; onClic
             <Icon name="image" size={44} color="var(--ink-4)" />
           </div>
         )}
+
+        <button
+          aria-label="위시리스트 삭제"
+          disabled={deleting}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          style={{
+            position: 'absolute', top: 12, right: 12,
+            width: 32, height: 32, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: 'none', background: 'rgba(255,255,255,0.92)',
+            boxShadow: 'var(--shadow-md)',
+            cursor: deleting ? 'default' : 'pointer',
+          }}
+        >
+          <Icon name="x" size={18} color="var(--ink-1)" />
+        </button>
       </div>
 
       <div style={{ marginTop: 14 }}>

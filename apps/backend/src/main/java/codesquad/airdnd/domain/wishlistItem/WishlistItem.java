@@ -1,6 +1,7 @@
-package codesquad.airdnd.domain.wishlist.entity;
+package codesquad.airdnd.domain.wishlistItem;
 
 import codesquad.airdnd.domain.listing.entity.Listing;
+import codesquad.airdnd.domain.wishlist.entity.Wishlist;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -37,6 +38,10 @@ public class WishlistItem {
     protected WishlistItem(Wishlist wishlist, Listing listing, String note) {
         this.wishlist = wishlist;
         this.listing = listing;
+        this.note = note;
+    }
+
+    public void updateNote(String note){
         this.note = note;
     }
 }

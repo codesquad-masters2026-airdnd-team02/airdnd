@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
 
@@ -74,4 +75,6 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
     """
     )
     List<WishlistDetailItemQueryResult> findDetailItem(@Param("listingIds") List<Long> listingIds);
+
+    Optional<Wishlist> findByIdAndMember_Id(Long wishlistId, Long memberId);
 }
