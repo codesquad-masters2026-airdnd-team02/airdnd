@@ -1,17 +1,17 @@
 import { motion } from 'framer-motion';
+import { useNavigate, useParams } from 'react-router-dom';
 import { SlimHeader } from './components/SlimHeader';
 import { listingImage, nightsOf } from './utils';
 import { won } from '../../shared/utils';
-import type { Listing, SearchState } from '../../types';
+import { LISTINGS } from '../Results';
+import { useAppState } from '../../shared/AppState';
 
-interface StayPendingProps {
-  listing: Listing;
-  search: SearchState;
-  onDone: () => void;
-  onLogo: () => void;
-}
-
-export function StayPending({ listing, search, onDone, onLogo }: StayPendingProps) {
+export function StayPending() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { search, selectedListing } = useAppState();
+  const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+  const onDone = () => navigate('/trips');
   const nights = nightsOf(search);
   const total = listing.price * nights;
   const dates = search.dates || '날짜 미정';
@@ -19,7 +19,7 @@ export function StayPending({ listing, search, onDone, onLogo }: StayPendingProp
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface-alt)' }}>
-      <SlimHeader onLogo={onLogo} />
+      <SlimHeader />
 
       <div
         style={{

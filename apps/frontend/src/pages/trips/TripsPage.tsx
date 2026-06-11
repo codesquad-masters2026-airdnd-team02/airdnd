@@ -1,19 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { listingImage } from '../reservation/utils';
 import { Icon } from '../../shared/Icon';
-import type { Listing, SearchState } from '../../types';
-
-interface TripsPageProps {
-  listing: Listing;
-  search: SearchState;
-  onLogo: () => void;
-  onViewListing: () => void;
-  onHosting: () => void;
-  onAdmin: () => void;
-  onMyPage: () => void;
-}
+import { useAppState } from '../../shared/AppState';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -27,7 +18,10 @@ function dayMark(dateStr: string | null | undefined): { wd: string; day: string 
   return { wd: '', day: '–' };
 }
 
-export function TripsPage({ listing, search, onLogo, onViewListing, onHosting, onAdmin, onMyPage }: TripsPageProps) {
+export function TripsPage() {
+  const navigate = useNavigate();
+  const { search, selectedListing: listing } = useAppState();
+  const onViewListing = () => navigate(`/listings/${listing.id}`);
   const dates = search.dates || '날짜 미정';
   const checkIn = dayMark(search.range?.a);
   const checkOut = dayMark(search.range?.b);
@@ -35,7 +29,7 @@ export function TripsPage({ listing, search, onLogo, onViewListing, onHosting, o
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
-      <Header mode="minimal" onLogo={onLogo} onHosting={onHosting} onAdmin={onAdmin} onMyPage={onMyPage} />
+      <Header mode="minimal" />
 
       <div style={{ maxWidth: 1040, margin: '0 auto', padding: '130px 48px 80px' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 34, marginBottom: 28 }}>

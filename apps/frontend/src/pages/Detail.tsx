@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Icon } from '../shared/Icon';
 import { CalendarModal } from '../components/panels/CalendarModal';
 import { GuestPanel } from '../components/panels/GuestPanel';
 import { toReservationRequest } from '../shared/api/reservationMapping';
 import { won } from '../shared/utils';
-import type { Listing, SearchState } from '../types';
+import { LISTINGS } from './Results';
+import { useAppState } from '../shared/AppState';
 
 import listing1 from '../assets/listing-1.png';
 import listing2 from '../assets/listing-2.png';
@@ -21,21 +23,21 @@ const ASSET_MAP: Record<string, string> = {
 
 const AMENITIES = ['주방', '무선 인터넷', '에어컨', '헤어드라이어', '세탁기', '무료 주차'];
 
-interface DetailProps {
-  listing: Listing;
-  search: SearchState;
-  onChange: (v: SearchState) => void;
-  onBack: () => void;
-  onLogo: () => void;
-  onReserve: () => void;
-  onHosting: () => void;
-  onAdmin?: () => void;
-  onMyPage?: () => void;
-}
-
 type Panel = 'date' | 'guest' | null;
 
-export function Detail({ listing, search, onChange, onBack, onLogo, onReserve, onHosting, onAdmin, onMyPage }: DetailProps) {
+export function Detail() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { search, setSearch, selectedListing, setSelectedListing } = useAppState();
+  const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+  const onChange = setSearch;
+  const onBack = () => navigate('/results');
+  const onReserve = () => navigate(`/listings/${listing.id}/checkout`);
+
+  useEffect(() => {
+    setSelectedListing(listing);
+  }, [listing, setSelectedListing]);
+
   const l = listing;
   const nights = 1;
   const fee = Math.round(l.price * 0.099);
@@ -73,7 +75,7 @@ export function Detail({ listing, search, onChange, onBack, onLogo, onReserve, o
 
   return (
     <div>
-      <Header mode="compact" search={search} onSearchPill={onBack} onLogo={onLogo} onHosting={onHosting} onAdmin={onAdmin} onMyPage={onMyPage} />
+      <Header mode="compact" search={search} onSearchPill={onBack} />
       <div style={{ padding: '28px 80px 80px', maxWidth: 1320, margin: '0 auto' }}>
         {/* Back link */}
         <div

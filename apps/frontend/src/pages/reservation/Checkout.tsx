@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { SlimHeader } from './components/SlimHeader';
 import { PaymentTimingStep, type PayOption } from './components/PaymentTimingStep';
@@ -10,18 +11,18 @@ import { createReservationMutation } from '../../shared/api/generated/@tanstack/
 import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
 import { Icon } from '../../shared/Icon';
 import { nightsOf } from './utils';
-import type { Listing, SearchState } from '../../types';
+import { LISTINGS } from '../Results';
+import { useAppState } from '../../shared/AppState';
 
-interface CheckoutProps {
-  listing: Listing;
-  search: SearchState;
-  onChange: (v: SearchState) => void;
-  onBack: () => void;
-  onLogo: () => void;
-  onConfirm: () => void;
-}
+export function Checkout() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { search, setSearch, selectedListing } = useAppState();
+  const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+  const onChange = setSearch;
+  const onBack = () => navigate(`/listings/${listing.id}`);
+  const onConfirm = () => navigate(`/listings/${listing.id}/pending`);
 
-export function Checkout({ listing, search, onChange, onBack, onLogo, onConfirm }: CheckoutProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [payOption, setPayOption] = useState<PayOption>('now');
   const [payStatus, setPayStatus] = useState<PayStatus | null>(null);
@@ -65,7 +66,7 @@ export function Checkout({ listing, search, onChange, onBack, onLogo, onConfirm 
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
-      <SlimHeader onLogo={onLogo} />
+      <SlimHeader />
 
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 48px 80px 160px' }}>
         {/* 스크롤 시 좌측에 고정되는 뒤로가기 버튼 */}

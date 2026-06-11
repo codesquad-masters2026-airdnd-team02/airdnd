@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import logoSvg from '../assets/logo.svg';
 import type { SearchState } from '../types';
@@ -6,14 +7,15 @@ import type { SearchState } from '../types';
 interface HeaderProps {
   mode?: 'full' | 'compact' | 'minimal';
   search?: SearchState;
-  onLogo?: () => void;
   onSearchPill?: () => void;
-  onHosting?: () => void;
-  onAdmin?: () => void;
-  onMyPage?: () => void;
 }
 
-export function Header({ mode = 'full', search, onLogo, onSearchPill, onHosting, onAdmin, onMyPage }: HeaderProps) {
+export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
+  const navigate = useNavigate();
+  const onLogo = () => navigate('/');
+  const onHosting = () => navigate('/host');
+  const onAdmin = () => navigate('/admin');
+  const onMyPage = () => navigate('/mypage');
   const compact = mode === 'compact';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

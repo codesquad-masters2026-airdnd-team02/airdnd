@@ -1,10 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import logoSvg from '../../../assets/logo.svg';
 
-interface SlimHeaderProps {
-  onLogo: () => void;
-}
-
-export function SlimHeader({ onLogo }: SlimHeaderProps) {
+export function SlimHeader() {
+  const navigate = useNavigate();
+  const onLogo = () => navigate('/');
   return (
     <header
       style={{
