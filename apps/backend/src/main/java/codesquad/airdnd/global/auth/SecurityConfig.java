@@ -2,7 +2,6 @@ package codesquad.airdnd.global.auth;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -19,26 +18,33 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults());
+                .formLogin(form -> form
+                        // .loginPage("/loginPage")
+                        .loginProcessingUrl("/loginProc")
+                        .defaultSuccessUrl("/", true)
+                        .failureUrl("/failed")
+                        .usernameParameter("userId")
+                        .passwordParameter("pwd")
+                        .successHandler((request, response, authentication) -> {
+                                System.out.println("authentication: " + authentication);
+                                response.sendRedirect("/home");
+                        })
+                        .failureHandler((request, response, exception) -> {
+                            System.out.println("exception: " + exception.getMessage());
+                            response.sendRedirect("/login");
+                        })
+                        .permitAll()
+                );
 
         return http.build();
     }
 
-    // TODO: yml 파일보다 더 우선
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails user1 = User.withUsername("user1")
+        UserDetails user = User.withUsername("user")
                 .password("{noop}1111")
                 .roles("USER").build();
 
-        UserDetails user2 = User.withUsername("user2")
-                .password("{noop}1111")
-                .roles("USER").build();
-
-        UserDetails user3 = User.withUsername("user3")
-                .password("{noop}1111")
-                .roles("USER").build();
-
-        return new InMemoryUserDetailsManager(user1, user2, user3);
+        return new InMemoryUserDetailsManager(user);
     }
 }
