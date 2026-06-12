@@ -12,6 +12,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { MyPage } from './pages/mypage/MyPage';
 import { WishlistPage } from './pages/wishlist/WishlistPage';
 import { WishlistDetailPage } from './pages/wishlist/WishlistDetailPage';
+import { SignupPage } from './pages/auth/SignupPage';
 import { AppStateProvider } from './shared/AppState';
 
 function ScrollToTop() {
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/wishlists" element={<WishlistPage />} />
           <Route path="/wishlists/:id" element={<WishlistDetailPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppStateProvider>
