@@ -1,37 +1,35 @@
 package codesquad.airdnd.domain.auth;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import codesquad.airdnd.domain.auth.dto.SessionResponse;
+import codesquad.airdnd.domain.auth.dto.SignupRequest;
+import codesquad.airdnd.global.ApiResponse;
+import codesquad.airdnd.global.auth.security.AirdndUserDetails;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
+    private final AuthService authService;
 
-    @Autowired
-    SecurityContextService securityContextService;
-
-    @GetMapping("/")
-    public String index() {
-        // 현재 요청한 클라의 정보를 가져옴
-        SecurityContext securityContext = SecurityContextHolder.getContextHolderStrategy().getContext();
-        Authentication authentication = securityContext.getAuthentication();
-        System.out.println("Authentication: " + authentication);
-
-        securityContextService.securityContext();
-
-        return "index";
+    @PostMapping("/signup")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<Long> signup(
+            @RequestBody @Valid SignupRequest request
+    ){
+        return ApiResponse.success(authService.signup(request));
     }
 
-    @GetMapping("/home")
-    public String home() {
-        return "home";
-    }
-
-    @GetMapping("/loginPage")
-    public String loginPage() {
-        return "loginPage";
+    @GetMapping("/session")
+    public ApiResponse<SessionResponse> session(
+            @AuthenticationPrincipal AirdndUserDetails principal
+    ){
+        SessionResponse response = (principal != null) ?
+                SessionResponse.of(principal.getMember()) : SessionResponse.anonymous();
+        return ApiResponse.success(response);
     }
 }

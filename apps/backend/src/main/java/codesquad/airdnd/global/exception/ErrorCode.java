@@ -14,7 +14,10 @@ public enum ErrorCode {
 	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COMMON_002","입력값이 올바르지 않습니다." ),
 
     // ==== MEMBER ====
-    MEMBER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "MEMBER_001", "존재하지 않는 회원입니다."),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_001", "존재하지 않는 회원입니다."),
+    MEMBER_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "MEMBER_002", "접근 권한이 없습니다."),
+    MEMBER_DUPLICATE_USER_ID(HttpStatus.CONFLICT, "MEMBER_003", "허용되지 않는 아이디입니다."),
+    MEMBER_DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "MEMBER_004", "허용되지 않는 닉네임입니다."),
 
     // ==== Wishlist ====
     WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "WISHLIST_001", "존재하지 않는 위시리스트 입니다."),
