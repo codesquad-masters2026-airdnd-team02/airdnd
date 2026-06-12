@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
+import { LoginModal } from './LoginModal';
+import { useAppState } from '../shared/AppState';
 import logoSvg from '../assets/logo.svg';
 import type { SearchState } from '../types';
 
@@ -12,12 +14,24 @@ interface HeaderProps {
 
 export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   const navigate = useNavigate();
+  const { isLoggedIn, setLoggedIn } = useAppState();
   const onLogo = () => navigate('/');
   const onHosting = () => navigate('/host');
   const onAdmin = () => navigate('/admin');
   const onMyPage = () => navigate('/mypage');
+  const onLogout = async () => {
+    setMenuOpen(false);
+    try {
+      await fetch('http://localhost:8080/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      /* 네트워크 실패해도 클라이언트 상태는 비운다 */
+    }
+    setLoggedIn(false);
+    navigate('/');
+  };
   const compact = mode === 'compact';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -177,19 +191,47 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
                 position: 'absolute',
                 top: 'calc(100% + 8px)',
                 right: 0,
-                width: 200,
+                width: 290,
                 background: '#fff',
                 borderRadius: 14,
                 boxShadow: 'var(--shadow-pop)',
                 border: '1px solid var(--line)',
                 overflow: 'hidden',
                 zIndex: 60,
+                paddingBlock: 8,
               }}
             >
+              <MenuItem onClick={() => setMenuOpen(false)}>
+                <Icon name="message-circle" size={18} style={{ marginRight: 12 }} />
+                도움말 센터
+              </MenuItem>
+
+              <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />
+
+              <MenuItem onClick={() => { setMenuOpen(false); onHosting(); }}>
+                <span style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: 700 }}>호스팅 하기</span>
+                  <span style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>
+                    간단하게 호스팅을 시작하고<br />부수입을 올릴 수 있습니다.
+                  </span>
+                </span>
+              </MenuItem>
+
+              <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />
+
+              {isLoggedIn ? (
+                <MenuItem onClick={onLogout}>로그아웃</MenuItem>
+              ) : (
+                <MenuItem onClick={() => { setMenuOpen(false); setLoginOpen(true); }}>
+                  로그인
+                </MenuItem>
+              )}
+
+              <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />
+
               <MenuItem onClick={() => { setMenuOpen(false); onMyPage?.(); }}>
                 마이 페이지
               </MenuItem>
-              <div style={{ height: 1, background: 'var(--line)' }} />
               <MenuItem onClick={() => { setMenuOpen(false); onAdmin?.(); }}>
                 관리자 페이지
               </MenuItem>
@@ -197,6 +239,8 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
           )}
         </div>
       </div>
+
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </header>
   );
 }
