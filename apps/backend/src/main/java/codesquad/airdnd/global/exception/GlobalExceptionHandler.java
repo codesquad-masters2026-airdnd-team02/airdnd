@@ -33,6 +33,8 @@ public class GlobalExceptionHandler {
 			.status(errorCode.getHttpStatus())
 			.body(ApiResponse.error(errorCode, errors));
 	}
+    
+    // TODO: Validated 예외도 추가 필요
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
