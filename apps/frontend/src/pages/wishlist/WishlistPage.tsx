@@ -19,7 +19,7 @@ export function WishlistPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/wishlists')
+    fetch('http://localhost:8080/api/wishlists', { credentials: 'include' })
       .then(res => res.json())
       .then(json => setWishlists(json.data ?? []))
       .catch(() => {})
