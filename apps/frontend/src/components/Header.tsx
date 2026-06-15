@@ -17,6 +17,7 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   const onAdmin = () => navigate('/admin');
   const onMyPage = () => navigate('/mypage');
   const compact = mode === 'compact';
+  const solid = compact || mode === 'minimal';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -33,17 +34,17 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   return (
     <header
       style={{
-        position: compact ? 'sticky' : 'absolute',
+        position: solid ? 'sticky' : 'absolute',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 40,
-        height: compact ? 80 : 94,
+        height: solid ? 80 : 94,
         display: 'flex',
         alignItems: 'center',
         padding: '0 48px',
-        background: compact ? 'var(--surface)' : 'transparent',
-        borderBottom: compact ? '1px solid var(--line)' : 'none',
+        background: solid ? 'var(--surface)' : 'transparent',
+        borderBottom: solid ? '1px solid var(--line)' : 'none',
       }}
     >
       {/* Left: wordmark */}

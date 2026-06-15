@@ -1,4 +1,11 @@
 package codesquad.airdnd.domain.reservation.dto.request;
 
-public class ReservationCancelRequest {
+import codesquad.airdnd.domain.reservation.entity.CancelReason;
+import jakarta.validation.constraints.NotNull;
+
+public record ReservationCancelRequest(
+	@NotNull CancelReason reason,
+	String message
+) {
+
 }

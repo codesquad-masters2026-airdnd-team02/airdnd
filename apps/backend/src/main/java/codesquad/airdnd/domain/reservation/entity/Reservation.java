@@ -89,6 +89,16 @@ public class Reservation {
 			.build();
 	}
 
+
+	public boolean isOwnedBy(Long userId) {
+		return userId.equals(guest.getId());
+	}
+
+	public boolean isHostOf(Long userId) {
+		Long hostId = listing.getHost().getId();
+		return userId.equals(hostId);
+	}
+
 	private static void validateDates(LocalDate checkInDate, LocalDate checkOutDate) {
 		if (!checkOutDate.isAfter(checkInDate)) {
 			throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);

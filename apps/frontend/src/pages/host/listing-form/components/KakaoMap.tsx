@@ -3,7 +3,7 @@ import mapPin from '../../../../assets/map-pin.svg';
 
 let sdkPromise: Promise<void> | null = null;
 
-function loadKakaoMapsSDK(): Promise<void> {
+export function loadKakaoMapsSDK(): Promise<void> {
   if (sdkPromise) return sdkPromise;
 
   sdkPromise = new Promise((resolve, reject) => {
