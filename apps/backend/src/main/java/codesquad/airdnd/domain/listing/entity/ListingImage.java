@@ -26,14 +26,10 @@ public class ListingImage {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
-    @Column(name = "is_cover", nullable = false)
-    private boolean cover;
-
     @Builder
-    protected ListingImage(Listing listing, String imageUrl, int sortOrder, boolean cover) {
+    protected ListingImage(Listing listing, String imageUrl, int sortOrder) {
         this.listing = listing;
         this.imageUrl = imageUrl;
         this.sortOrder = sortOrder;
-        this.cover = cover;
     }
 }
