@@ -98,4 +98,8 @@ public class Reservation {
 	private static BigDecimal calculateTotalPrice(long nights, BigDecimal pricePerNight) {
 		return pricePerNight.multiply(BigDecimal.valueOf(nights));
 	}
+
+    public boolean isPending(){
+        return state == ReservationState.PENDING;
+    }
 }
