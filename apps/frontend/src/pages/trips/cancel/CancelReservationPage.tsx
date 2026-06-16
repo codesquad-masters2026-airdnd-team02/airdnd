@@ -7,7 +7,7 @@ import { useAppState } from '../../../shared/AppState';
 import {
   getReservationOptions,
   cancelPreviewOptions,
-  cancelReservation1Mutation,
+  cancelReservationMutation,
 } from '../../../shared/api/generated/@tanstack/react-query.gen';
 import type { CurrentMemberInfo, GuestCountsResponse } from '../../../shared/api/generated/types.gen';
 import { CancelSummaryCard } from './CancelSummaryCard';
@@ -52,7 +52,7 @@ export function CancelReservationPage() {
   });
   const refund = previewQuery.data?.data?.refundAmount ?? detail?.totalPrice;
 
-  const cancelMutation = useMutation(cancelReservation1Mutation());
+  const cancelMutation = useMutation(cancelReservationMutation());
 
   const title = detail?.listingTitle ?? listing.title;
   const hostName = detail?.hostName ?? 'airdnd';

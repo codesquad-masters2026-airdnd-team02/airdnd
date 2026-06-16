@@ -79,7 +79,7 @@ export function KakaoMap({ address, onCoordinatesChange }: KakaoMapProps) {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ position: 'relative', width: '100%', height: 300, borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '11 / 10', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
         <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
         <img
           src={mapPin}

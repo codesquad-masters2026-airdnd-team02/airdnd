@@ -35,6 +35,19 @@ import {
   Globe,
   HelpCircle,
   LogOut,
+  Home,
+  DoorOpen,
+  Utensils,
+  Wifi,
+  Wind,
+  WashingMachine,
+  Car,
+  Tv,
+  Waves,
+  PawPrint,
+  Coffee,
+  Dumbbell,
+  ArrowUpDown,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -76,6 +89,19 @@ const ICONS: Record<string, LucideIcon> = {
   globe: Globe,
   'help-circle': HelpCircle,
   'log-out': LogOut,
+  home: Home,
+  'door-open': DoorOpen,
+  utensils: Utensils,
+  wifi: Wifi,
+  wind: Wind,
+  'washing-machine': WashingMachine,
+  car: Car,
+  tv: Tv,
+  waves: Waves,
+  'paw-print': PawPrint,
+  coffee: Coffee,
+  dumbbell: Dumbbell,
+  'arrow-up-down': ArrowUpDown,
 };
 
 interface IconProps {
