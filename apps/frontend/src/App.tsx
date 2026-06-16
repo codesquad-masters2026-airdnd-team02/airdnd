@@ -7,6 +7,7 @@ import { Checkout } from './pages/reservation/Checkout';
 import { StayPending } from './pages/reservation/StayPending';
 import { TripsPage } from './pages/trips/TripsPage';
 import { ReservationDetailPage } from './pages/trips/reservation-detail/ReservationDetailPage';
+import { CancelReservationPage } from './pages/trips/cancel/CancelReservationPage';
 import { HostDashboard } from './pages/host/HostDashboard';
 import { HostListingForm } from './pages/host/HostListingForm';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/listings/:id/pending" element={<StayPending />} />
           <Route path="/trips" element={<TripsPage />} />
           <Route path="/trips/reservation/:reservationId" element={<ReservationDetailPage />} />
+          <Route path="/trips/reservation/:reservationId/cancel" element={<CancelReservationPage />} />
           <Route path="/host" element={<HostDashboard />} />
           <Route path="/host/new" element={<HostListingForm />} />
           <Route path="/host/listings/:id/edit" element={<HostListingForm />} />

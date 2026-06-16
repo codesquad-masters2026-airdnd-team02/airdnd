@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import codesquad.airdnd.domain.reservation.dto.request.CreateReservationRequest;
-import codesquad.airdnd.domain.reservation.dto.request.ReservationCancelRequest;
+import codesquad.airdnd.domain.reservation.dto.response.CancelPreview;
 import codesquad.airdnd.domain.reservation.dto.response.ReservationDetailResponse;
 import codesquad.airdnd.domain.reservation.dto.response.ReservationSummary;
 import codesquad.airdnd.domain.reservation.dto.response.UpcomingReservationResponse;
@@ -49,23 +49,20 @@ public class ReservationController {
 
 	@Operation(summary = "게스트가 예약 취소 시 환불 정책, 남은 기간 계산한 환불 금액, 수수료 등 미리보기")
 	@GetMapping("/reservations/{reservationId}/cancel-preview")
-	public void cancelPreview() {
-
+	public ResponseEntity<ApiResponse<CancelPreview>> cancelPreview(
+		@CurrentMember CurrentMemberInfo guest, @PathVariable Long reservationId
+	) {
+		CancelPreview response = reservationService.getCancelPreview(guest.id(), reservationId);
+		return ResponseEntity.ok(ApiResponse.success(response));
 	}
 
 	@Operation(summary = "게스트의 예약 취소")
 	@PostMapping("/reservations/{reservationId}/cancel")
-	public void cancelReservation(@CurrentMember CurrentMemberInfo memberInfo, @PathVariable Long reservationId) {
-		reservationService.cancelReservation(memberInfo.id(), reservationId);
-	}
-
-	@Operation(summary = "호스트의 예약 취소")
-	@PostMapping("/reservations/{reservationId}/host-cancel")
-	public void cancelReservation(
-		@CurrentMember CurrentMemberInfo memberInfo, @PathVariable Long reservationId,
-		@RequestBody @Valid ReservationCancelRequest request
+	public ResponseEntity<ApiResponse<Void>> cancelReservation(
+		@CurrentMember CurrentMemberInfo guest, @PathVariable Long reservationId
 	) {
-		reservationService.hostCancelReservation(memberInfo.id(), reservationId, request);
+		reservationService.cancelReservation(guest.id(), reservationId);
+		return ResponseEntity.ok(ApiResponse.success());
 	}
 
 	@Operation(summary = "게스트 예약 목록")
@@ -75,17 +72,5 @@ public class ReservationController {
 	) {
 		UpcomingReservationResponse reservations = reservationService.getUpcomingReservations(memberInfo.id());
 		return ResponseEntity.ok(ApiResponse.success(reservations));
-	}
-
-	@Operation(summary = "호스트 예약 목록")
-	@GetMapping("/host/reservations")
-	public void getHostReservations() {
-
-	}
-
-	@Operation(summary = "호스트의 숙소별 예약 조회")
-	@GetMapping("/host/listings/{listingId}/reservations")
-	public void getReservationsByListing(@PathVariable Long listingId) {
-
 	}
 }

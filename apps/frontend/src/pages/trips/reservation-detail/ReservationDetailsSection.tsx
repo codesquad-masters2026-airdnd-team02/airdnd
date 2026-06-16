@@ -1,6 +1,14 @@
+import { useNavigate } from 'react-router-dom';
 import { Section, InfoField, ExpandableText, LinkRow } from './primitives';
 
-export function ReservationDetailsSection({ guestSummary }: { guestSummary: string }) {
+export function ReservationDetailsSection({
+  guestSummary,
+  reservationId,
+}: {
+  guestSummary: string;
+  reservationId: number;
+}) {
+  const navigate = useNavigate();
   return (
     <Section title="예약 세부정보">
       <InfoField label="누가 오나요" value={guestSummary} />
@@ -11,7 +19,11 @@ export function ReservationDetailsSection({ guestSummary }: { guestSummary: stri
 
       <div style={{ marginTop: 12 }}>
         <LinkRow icon="edit-3" label="예약 변경" />
-        <LinkRow icon="x" label="예약 취소" />
+        <LinkRow
+          icon="x"
+          label="예약 취소"
+          onClick={() => navigate(`/trips/reservation/${reservationId}/cancel`)}
+        />
         <LinkRow icon="image" label="모든 용도의 PDF 받기" />
         <LinkRow icon="image" label="세부정보 인쇄" />
         <LinkRow icon="credit-card" label="영수증 받기" />

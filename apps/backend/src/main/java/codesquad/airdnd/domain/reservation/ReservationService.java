@@ -1,5 +1,6 @@
 package codesquad.airdnd.domain.reservation;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -14,7 +15,7 @@ import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.member.MemberRepository;
 import codesquad.airdnd.domain.reservation.dto.request.CreateReservationRequest;
-import codesquad.airdnd.domain.reservation.dto.request.ReservationCancelRequest;
+import codesquad.airdnd.domain.reservation.dto.response.CancelPreview;
 import codesquad.airdnd.domain.reservation.dto.response.ReservationDetailResponse;
 import codesquad.airdnd.domain.reservation.dto.response.ReservationSummary;
 import codesquad.airdnd.domain.reservation.dto.response.UpcomingReservationResponse;
@@ -99,17 +100,35 @@ public class ReservationService {
 		}
 	}
 
+	public CancelPreview getCancelPreview(Long guestId, Long reservationId) {
+		Reservation reservation = getOwnedReservation(guestId, reservationId);
+
+		// 환불액 계산 로직
+		BigDecimal refundAmount = reservation.getTotalPrice();
+
+		return new CancelPreview(refundAmount);
+	}
+
+	@Transactional
 	public void cancelReservation(Long guestId, Long reservationId) {
+		Reservation reservation = getOwnedReservation(guestId, reservationId);
 
+		reservation.cancelByGuest();
+		resDateRepository.deleteByReservationId(reservationId);
+
+		// 환불 로직
+		// paymentService.refund();
 	}
 
-	public void hostCancelReservation(Long hostId, Long reservationId, ReservationCancelRequest request) {
-
-	}
-
-	private Reservation findDetailById(Long reservationId) {
-		return resRepository.findById(reservationId)
+	private Reservation getOwnedReservation(Long guestId, Long reservationId) {
+		Reservation reservation = resRepository.findById(reservationId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+		if (!reservation.isOwnedBy(guestId)) {
+			throw new BusinessException(ErrorCode.NOT_RESERVATION_OWNER);
+		}
+
+		return reservation;
 	}
 
 	private ReservationSummary toSummary(Reservation r) {

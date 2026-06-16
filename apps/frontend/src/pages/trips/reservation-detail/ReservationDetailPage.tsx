@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '../../../components/Header';
@@ -40,7 +39,7 @@ export function ReservationDetailPage() {
   const navigate = useNavigate();
   const { reservationId: idParam } = useParams();
   const reservationId = Number(idParam);
-  const { search, selectedListing: listing } = useAppState();
+  const { search, selectedListing: listing, canceledIds } = useAppState();
 
   const detailQuery = useQuery({
     ...getReservationOptions({
@@ -60,6 +59,10 @@ export function ReservationDetailPage() {
   const checkOut = fmtDate(detail?.checkOutDate ?? search.range?.b);
   const guests = guestSummary(detail?.guestCounts);
   const hostProfileUrl = detail?.hostProfileUrl;
+  const isCanceled =
+    detail?.state === 'GUEST_CANCELED' ||
+    detail?.state === 'HOST_CANCELED' ||
+    canceledIds.has(reservationId);
   const amountPaid =
     detail?.totalPrice != null
       ? `₩${Number(detail.totalPrice).toLocaleString('ko-KR')}`
@@ -98,7 +101,7 @@ export function ReservationDetailPage() {
             <Icon name="arrow-left" size={22} />
           </button>
 
-          <PhotoCarousel img={listing.img} title={title} />
+          <PhotoCarousel img={listing.img} title={title} badge={isCanceled ? '취소됨' : '한 달 뒤'} />
 
           <h1
             style={{
@@ -114,51 +117,49 @@ export function ReservationDetailPage() {
             호스트 {hostName}님
           </div>
 
-          {/* 체크인 / 체크아웃 박스 */}
-          <div
-            style={{
-              display: 'flex',
-              border: '1px solid var(--line)',
-              borderRadius: 12,
-              overflow: 'hidden',
-              marginTop: 28,
-            }}
-          >
-            <DateCell label="체크인" date={checkIn} time="오후 3:00" />
-            <div style={{ width: 1, background: 'var(--line)' }} />
-            <DateCell label="체크아웃" date={checkOut} time="오전 11:00" />
-          </div>
+          {/* 체크인 / 체크아웃 박스 (취소 시 숨김) */}
+          {!isCanceled && (
+            <div
+              style={{
+                display: 'flex',
+                border: '1px solid var(--line)',
+                borderRadius: 12,
+                overflow: 'hidden',
+                marginTop: 28,
+              }}
+            >
+              <DateCell label="체크인" date={checkIn} time="오후 3:00" />
+              <div style={{ width: 1, background: 'var(--line)' }} />
+              <DateCell label="체크아웃" date={checkOut} time="오전 11:00" />
+            </div>
+          )}
 
-          {/* 메뉴 링크 */}
+          {/* 메뉴 링크 (취소 시 메시지만) */}
           <div style={{ marginTop: 32 }}>
-            <MenuRow
-              icon="map-pin"
-              title="찾아가는 길"
-              sub={addressSummary}
-              onClick={() =>
-                document.getElementById('getting-there')?.scrollIntoView({ behavior: 'smooth' })
-              }
-            />
-            <MenuRow
-              icon="book-open"
-              title="숙소 이용 안내"
-              sub="이용 방법과 이용 수칙"
-            />
+            {!isCanceled && (
+              <MenuRow
+                icon="map-pin"
+                title="찾아가는 길"
+                sub={addressSummary}
+                onClick={() =>
+                  document.getElementById('getting-there')?.scrollIntoView({ behavior: 'smooth' })
+                }
+              />
+            )}
+            {!isCanceled && (
+              <MenuRow icon="book-open" title="숙소 이용 안내" sub="이용 방법과 이용 수칙" />
+            )}
             <MenuRow
               icon="message-circle"
               title="호스트에게 메시지"
               sub={`호스트 ${hostName}님`}
             />
-            <MenuRow
-              icon="building-2"
-              title="내 숙소"
-              sub={title}
-            />
+            {!isCanceled && <MenuRow icon="building-2" title="내 숙소" sub={title} />}
           </div>
 
-          <ReservationDetailsSection guestSummary={guests} />
-          <GettingThereSection address={addressDetail} />
-          <RulesSection listingId={detail?.listingId ?? listing.id} />
+          <ReservationDetailsSection guestSummary={guests} reservationId={reservationId} />
+          {!isCanceled && <GettingThereSection address={addressDetail} />}
+          {!isCanceled && <RulesSection listingId={detail?.listingId ?? listing.id} />}
           <HostSection hostName={hostName} hostProfileUrl={hostProfileUrl} amountPaid={amountPaid} />
         </div>
 
@@ -176,8 +177,7 @@ export function ReservationDetailPage() {
   );
 }
 
-function PhotoCarousel({ img, title }: { img: string; title: string }) {
-  const [badge] = useState('한 달 뒤');
+function PhotoCarousel({ img, title, badge }: { img: string; title: string; badge: string }) {
   return (
     <div
       style={{

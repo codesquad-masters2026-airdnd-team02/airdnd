@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
 import { Icon } from '../../shared/Icon';
+import { useAppState } from '../../shared/AppState';
 import { getMyReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { CurrentMemberInfo, ReservationSummary } from '../../shared/api/generated/types.gen';
 
@@ -79,11 +80,16 @@ export function TripsPage() {
 
 function TripCard({ reservation: r }: { reservation: ReservationSummary }) {
   const navigate = useNavigate();
+  const { canceledIds } = useAppState();
   const [showTimeline, setShowTimeline] = useState(false);
   const dates = rangeLabel(r.checkInDate, r.checkOutDate);
   const checkIn = dayMark(r.checkInDate);
   const checkOut = dayMark(r.checkOutDate);
-  const stateLabel = r.state ? STATE_LABEL[r.state] : '';
+  const isCanceled =
+    r.state === 'GUEST_CANCELED' ||
+    r.state === 'HOST_CANCELED' ||
+    (r.reservationId != null && canceledIds.has(r.reservationId));
+  const stateLabel = isCanceled ? '취소됨' : r.state ? STATE_LABEL[r.state] : '';
 
   return (
     <div>
@@ -141,7 +147,14 @@ function TripCard({ reservation: r }: { reservation: ReservationSummary }) {
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26 }}>
             {r.listingTitle}
           </div>
-          <div style={{ fontSize: 16, color: 'var(--ink-3)', marginTop: 10 }}>
+          <div
+            style={{
+              fontSize: 16,
+              color: 'var(--ink-3)',
+              marginTop: 10,
+              textDecoration: isCanceled ? 'line-through' : 'none',
+            }}
+          >
             {dates} · 호스트 airdnd님
           </div>
 
