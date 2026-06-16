@@ -29,6 +29,12 @@ import {
   Pencil,
   Trash2,
   CreditCard,
+  BookOpen,
+  Bell,
+  Settings,
+  Globe,
+  HelpCircle,
+  LogOut,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -64,6 +70,12 @@ const ICONS: Record<string, LucideIcon> = {
   pencil: Pencil,
   'trash-2': Trash2,
   'credit-card': CreditCard,
+  'book-open': BookOpen,
+  bell: Bell,
+  settings: Settings,
+  globe: Globe,
+  'help-circle': HelpCircle,
+  'log-out': LogOut,
 };
 
 interface IconProps {

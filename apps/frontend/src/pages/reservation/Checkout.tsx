@@ -21,7 +21,7 @@ export function Checkout() {
   const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
   const onChange = setSearch;
   const onBack = () => navigate(`/listings/${listing.id}`);
-  const onConfirm = () => navigate(`/listings/${listing.id}/pending`);
+  const onConfirm = () => navigate(`/listings/${listing.id}/pending`, { state: { fromCheckout: true } });
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [payOption, setPayOption] = useState<PayOption>('now');
