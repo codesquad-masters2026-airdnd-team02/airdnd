@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { SlimHeader } from './components/SlimHeader';
@@ -9,6 +9,8 @@ import { ReservationSummary } from './components/ReservationSummary';
 import { PaymentModal, type PayStatus } from './components/PaymentModal';
 import { createReservationMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
 import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
+import { preparePayment } from '../../shared/api/payment';
+import { startCardPayment } from '../../shared/payment/toss';
 import { Icon } from '../../shared/Icon';
 import { nightsOf } from './utils';
 import { LISTINGS } from '../Results';
@@ -21,39 +23,46 @@ export function Checkout() {
   const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
   const onChange = setSearch;
   const onBack = () => navigate(`/listings/${listing.id}`);
-  const onConfirm = () => navigate(`/listings/${listing.id}/pending`);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [payOption, setPayOption] = useState<PayOption>('now');
   const [payStatus, setPayStatus] = useState<PayStatus | null>(null);
   const [payError, setPayError] = useState<string>('');
-  const timers = useRef<number[]>([]);
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const reserveMutation = useMutation(createReservationMutation());
+
+  function fail(message: string) {
+    setPayError(message);
+    setPayStatus('fail');
+  }
 
   function handleConfirm() {
     let body;
     try {
       body = toReservationRequest(search);
     } catch (e) {
-      setPayError(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
-      setPayStatus('fail');
+      fail(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
       return;
     }
     setPayStatus('loading');
     reserveMutation.mutate(
       { path: { listingId: listing.id }, query: { guest: GUEST_STUB }, body },
       {
-        onSuccess: () => {
-          setPayStatus('success');
-          timers.current.push(window.setTimeout(() => onConfirm(), 1400));
+        onSuccess: async (res) => {
+          const reservationId = res.data?.reservationId;
+          if (reservationId == null) {
+            fail('예약 번호를 받지 못했어요.');
+            return;
+          }
+          try {
+            // 예약 → 결제 준비 → 카드 결제창. 성공 시 토스가 success/fail 페이지로 리다이렉트한다.
+            const prepare = await preparePayment(reservationId);
+            await startCardPayment(prepare);
+          } catch (e) {
+            fail(e instanceof Error ? e.message : '결제 요청에 실패했어요.');
+          }
         },
-        onError: (err) => {
-          setPayError(reservationErrorMessage(err));
-          setPayStatus('fail');
-        },
+        onError: (err) => fail(reservationErrorMessage(err)),
       },
     );
   }
