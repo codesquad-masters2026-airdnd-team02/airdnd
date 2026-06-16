@@ -1,9 +1,12 @@
 package codesquad.airdnd.domain.payment;
 
+import codesquad.airdnd.domain.payment.dto.request.PaymentConfirmRequest;
+import codesquad.airdnd.domain.payment.dto.response.PaymentConfirmResponse;
 import codesquad.airdnd.domain.payment.dto.response.PaymentPrepareResponse;
 import codesquad.airdnd.global.ApiResponse;
 import codesquad.airdnd.global.auth.CurrentMember;
 import codesquad.airdnd.global.auth.CurrentMemberInfo;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,14 @@ public class PaymentController {
         @CurrentMember CurrentMemberInfo currentMember,
         @PathVariable @Min(1) Long resId
     ){
-        return ApiResponse.success(paymentService.prepare(currentMember.id(), resId));
+        return ApiResponse.success(paymentService.preparePayment(currentMember.id(), resId));
+    }
+
+    @PostMapping("/confirm")
+    public ApiResponse<PaymentConfirmResponse> confirm(
+            @CurrentMember CurrentMemberInfo member,
+            @Valid @RequestBody PaymentConfirmRequest request
+    ){
+        return ApiResponse.success(paymentService.confirmPayment(member.id(), request));
     }
 }

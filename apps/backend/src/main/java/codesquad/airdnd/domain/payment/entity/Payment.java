@@ -61,4 +61,19 @@ public class Payment {
     }
 
     // TODO: 추후 결제 승인 / 실패 메서드 따로 빼기 -> complete, fail
+
+    public boolean isReady() {
+        return this.status.equals(PaymentStatus.READY);
+    }
+
+    public boolean isEqualAmount(BigDecimal amount) {
+        return this.amount.compareTo(amount) == 0;
+    }
+
+    public void complete(String paymentKey, String method, LocalDateTime localDateTime){
+        this.paymentKey = paymentKey;
+        this.method = method;
+        this.approvedAt = localDateTime;
+        this.status = PaymentStatus.DONE; // 승인 완료
+    }
 }

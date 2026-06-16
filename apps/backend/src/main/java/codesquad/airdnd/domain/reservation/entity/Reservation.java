@@ -102,4 +102,12 @@ public class Reservation {
     public boolean isPending(){
         return state == ReservationState.PENDING;
     }
+
+    public void confirm(){
+        this.state = ReservationState.CONFIRMED;
+    }
+
+    public boolean isOwner(Long memberId){
+        return this.guest.getId().equals(memberId);
+    }
 }
