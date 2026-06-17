@@ -14,6 +14,7 @@ import codesquad.airdnd.domain.listing.dto.response.HostListingsList;
 import codesquad.airdnd.domain.listing.dto.response.ListingDetail;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
+import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.member.MemberRepository;
 import codesquad.airdnd.global.exception.BusinessException;
