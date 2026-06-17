@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:8080';
+import { API_BASE as BASE } from './config';
 
 /** POST /api/payments/{resId}/prepare 가 돌려주는 결제 준비 정보.
  *  orderId/orderName/successUrl/failUrl/amount 모두 서버가 확정한 값으로, 그대로 토스에 넘긴다. */

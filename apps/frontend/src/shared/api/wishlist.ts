@@ -1,6 +1,5 @@
 import type { WishlistSummary } from '../../types';
-
-const BASE = 'http://localhost:8080';
+import { API_BASE as BASE } from './config';
 
 /** 백엔드 ApiResponse 봉투 */
 interface Envelope<T> {
