@@ -137,5 +137,18 @@ public class PaymentService {
         reservationService.releaseHold(reservation.getReservationId());
     }
 
+    @Transactional
+    public void expirePayment(Long paymentId){
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
+
+        if(!payment.isReady()){
+            return;
+        }
+
+        payment.cancel();
+        reservationService.releaseHold(payment.getReservationId());
+    }
+
     // TODO: 환불 기능 시 미래 순환 의존
 }
