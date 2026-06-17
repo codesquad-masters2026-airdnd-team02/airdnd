@@ -3,7 +3,7 @@ package codesquad.airdnd.domain.payment;
 import codesquad.airdnd.domain.payment.dto.request.PaymentConfirmRequest;
 import codesquad.airdnd.domain.payment.dto.response.PaymentConfirmResponse;
 import codesquad.airdnd.domain.payment.dto.response.PaymentPrepareResponse;
-import codesquad.airdnd.global.ApiResponse;
+import codesquad.airdnd.global.response.ApiResponse;
 import codesquad.airdnd.global.auth.CurrentMember;
 import codesquad.airdnd.global.auth.CurrentMemberInfo;
 import jakarta.validation.Valid;
