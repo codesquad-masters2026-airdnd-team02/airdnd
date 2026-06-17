@@ -47,7 +47,7 @@ export function CancelReservationPage() {
   const detail = detailQuery.data?.data;
 
   const previewQuery = useQuery({
-    ...cancelPreviewOptions({ path: { reservationId } }),
+    ...cancelPreviewOptions({ path: { reservationId }, query: { guest: MEMBER_STUB } }),
     enabled,
   });
   const refund = previewQuery.data?.data?.refundAmount ?? detail?.totalPrice;

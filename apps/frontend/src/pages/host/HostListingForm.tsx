@@ -170,7 +170,7 @@ export function HostListingForm() {
       return;
     }
     createMutation.mutate(
-      { body: toCreateRequest({ ...form, imageUrls: form.imageUrls.filter(u => u.trim()) }), query: { host: HOST_STUB } },
+      { body: toCreateRequest({ ...form, imageUrls: form.imageUrls.filter(u => u.trim()) }), query: { memberInfo: HOST_STUB } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: [{ _id: 'getHostListings' }] });
