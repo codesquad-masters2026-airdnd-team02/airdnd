@@ -80,3 +80,29 @@ export async function confirmPayment(params: {
   }
   return body.data;
 }
+
+/**
+ * POST /api/payments/{orderId}/cancel — READY 상태 결제 취소 + hold 해제.
+ * 결제 실패/취소 시 잡아둔 예약 hold를 푸는 best-effort 정리용이다.
+ * 멱등(이미 취소/실패면 200 no-op)이며 응답은 ApiResponse<Void>(data 없음).
+ *
+ * credentials 생략 — stub 인증(id=1), confirm/prepare와 동일 기조.
+ * 실패해도 호출부(실패 페이지)는 그대로 진행하므로, 호출부에서 결과를 무시해도 된다.
+ */
+export async function cancelPayment(orderId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/payments/${orderId}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  let body: Envelope<never> | null = null;
+  try {
+    body = await res.json();
+  } catch {
+    /* 바디 없음 */
+  }
+
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.message ?? `결제 취소에 실패했어요 (${res.status})`);
+  }
+}
