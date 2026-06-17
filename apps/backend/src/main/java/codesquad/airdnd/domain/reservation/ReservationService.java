@@ -136,4 +136,13 @@ public class ReservationService {
 		String region = regionCodeService.getAddressSummary(address.getSidoCode(), address.getSigunguCode());
 		return ReservationSummary.from(r, region);
 	}
+
+    @Transactional
+    public void releaseHold(Long reservationId){
+        Reservation reservation = resRepository.findById(reservationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        reservation.expireInPending();
+        resDateRepository.deleteByReservationId(reservationId);
+    }
 }
