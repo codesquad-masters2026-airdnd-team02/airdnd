@@ -9,7 +9,7 @@ import { ReservationSummary } from './components/ReservationSummary';
 import { PaymentModal, type PayStatus } from './components/PaymentModal';
 import { createReservationMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
 import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
-import { preparePayment } from '../../shared/api/payment';
+import { preparePayment, cancelPayment } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
 import { Icon } from '../../shared/Icon';
 import { nightsOf } from './utils';
@@ -58,12 +58,22 @@ export function Checkout() {
             fail('예약 번호를 받지 못했어요.');
             return;
           }
+          let prepare;
           try {
-            // 예약 → 결제 준비 → 카드 결제창. 성공 시 토스가 success/fail 페이지로 리다이렉트한다.
-            const prepare = await preparePayment(reservationId);
+            prepare = await preparePayment(reservationId);
+          } catch (e) {
+            // prepare 실패 — 아직 hold(READY 결제)가 없으니 cancel 불필요.
+            fail(e instanceof Error ? e.message : '결제 준비에 실패했어요.');
+            return;
+          }
+          try {
+            // 결제창 호출. 결제 성공/실패는 토스가 success/fail 페이지로 리다이렉트한다.
             await startCardPayment(prepare);
           } catch (e) {
-            fail(e instanceof Error ? e.message : '결제 요청에 실패했어요.');
+            // 사용자가 결제창을 닫는(X) 등 요청이 중단되면 리다이렉트 없이 여기로 떨어진다.
+            // failUrl을 안 거치므로 잡아둔 hold를 여기서 직접 해제한다(best-effort).
+            cancelPayment(prepare.orderId).catch(() => {});
+            fail(e instanceof Error ? e.message : '결제가 취소되었어요.');
           }
         },
         onError: (err) => {
