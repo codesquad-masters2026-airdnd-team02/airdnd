@@ -37,4 +37,13 @@ public class PaymentController {
     ){
         return ApiResponse.success(paymentService.confirmPayment(member.id(), request));
     }
+
+    @PostMapping("/{orderId}/cancel")
+    public ApiResponse<Void> cancel(
+            @CurrentMember CurrentMemberInfo currentMember,
+            @PathVariable String orderId
+    ){
+        paymentService.cancelPayment(currentMember.id(), orderId);
+        return ApiResponse.success();
+    }
 }
