@@ -34,7 +34,7 @@ public class PaymentService {
     @Transactional
     public PaymentPrepareResponse preparePayment(Long memberId, Long resId){
         Reservation reservation = reservationRepository.findByReservationIdAndGuest_Id(resId, memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_RESERVATION));
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
 
         Listing listing = reservation.getListing();
 
@@ -78,7 +78,7 @@ public class PaymentService {
         }
 
         Reservation reservation = reservationRepository.findById(payment.getReservationId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_RESERVATION));
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
 
         if(!reservation.isOwner(memberId)){
             throw new BusinessException(ErrorCode.NOT_OWNER_PAYMENT);

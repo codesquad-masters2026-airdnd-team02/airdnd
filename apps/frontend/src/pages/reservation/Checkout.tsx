@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { SlimHeader } from './components/SlimHeader';
@@ -28,6 +28,9 @@ export function Checkout() {
   const [payOption, setPayOption] = useState<PayOption>('now');
   const [payStatus, setPayStatus] = useState<PayStatus | null>(null);
   const [payError, setPayError] = useState<string>('');
+  const timers = useRef<number[]>([]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const reserveMutation = useMutation(createReservationMutation());
 
@@ -41,7 +44,8 @@ export function Checkout() {
     try {
       body = toReservationRequest(search);
     } catch (e) {
-      fail(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
+      setPayError(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
+      setPayStatus('fail');
       return;
     }
     setPayStatus('loading');
@@ -62,7 +66,10 @@ export function Checkout() {
             fail(e instanceof Error ? e.message : '결제 요청에 실패했어요.');
           }
         },
-        onError: (err) => fail(reservationErrorMessage(err)),
+        onError: (err) => {
+          setPayError(reservationErrorMessage(err));
+          setPayStatus('fail');
+        },
       },
     );
   }

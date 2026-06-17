@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { SlimHeader } from './components/SlimHeader';
 import { listingImage, nightsOf } from './utils';
 import { won } from '../../shared/utils';
@@ -9,7 +9,14 @@ import { useAppState } from '../../shared/AppState';
 export function StayPending() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const { search, selectedListing } = useAppState();
+
+  // 예약 완료 흐름(Checkout)에서만 진입 가능 — 직접 URL 접근/새로고침 차단
+  if (!(location.state as { fromCheckout?: boolean } | null)?.fromCheckout) {
+    return <Navigate to={`/listings/${id ?? ''}`} replace />;
+  }
+
   const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
   const onDone = () => navigate('/trips');
   const nights = nightsOf(search);
