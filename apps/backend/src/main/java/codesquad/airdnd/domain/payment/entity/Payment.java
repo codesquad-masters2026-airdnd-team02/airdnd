@@ -60,12 +60,18 @@ public class Payment {
                 .build();
     }
 
-    // TODO: 추후 결제 승인 / 실패 메서드 따로 빼기 -> complete, fail
-
     public boolean isReady() {
         return this.status.equals(PaymentStatus.READY);
     }
-
+    public boolean isCanceled() {
+        return this.status.equals(PaymentStatus.CANCELED);
+    }
+    public boolean isDone(){
+        return this.status.equals(PaymentStatus.DONE);
+    }
+    public boolean isFailed(){
+        return this.status.equals(PaymentStatus.FAILED);
+    }
     public boolean isEqualAmount(BigDecimal amount) {
         return this.amount.compareTo(amount) == 0;
     }
@@ -75,5 +81,9 @@ public class Payment {
         this.method = method;
         this.approvedAt = localDateTime;
         this.status = PaymentStatus.DONE; // 승인 완료
+    }
+
+    public void cancel(){
+        this.status = PaymentStatus.CANCELED;
     }
 }

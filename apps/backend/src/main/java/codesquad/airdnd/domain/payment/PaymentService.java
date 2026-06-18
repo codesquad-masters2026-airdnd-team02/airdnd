@@ -8,6 +8,7 @@ import codesquad.airdnd.domain.payment.dto.response.TossConfirmResponse;
 import codesquad.airdnd.domain.payment.dto.response.PaymentPrepareResponse;
 import codesquad.airdnd.domain.payment.entity.Payment;
 import codesquad.airdnd.domain.reservation.ReservationRepository;
+import codesquad.airdnd.domain.reservation.ReservationService;
 import codesquad.airdnd.domain.reservation.entity.Reservation;
 import codesquad.airdnd.global.config.TossProperties;
 import codesquad.airdnd.global.exception.BusinessException;
@@ -30,6 +31,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final TossProperties tossProperties;
     private final RestClient tossRestClient;
+    private final ReservationService reservationService;
 
     @Transactional
     public PaymentPrepareResponse preparePayment(Long memberId, Long resId){
@@ -64,8 +66,6 @@ public class PaymentService {
 
     @Transactional
     public PaymentConfirmResponse confirmPayment(Long memberId, PaymentConfirmRequest request){
-
-
         Payment payment = paymentRepository.findByOrderId(request.orderId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
 
@@ -80,7 +80,7 @@ public class PaymentService {
         Reservation reservation = reservationRepository.findById(payment.getReservationId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
 
-        if(!reservation.isOwner(memberId)){
+        if(!reservation.isOwnedBy(memberId)){
             throw new BusinessException(ErrorCode.NOT_OWNER_PAYMENT);
         }
 
@@ -112,4 +112,43 @@ public class PaymentService {
 
         return PaymentConfirmResponse.from(payment);
     }
+
+    @Transactional
+    public void cancelPayment(Long memberId, String orderId){
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
+
+        Reservation reservation = reservationRepository.findById(payment.getReservationId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND)); // 결제와 연결된 예약이 없음?
+
+        if(!reservation.isOwnedBy(memberId)){
+            throw new BusinessException(ErrorCode.NOT_OWNER_PAYMENT);
+        }
+
+        if(payment.isCanceled() || payment.isFailed()){
+            return;
+        }
+
+        if(payment.isDone()){
+            throw new BusinessException(ErrorCode.ALREADY_DONE_PAYMENT);
+        }
+
+        payment.cancel();
+        reservationService.releaseHold(reservation.getReservationId());
+    }
+
+    @Transactional
+    public void expirePayment(Long paymentId){
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
+
+        if(!payment.isReady()){
+            return;
+        }
+
+        payment.cancel();
+        reservationService.releaseHold(payment.getReservationId());
+    }
+
+    // TODO: 환불 기능 시 미래 순환 의존
 }

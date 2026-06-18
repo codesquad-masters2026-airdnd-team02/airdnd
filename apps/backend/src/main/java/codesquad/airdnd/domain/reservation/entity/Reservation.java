@@ -105,6 +105,13 @@ public class Reservation {
 		}
 		state = ReservationState.GUEST_CANCELED;
 	}
+    public void expireInPending(){
+        if(this.state != ReservationState.PENDING){
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_CANCELABLE);
+        }
+
+        this.state = ReservationState.EXPIRED;
+    }
 
 	private static void validateDates(LocalDate checkInDate, LocalDate checkOutDate) {
 		if (!checkOutDate.isAfter(checkInDate)) {
@@ -122,9 +129,5 @@ public class Reservation {
 
     public void confirm(){
         this.state = ReservationState.CONFIRMED;
-    }
-
-    public boolean isOwner(Long memberId){
-        return this.guest.getId().equals(memberId);
     }
 }
