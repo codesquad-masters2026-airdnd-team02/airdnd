@@ -24,11 +24,11 @@ public class RestClientConfig {
 	}
 
     @Bean
-    public RestClient tossRestClient(TossProperties props) {
+    public RestClient tossRestClient(TossProperties props, RestClient.Builder builder) {
         String basic = Base64.getEncoder()
                 .encodeToString((props.secretKey() + ":").getBytes(StandardCharsets.UTF_8));
 
-        return RestClient.builder()
+        return builder
                 .baseUrl(props.baseUrl())
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basic)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
