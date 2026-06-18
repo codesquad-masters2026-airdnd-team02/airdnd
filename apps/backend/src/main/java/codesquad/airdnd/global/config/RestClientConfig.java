@@ -25,6 +25,8 @@ public class RestClientConfig {
 
     @Bean
     public RestClient tossRestClient(TossProperties props, RestClient.Builder builder) {
+        // TODO: 추후 타임아웃/로깅/모니터링 구현
+        
         String basic = Base64.getEncoder()
                 .encodeToString((props.secretKey() + ":").getBytes(StandardCharsets.UTF_8));
 
