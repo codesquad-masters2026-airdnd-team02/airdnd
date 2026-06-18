@@ -21,7 +21,7 @@ public class ReservationCancelService {
         // 예약 검증, 선점 해제, 상태변경 후 엔티티 반환
         Reservation reservation = reservationService.cancelReservation(guest.id(), resId);
 
-        // 결제 상태 변경 및 토스 서버 POST 요청 전송
+        // 결제 검증, 토스 서버 POST 요청 전송, 결제 상태 변경
         return paymentService.refund(reservation, reservation.getTotalPrice(), request.cancelReason());
     }
 }

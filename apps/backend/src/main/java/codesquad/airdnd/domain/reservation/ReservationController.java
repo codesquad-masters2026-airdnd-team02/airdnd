@@ -62,7 +62,6 @@ public class ReservationController {
             @PathVariable Long reservationId,
             @RequestBody @Valid ReservationCancelRequest request
             ) {
-
 		return ResponseEntity.ok(ApiResponse.success(reservationCancelService.cancel(guest, reservationId, request)));
 	}
 

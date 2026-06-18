@@ -44,6 +44,10 @@ public enum ErrorCode {
     CONFIRM_FAILED_PAYMENT(HttpStatus.BAD_GATEWAY, "PAYMENT_005", "결제 도중 문제가 생겼습니다."),
     NOT_OWNER_PAYMENT(HttpStatus.FORBIDDEN, "PAYMENT_006", "해당 결제에 접근 권한이 없습니다."),
     ALREADY_DONE_PAYMENT(HttpStatus.CONFLICT, "PAYMENT_007", "이미 결제된 예약입니다. 환불 페이지로 이동해주세요."),
+    NOT_DONE_PAYMENT(HttpStatus.CONFLICT, "PAYMENT_008", "결제되지 않은 예약입니다."),
+    REFUND_FAILED_PAYMENT(HttpStatus.BAD_GATEWAY, "PAYMENT_009", "환불 도중 문제가 생겼습니다."),
+    NOT_EQUAL_REFUND_AMOUNT_PAYMENT(HttpStatus.CONFLICT, "PAYMENT_010", "환불 금액이 일치하지 않습니다."),
+    ALREADY_REFUNDED_PAYMENT(HttpStatus.CONFLICT, "PAYMENT_011", "이미 환불되었습니다."),
     ;
 	private final HttpStatus httpStatus;
 	private final String code;
