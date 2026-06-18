@@ -3,7 +3,11 @@ package codesquad.airdnd.domain.wishlistItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public interface WishlistItemRepository extends JpaRepository<WishlistItem, WishlistItemId> {
 
@@ -15,4 +19,12 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Wish
     boolean existsByMemberIdAndListingId(Long memberId, Long listingId);
 
     Optional<WishlistItem> findByWishlist_IdAndListing_Id(Long wishlistId, Long listingId);
+
+	List<WishlistItem> findByListingIdIn(Collection<Long> listing_id);
+
+	default Set<Long> findItemsByListingIds(List<Long> listingIds) {
+		return findByListingIdIn(listingIds).stream()
+			.map(item -> item.getListing().getId())
+			.collect(Collectors.toSet());
+	}
 }

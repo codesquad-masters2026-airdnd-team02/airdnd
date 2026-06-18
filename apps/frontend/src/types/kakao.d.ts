@@ -11,6 +11,18 @@ declare global {
     getLevel(): number;
     setLevel(level: number, options?: { animate?: boolean | { duration?: number } }): void;
     setZoomable(zoomable: boolean): void;
+    setCenter(latlng: KakaoLatLng): void;
+    panTo(latlng: KakaoLatLng): void;
+    setBounds(bounds: KakaoLatLngBounds): void;
+  }
+
+  interface KakaoLatLngBounds {
+    extend(latlng: KakaoLatLng): void;
+  }
+
+  interface KakaoCustomOverlay {
+    setZIndex(zIndex: number): void;
+    setMap(map: KakaoMap | null): void;
   }
 
   interface Window {
@@ -36,6 +48,7 @@ declare global {
           options: { center: KakaoLatLng; level: number }
         ) => KakaoMap;
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
+        LatLngBounds: new () => KakaoLatLngBounds;
         Marker: new (options: { map?: KakaoMap; position: KakaoLatLng }) => unknown;
         CustomOverlay: new (options: {
           map?: KakaoMap;
@@ -44,7 +57,7 @@ declare global {
           xAnchor?: number;
           yAnchor?: number;
           zIndex?: number;
-        }) => unknown;
+        }) => KakaoCustomOverlay;
         event: {
           addListener(target: unknown, type: string, callback: () => void): void;
         };

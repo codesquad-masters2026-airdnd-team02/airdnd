@@ -6,7 +6,7 @@ import { CalendarModal } from '../components/panels/CalendarModal';
 import { GuestPanel } from '../components/panels/GuestPanel';
 import { toReservationRequest } from '../shared/api/reservationMapping';
 import { won } from '../shared/utils';
-import { LISTINGS } from './Results';
+import { LISTINGS } from '../shared/demoListings';
 import { useAppState } from '../shared/AppState';
 
 import listing1 from '../assets/listing-1.png';

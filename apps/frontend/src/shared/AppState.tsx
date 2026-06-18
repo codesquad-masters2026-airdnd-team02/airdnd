@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { LISTINGS } from '../pages/Results';
+import { LISTINGS } from './demoListings';
 import type { SearchState, Listing } from '../types';
 
 const DEFAULT_SEARCH: SearchState = {
