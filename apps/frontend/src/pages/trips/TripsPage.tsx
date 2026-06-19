@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
 import { Icon } from '../../shared/Icon';
 import { useAppState } from '../../shared/AppState';
 import { getMyReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { CurrentMemberInfo, ReservationSummary } from '../../shared/api/generated/types.gen';
+import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
+import { startCardPayment } from '../../shared/payment/toss';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -45,8 +47,47 @@ function rangeLabel(a?: string, b?: string): string {
 
 export function TripsPage() {
   const query = useQuery(getMyReservationsOptions({ query: { memberInfo: MEMBER_STUB } }));
+  const queryClient = useQueryClient();
+  const { canceledIds } = useAppState();
   const reservations = query.data?.data?.reservations ?? [];
-  const region = reservations[0]?.region;
+
+  const [resumingId, setResumingId] = useState<number | null>(null);
+  const [resumeError, setResumeError] = useState('');
+
+  // PENDING 카드 클릭 → 기존 예약으로 결제 이어하기 (상세 안 거치고 prepare → 토스 결제창).
+  async function handleResume(reservationId: number) {
+    setResumeError('');
+    setResumingId(reservationId);
+    try {
+      const prepare = await preparePayment(reservationId);
+      await startCardPayment(prepare); // 성공 시 토스로 리다이렉트(여기로 돌아오지 않음)
+    } catch (e) {
+      setResumingId(null);
+      if (e instanceof ApiError && e.code && UNUSABLE_RESERVATION_CODES.has(e.code)) {
+        // 결제 가능 시간(TTL)이 지나 예약이 만료/소멸됨 → 목록 새로고침으로 항목 정리.
+        setResumeError('결제 가능 시간이 지났어요. 숙소에서 다시 예약해 주세요.');
+        queryClient.invalidateQueries();
+      } else {
+        setResumeError(e instanceof Error ? e.message : '결제를 시작하지 못했어요.');
+      }
+    }
+  }
+
+  // 상태별 그룹핑. EXPIRED 등 그 외 상태는 숨긴다(버려진 예약).
+  const pending: ReservationSummary[] = [];
+  const upcoming: ReservationSummary[] = [];
+  const past: ReservationSummary[] = [];
+  for (const r of reservations) {
+    const id = r.reservationId;
+    const canceled =
+      r.state === 'GUEST_CANCELED' ||
+      r.state === 'HOST_CANCELED' ||
+      (id != null && canceledIds.has(id));
+    if (canceled || r.state === 'COMPLETED') past.push(r);
+    else if (r.state === 'PENDING') pending.push(r);
+    else if (r.state === 'CONFIRMED') upcoming.push(r);
+  }
+  const hasAny = pending.length + upcoming.length + past.length > 0;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
@@ -61,24 +102,77 @@ export function TripsPage() {
           <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>불러오는 중…</div>
         ) : query.isError ? (
           <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>예약 정보를 불러오지 못했어요.</div>
-        ) : reservations.length === 0 ? (
+        ) : !hasAny ? (
           <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>아직 예약한 여행이 없어요.</div>
         ) : (
-          <>
-            {region && <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>{region}</h2>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              {reservations.map(r => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+            {resumeError && (
+              <div
+                style={{
+                  background: 'var(--surface-alt-2)',
+                  borderRadius: 12,
+                  padding: '14px 18px',
+                  fontSize: 15,
+                  color: 'var(--brand-coral)',
+                }}
+              >
+                {resumeError}
+              </div>
+            )}
+
+            <Section title="결제 대기" count={pending.length}>
+              {pending.map((r) => (
+                <TripCard
+                  key={r.reservationId}
+                  reservation={r}
+                  cta="결제 이어하기"
+                  busy={resumingId === r.reservationId}
+                  onCardClick={() => r.reservationId != null && handleResume(r.reservationId)}
+                />
+              ))}
+            </Section>
+
+            <Section title="예정된 여행" count={upcoming.length}>
+              {upcoming.map((r) => (
                 <TripCard key={r.reservationId} reservation={r} />
               ))}
-            </div>
-          </>
+            </Section>
+
+            <Section title="지난·취소된 여행" count={past.length}>
+              {past.map((r) => (
+                <TripCard key={r.reservationId} reservation={r} />
+              ))}
+            </Section>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function TripCard({ reservation: r }: { reservation: ReservationSummary }) {
+function Section({ title, count, children }: { title: string; count: number; children: ReactNode }) {
+  if (count === 0) return null;
+  return (
+    <section>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>
+        {title} <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>{count}</span>
+      </h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>{children}</div>
+    </section>
+  );
+}
+
+function TripCard({
+  reservation: r,
+  onCardClick,
+  cta,
+  busy,
+}: {
+  reservation: ReservationSummary;
+  onCardClick?: () => void;
+  cta?: string;
+  busy?: boolean;
+}) {
   const navigate = useNavigate();
   const { canceledIds } = useAppState();
   const [showTimeline, setShowTimeline] = useState(false);
@@ -89,12 +183,20 @@ function TripCard({ reservation: r }: { reservation: ReservationSummary }) {
     r.state === 'GUEST_CANCELED' ||
     r.state === 'HOST_CANCELED' ||
     (r.reservationId != null && canceledIds.has(r.reservationId));
-  const stateLabel = isCanceled ? '취소됨' : r.state ? STATE_LABEL[r.state] : '';
+  const stateLabel = busy
+    ? '결제창 여는 중…'
+    : isCanceled
+      ? '취소됨'
+      : r.state
+        ? STATE_LABEL[r.state]
+        : '';
+  // onCardClick이 있으면(PENDING 결제 이어하기) 그걸, 없으면 기본은 상세 페이지로.
+  const handleClick = onCardClick ?? (() => navigate(`/trips/reservation/${r.reservationId}`));
 
   return (
     <div>
       <div
-        onClick={() => navigate(`/trips/reservation/${r.reservationId}`)}
+        onClick={busy ? undefined : handleClick}
         style={{
           display: 'flex',
           gap: 32,
@@ -103,7 +205,8 @@ function TripCard({ reservation: r }: { reservation: ReservationSummary }) {
           borderRadius: 16,
           boxShadow: 'var(--shadow-lg)',
           padding: 20,
-          cursor: 'pointer',
+          cursor: busy ? 'default' : 'pointer',
+          opacity: busy ? 0.6 : 1,
         }}
       >
         <div
@@ -157,6 +260,23 @@ function TripCard({ reservation: r }: { reservation: ReservationSummary }) {
           >
             {dates} · 호스트 airdnd님
           </div>
+
+          {cta && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 15,
+                fontWeight: 700,
+                color: 'var(--brand-coral)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              {cta}
+              <Icon name="chevron-right" size={16} color="var(--brand-coral)" />
+            </div>
+          )}
 
           <div
             style={{

@@ -25,9 +25,26 @@ export interface PaymentConfirmResult {
 
 interface Envelope<T> {
   success?: boolean;
+  code?: string;
   data?: T;
   message?: string;
 }
+
+/** 서버 ApiResponse 에러를 코드까지 담아 던지는 에러. 호출부가 code(예: RESERVATION_006)로 분기할 수 있다. */
+export class ApiError extends Error {
+  readonly code?: string;
+  readonly status: number;
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
+/** prepare가 이 코드로 실패하면 그 예약은 더는 못 쓴다(만료/확정·취소/없음).
+ *  RESERVATION_006: NOT_PENDING_RESERVATION, RESERVATION_003: RESERVATION_NOT_FOUND */
+export const UNUSABLE_RESERVATION_CODES = new Set(['RESERVATION_006', 'RESERVATION_003']);
 
 /** 예약(resId)에 대한 결제를 준비한다. 예약은 PENDING 상태여야 하고, 인증 회원(스텁: id=1)의 것이어야 한다. */
 export async function preparePayment(reservationId: number): Promise<PaymentPrepareResponse> {
@@ -44,7 +61,7 @@ export async function preparePayment(reservationId: number): Promise<PaymentPrep
   }
 
   if (!res.ok || !body?.success || !body.data) {
-    throw new Error(body?.message ?? `결제 준비에 실패했어요 (${res.status})`);
+    throw new ApiError(body?.message ?? `결제 준비에 실패했어요 (${res.status})`, res.status, body?.code);
   }
   return body.data;
 }
@@ -79,30 +96,4 @@ export async function confirmPayment(params: {
     throw new Error(body?.message ?? `결제 승인에 실패했어요 (${res.status})`);
   }
   return body.data;
-}
-
-/**
- * POST /api/payments/{orderId}/cancel — READY 상태 결제 취소 + hold 해제.
- * 결제 실패/취소 시 잡아둔 예약 hold를 푸는 best-effort 정리용이다.
- * 멱등(이미 취소/실패면 200 no-op)이며 응답은 ApiResponse<Void>(data 없음).
- *
- * credentials 생략 — stub 인증(id=1), confirm/prepare와 동일 기조.
- * 실패해도 호출부(실패 페이지)는 그대로 진행하므로, 호출부에서 결과를 무시해도 된다.
- */
-export async function cancelPayment(orderId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/payments/${orderId}/cancel`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  let body: Envelope<never> | null = null;
-  try {
-    body = await res.json();
-  } catch {
-    /* 바디 없음 */
-  }
-
-  if (!res.ok || !body?.success) {
-    throw new Error(body?.message ?? `결제 취소에 실패했어요 (${res.status})`);
-  }
 }
