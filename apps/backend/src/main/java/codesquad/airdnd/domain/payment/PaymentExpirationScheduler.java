@@ -26,7 +26,7 @@ public class PaymentExpirationScheduler {
 
         for(Payment payment : expired) {
             try {
-                paymentService.expirePayment(payment.getId());
+                paymentService.expire(payment.getId());
             } catch (Exception e){
                 log.warn("결제 만료 처리 실패: paymentId={}", payment.getId(), e);
             }

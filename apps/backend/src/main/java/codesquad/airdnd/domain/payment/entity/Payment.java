@@ -63,14 +63,8 @@ public class Payment {
     public boolean isReady() {
         return this.status.equals(PaymentStatus.READY);
     }
-    public boolean isCanceled() {
-        return this.status.equals(PaymentStatus.CANCELED);
-    }
     public boolean isDone(){
         return this.status.equals(PaymentStatus.DONE);
-    }
-    public boolean isFailed(){
-        return this.status.equals(PaymentStatus.FAILED);
     }
     public boolean isEqualAmount(BigDecimal amount) {
         return this.amount.compareTo(amount) == 0;

@@ -14,7 +14,6 @@ import codesquad.airdnd.global.config.TossProperties;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -22,6 +21,7 @@ import org.springframework.web.client.RestClientException;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,38 +35,37 @@ public class PaymentService {
     private final ReservationService reservationService;
 
     @Transactional
-    public PaymentPrepareResponse preparePayment(Long memberId, Long resId){
-        Reservation reservation = reservationRepository.findByReservationIdAndGuest_Id(resId, memberId)
+    public PaymentPrepareResponse prepare(Long memberId, Long resId){
+        // TODO: 리팩토링 필요 -> reservationService에 요청하거나 오케스트레이션 객체를 통해 검증
+        Reservation reservation = reservationRepository.findForUpdate(resId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
-
-        Listing listing = reservation.getListing();
 
         if(!reservation.isPending()){
             throw new BusinessException(ErrorCode.NOT_PENDING_RESERVATION);
         }
 
-        paymentRepository.findByReservationId(reservation.getReservationId())
-                .ifPresent(p -> { throw new BusinessException(ErrorCode.ALREADY_IN_PROGRESS_PAYMENT); });
+        Listing listing = reservation.getListing();
 
-        try {
-            Payment payment = paymentRepository.save(
-                    Payment.ready(UUID.randomUUID().toString(),
-                            reservation.getTotalPrice(),
-                            reservation.getReservationId()));
-
-            paymentRepository.flush();
-
-            return PaymentPrepareResponse.of(
-                    payment.getOrderId(), listing.getName(),
-                    tossProperties.successUrl(), tossProperties.failUrl(), payment.getAmount());
-
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.ALREADY_IN_PROGRESS_PAYMENT);
+        Optional<Payment> existing = paymentRepository.findByReservationId(resId);
+        if(existing.isPresent()){
+            return toResponse(existing.get(), listing);
         }
+
+        Payment payment = paymentRepository.save(
+                Payment.ready(UUID.randomUUID().toString(),
+                        reservation.getTotalPrice(),
+                        reservation.getReservationId()));
+
+        return toResponse(payment, listing);
+    }
+    private PaymentPrepareResponse toResponse(Payment payment, Listing listing){
+        return PaymentPrepareResponse.of(
+                payment.getOrderId(), listing.getName(),
+                tossProperties.successUrl(), tossProperties.failUrl(), payment.getAmount());
     }
 
     @Transactional
-    public PaymentConfirmResponse confirmPayment(Long memberId, PaymentConfirmRequest request){
+    public PaymentConfirmResponse confirm(Long memberId, PaymentConfirmRequest request){
         Payment payment = paymentRepository.findByOrderId(request.orderId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
 
@@ -115,31 +114,7 @@ public class PaymentService {
     }
 
     @Transactional
-    public void cancelPayment(Long memberId, String orderId){
-        Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
-
-        Reservation reservation = reservationRepository.findById(payment.getReservationId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND)); // 결제와 연결된 예약이 없음?
-
-        if(!reservation.isOwnedBy(memberId)){
-            throw new BusinessException(ErrorCode.NOT_OWNER_PAYMENT);
-        }
-
-        if(payment.isCanceled() || payment.isFailed()){
-            return;
-        }
-
-        if(payment.isDone()){
-            throw new BusinessException(ErrorCode.ALREADY_DONE_PAYMENT);
-        }
-
-        payment.cancel();
-        reservationService.releaseHold(reservation.getReservationId());
-    }
-
-    @Transactional
-    public void expirePayment(Long paymentId){
+    public void expire(Long paymentId){
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PAYMENT));
 

@@ -27,7 +27,7 @@ public class PaymentController {
         @CurrentMember CurrentMemberInfo currentMember,
         @PathVariable @Min(1) Long resId
     ){
-        return ApiResponse.success(paymentService.preparePayment(currentMember.id(), resId));
+        return ApiResponse.success(paymentService.prepare(currentMember.id(), resId));
     }
 
     @PostMapping("/confirm")
@@ -35,15 +35,6 @@ public class PaymentController {
             @CurrentMember CurrentMemberInfo member,
             @Valid @RequestBody PaymentConfirmRequest request
     ){
-        return ApiResponse.success(paymentService.confirmPayment(member.id(), request));
-    }
-
-    @PostMapping("/{orderId}/cancel")
-    public ApiResponse<Void> cancel(
-            @CurrentMember CurrentMemberInfo currentMember,
-            @PathVariable String orderId
-    ){
-        paymentService.cancelPayment(currentMember.id(), orderId);
-        return ApiResponse.success();
+        return ApiResponse.success(paymentService.confirm(member.id(), request));
     }
 }
