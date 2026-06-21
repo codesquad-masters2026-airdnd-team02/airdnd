@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import { LoginModal } from './LoginModal';
 import { useAppState } from '../shared/AppState';
+import { API_BASE } from '../shared/api/config';
 import logoSvg from '../assets/logo.svg';
 import type { SearchState } from '../types';
 
@@ -17,12 +18,14 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   const { isLoggedIn, setLoggedIn } = useAppState();
   const onLogo = () => navigate('/');
   const onHosting = () => navigate('/host');
-  const onAdmin = () => navigate('/admin');
-  const onMyPage = () => navigate('/mypage');
+  const go = (path: string) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
   const onLogout = async () => {
     setMenuOpen(false);
     try {
-      await fetch('http://localhost:8080/logout', { method: 'POST', credentials: 'include' });
+      await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
     } catch {
       /* 네트워크 실패해도 클라이언트 상태는 비운다 */
     }
@@ -30,6 +33,7 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
     navigate('/');
   };
   const compact = mode === 'compact';
+  const solid = compact || mode === 'minimal';
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -47,17 +51,17 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   return (
     <header
       style={{
-        position: compact ? 'sticky' : 'absolute',
+        position: solid ? 'sticky' : 'absolute',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 40,
-        height: compact ? 80 : 94,
+        height: solid ? 80 : 94,
         display: 'flex',
         alignItems: 'center',
         padding: '0 48px',
-        background: compact ? 'var(--surface)' : 'transparent',
-        borderBottom: compact ? '1px solid var(--line)' : 'none',
+        background: solid ? 'var(--surface)' : 'transparent',
+        borderBottom: solid ? '1px solid var(--line)' : 'none',
       }}
     >
       {/* Left: wordmark */}
@@ -191,50 +195,41 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
                 position: 'absolute',
                 top: 'calc(100% + 8px)',
                 right: 0,
-                width: 290,
+                width: 264,
                 background: '#fff',
                 borderRadius: 14,
                 boxShadow: 'var(--shadow-pop)',
                 border: '1px solid var(--line)',
                 overflow: 'hidden',
                 zIndex: 60,
-                paddingBlock: 8,
+                padding: '8px 0',
               }}
             >
-              <MenuItem onClick={() => setMenuOpen(false)}>
-                <Icon name="message-circle" size={18} style={{ marginRight: 12 }} />
-                도움말 센터
-              </MenuItem>
+              <MenuItem icon="heart" onClick={() => go('/wishlists')}>위시리스트</MenuItem>
+              <MenuItem icon="briefcase" onClick={() => go('/trips')}>여행</MenuItem>
+              <MenuItem icon="message-circle" badge={2} onClick={() => go('/mypage')}>메시지</MenuItem>
+              <MenuItem icon="user" onClick={() => go('/mypage')}>프로필</MenuItem>
 
-              <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />
+              <Divider />
 
-              <MenuItem onClick={() => { setMenuOpen(false); onHosting(); }}>
-                <span style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontWeight: 700 }}>호스팅 하기</span>
-                  <span style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>
-                    간단하게 호스팅을 시작하고<br />부수입을 올릴 수 있습니다.
-                  </span>
-                </span>
-              </MenuItem>
+              <MenuItem icon="bell" badge={1} onClick={() => go('/mypage')}>알림</MenuItem>
+              <MenuItem icon="settings" onClick={() => go('/mypage')}>계정 설정</MenuItem>
+              <MenuItem icon="help-circle" onClick={() => go('/mypage')}>도움말 센터</MenuItem>
 
-              <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />
+              <Divider />
+
+              <MenuItem icon="building-2" onClick={() => go('/host')}>호스팅 하기</MenuItem>
+              <MenuItem icon="layout-dashboard" onClick={() => go('/admin')}>관리자 페이지</MenuItem>
+
+              <Divider />
 
               {isLoggedIn ? (
-                <MenuItem onClick={onLogout}>로그아웃</MenuItem>
+                <MenuItem icon="log-out" onClick={onLogout}>로그아웃</MenuItem>
               ) : (
-                <MenuItem onClick={() => { setMenuOpen(false); setLoginOpen(true); }}>
+                <MenuItem icon="user" onClick={() => { setMenuOpen(false); setLoginOpen(true); }}>
                   로그인
                 </MenuItem>
               )}
-
-              <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />
-
-              <MenuItem onClick={() => { setMenuOpen(false); onMyPage?.(); }}>
-                마이 페이지
-              </MenuItem>
-              <MenuItem onClick={() => { setMenuOpen(false); onAdmin?.(); }}>
-                관리자 페이지
-              </MenuItem>
             </div>
           )}
         </div>
@@ -245,24 +240,61 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   );
 }
 
-function MenuItem({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+function Divider() {
+  return <div style={{ height: 1, background: 'var(--line)', margin: '8px 0' }} />;
+}
+
+function MenuItem({
+  onClick,
+  disabled,
+  icon,
+  badge,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  icon?: string;
+  badge?: number;
+  children: React.ReactNode;
+}) {
   return (
     <div
       onClick={disabled ? undefined : onClick}
       style={{
-        padding: '13px 18px',
+        padding: '11px 18px',
         fontSize: 14,
         fontWeight: 500,
         color: disabled ? 'var(--ink-4)' : 'var(--ink-1)',
         cursor: disabled ? 'default' : 'pointer',
         display: 'flex',
         alignItems: 'center',
+        gap: 12,
         transition: 'background 100ms ease',
       }}
       onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = 'var(--surface-alt-2)'; }}
       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
     >
-      {children}
+      {icon && <Icon name={icon} size={18} color="var(--ink-2)" />}
+      <span style={{ flex: 1 }}>{children}</span>
+      {badge != null && (
+        <span
+          style={{
+            minWidth: 18,
+            height: 18,
+            padding: '0 5px',
+            borderRadius: 9,
+            background: 'var(--brand-coral)',
+            color: '#fff',
+            fontSize: 11,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {badge}
+        </span>
+      )}
     </div>
   );
 }

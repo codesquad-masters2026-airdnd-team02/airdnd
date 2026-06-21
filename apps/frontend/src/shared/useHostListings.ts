@@ -3,7 +3,7 @@ import { getHostListingsOptions } from './api/generated/@tanstack/react-query.ge
 import { toHostListing, HOST_STUB } from './api/hostMapping';
 
 export function useHostListings() {
-  const query = useQuery(getHostListingsOptions({ query: { host: HOST_STUB } }));
+  const query = useQuery(getHostListingsOptions({ query: { memberInfo: HOST_STUB } }));
   const listings = query.data?.data?.listings?.map(toHostListing) ?? [];
   return { ...query, listings };
 }

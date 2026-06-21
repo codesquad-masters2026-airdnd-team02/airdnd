@@ -4,6 +4,7 @@ import { HostHeader } from '../../components/HostHeader';
 import { Icon } from '../../shared/Icon';
 import { ConfirmDeleteWishlistModal } from '../../components/ConfirmDeleteWishlistModal';
 import { deleteWishlist, ApiError } from '../../shared/api/wishlist';
+import { API_BASE } from '../../shared/api/config';
 import type { WishlistSummary } from '../../types';
 
 export function WishlistPage() {
@@ -19,7 +20,7 @@ export function WishlistPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/wishlists', { credentials: 'include' })
+    fetch(`${API_BASE}/api/wishlists`, { credentials: 'include' })
       .then(res => res.json())
       .then(json => setWishlists(json.data ?? []))
       .catch(() => {})

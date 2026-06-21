@@ -13,6 +13,7 @@ import {
   removeWishlistItem,
   ApiError,
 } from '../../shared/api/wishlist';
+import { API_BASE } from '../../shared/api/config';
 import type { WishlistDetail, WishlistDetailItem } from '../../types';
 
 export function WishlistDetailPage() {
@@ -44,7 +45,7 @@ export function WishlistDetailPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:8080/api/wishlists/${wishlistId}`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/wishlists/${wishlistId}`, { credentials: 'include' })
       .then(res => res.json())
       .then(json => setDetail(json.data ?? null))
       .catch(() => {})
