@@ -7,6 +7,7 @@ import { removeWishlistItem } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { ListingCardResponse, ListingSearchCondition } from '../../shared/api/generated/types.gen';
+import type { Bounds } from '../../shared/map';
 import { ResultCard } from './ResultCard';
 import { ResultsMap } from './ResultsMap';
 import { Pagination } from './Pagination';
@@ -25,9 +26,12 @@ export function Results() {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   const [page, setPage] = useState(0);
+  // 지도 영역 필터(idle 시 갱신). 지도 이동하면 페이징 초기화 후 해당 영역으로 재검색
+  const [mapBounds, setMapBounds] = useState<Bounds | null>(null);
+  const condition = (mapBounds ? { mapBounds } : {}) as ListingSearchCondition;
   const listingsQuery = useQuery(
     getListingsOptions({
-      query: { condition: {} as ListingSearchCondition, pageRequest: { page, size: 20 } },
+      query: { condition, pageRequest: { page, size: 20 } },
     }),
   );
   const pageData = listingsQuery.data?.data;
@@ -38,6 +42,12 @@ export function Results() {
   const goPage = (p: number) => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 지도 영역 변경 → 페이징 초기화 후 해당 영역으로 재검색
+  const onBoundsChange = (b: Bounds) => {
+    setMapBounds(b);
+    setPage(0);
   };
 
   const isLiked = (c: ListingCardResponse) =>
@@ -151,6 +161,7 @@ export function Results() {
             onOpen={onOpen}
             hoveredId={hoveredId}
             likedIds={new Set(cards.filter(c => c.id != null && isLiked(c)).map(c => c.id!))}
+            onBoundsChange={onBoundsChange}
           />
         </div>
       </div>

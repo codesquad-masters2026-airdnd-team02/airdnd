@@ -9,6 +9,13 @@ export interface Coord {
   lng: number;
 }
 
+export interface Bounds {
+  south: number;
+  north: number;
+  west: number;
+  east: number;
+}
+
 export interface HtmlMarkerOptions {
   coord: Coord;
   element: HTMLElement;
@@ -35,6 +42,10 @@ export interface MapController {
   panTo(coord: Coord): void;
   /** 주어진 좌표들이 모두 보이도록 영역 맞춤(센터+줌 자동) */
   fitBounds(coords: Coord[]): void;
+  /** 현재 보이는 지도 영역 */
+  getBounds(): Bounds;
+  /** 지도 이동/줌이 멈춘 뒤(idle) 콜백. 정리 함수 반환 */
+  onIdle(cb: () => void): () => void;
   /** HTML 마커 추가. 핸들 반환 */
   addHtmlMarker(options: HtmlMarkerOptions): MarkerHandle;
   /** 컨테이너 휠 줌을 애니메이션 줌으로 대체. 정리 함수 반환 */
@@ -93,6 +104,17 @@ export async function createMap(
       const bounds = new window.kakao.maps.LatLngBounds();
       coords.forEach(c => bounds.extend(new window.kakao.maps.LatLng(c.lat, c.lng)));
       map.setBounds(bounds);
+    },
+    getBounds: () => {
+      const b = map.getBounds();
+      const sw = b.getSouthWest();
+      const ne = b.getNorthEast();
+      return { south: sw.getLat(), west: sw.getLng(), north: ne.getLat(), east: ne.getLng() };
+    },
+    onIdle: cb => {
+      window.kakao.maps.event.addListener(map, 'idle', cb);
+      // 카카오는 removeListener 시 동일 콜백 참조 필요
+      return () => window.kakao.maps.event.removeListener?.(map, 'idle', cb);
     },
     addHtmlMarker: ({ coord, element, onClick, yAnchor = 1 }) => {
       if (onClick) element.addEventListener('click', onClick);

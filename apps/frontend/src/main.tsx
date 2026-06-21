@@ -9,18 +9,23 @@ import App from './App.tsx'
 // 서버는 flat 쿼리(size=, cursor=)를 기대한다. 객체명 prefix 없이 한 단계 펼쳐 직렬화.
 function flatQuerySerializer(query: Record<string, unknown>): string {
   const sp = new URLSearchParams()
-  const add = (k: string, v: unknown) => {
-    if (v != null && v !== '') sp.append(k, String(v))
-  }
-  // 'pageRequest.cursor' 같은 점 표기는 마지막 세그먼트만(flat) 사용
-  const flatKey = (k: string) => (k.includes('.') ? k.slice(k.lastIndexOf('.') + 1) : k)
-  for (const [key, value] of Object.entries(query)) {
-    if (Array.isArray(value)) {
-      value.forEach(v => add(flatKey(key), v))
-    } else if (value && typeof value === 'object') {
-      for (const [k2, v2] of Object.entries(value as Record<string, unknown>)) add(flatKey(k2), v2)
+  // 키 경로로 재귀 직렬화. 중첩 객체는 점 표기(mapBounds.south=) — @ModelAttribute 바인딩용
+  const append = (key: string, val: unknown) => {
+    if (val == null || val === '') return
+    if (Array.isArray(val)) {
+      val.forEach(v => append(key, v))
+    } else if (typeof val === 'object') {
+      for (const [k, v] of Object.entries(val as Record<string, unknown>)) append(`${key}.${k}`, v)
     } else {
-      add(flatKey(key), value)
+      sp.append(key, String(val))
+    }
+  }
+  // 최상위 컨테이너(condition/pageRequest)는 이름 없이 한 단계 펼침
+  for (const [key, value] of Object.entries(query)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      for (const [k2, v2] of Object.entries(value as Record<string, unknown>)) append(k2, v2)
+    } else {
+      append(key, value)
     }
   }
   return sp.toString()

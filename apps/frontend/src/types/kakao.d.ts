@@ -14,10 +14,13 @@ declare global {
     setCenter(latlng: KakaoLatLng): void;
     panTo(latlng: KakaoLatLng): void;
     setBounds(bounds: KakaoLatLngBounds): void;
+    getBounds(): KakaoLatLngBounds;
   }
 
   interface KakaoLatLngBounds {
     extend(latlng: KakaoLatLng): void;
+    getSouthWest(): KakaoLatLng;
+    getNorthEast(): KakaoLatLng;
   }
 
   interface KakaoCustomOverlay {
@@ -60,6 +63,7 @@ declare global {
         }) => KakaoCustomOverlay;
         event: {
           addListener(target: unknown, type: string, callback: () => void): void;
+          removeListener(target: unknown, type: string, callback: () => void): void;
         };
         services: {
           Geocoder: new () => {

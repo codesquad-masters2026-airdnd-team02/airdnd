@@ -5,18 +5,15 @@ import codesquad.airdnd.domain.listing.dto.query.CapacityFilter;
 import codesquad.airdnd.domain.listing.dto.query.MapBoundsFilter;
 import codesquad.airdnd.domain.listing.dto.query.PriceFilter;
 import codesquad.airdnd.domain.listing.dto.query.RoomTypeFilter;
+import jakarta.validation.Valid;
 
 public record ListingSearchCondition(
-	// MapBoundsFilter mapBounds,
+	 MapBoundsFilter mapBounds
 	// PriceFilter price,
 	// CapacityFilter capacity,
 	// RoomTypeFilter roomType,
 	// AmenityFilter amenity
 ) {
-	// public MapBoundsFilter mapBounds() {
-	// 	return mapBounds != null ? mapBounds : new MapBoundsFilter(null, null, null, null);
-	// }
-	//
 	// public PriceFilter price() {
 	// 	return price != null ? price : new PriceFilter(null, null);
 	// }

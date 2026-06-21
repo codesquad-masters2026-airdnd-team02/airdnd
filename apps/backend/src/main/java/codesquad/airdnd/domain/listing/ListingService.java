@@ -5,6 +5,7 @@ import java.util.List;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,7 +107,7 @@ public class ListingService {
 	private Address buildAddress(ListingCreateRequest request) {
 		KakaoRegionInfo region = kakaoGeocodingService.reverseGeocode(request.latitude(), request.longitude());
 
-		GeometryFactory factory = new GeometryFactory();
+		GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 4326);
 
 		Point point = factory.createPoint(
 			new Coordinate(request.longitude(), request.latitude()));

@@ -1,8 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { Icon } from '../../shared/Icon';
 import { won } from '../../shared/utils';
-import { createMap, type MapController, type MarkerHandle } from '../../shared/map';
+import { createMap, type MapController, type MarkerHandle, type Bounds } from '../../shared/map';
 import type { ListingCardResponse } from '../../shared/api/generated/types.gen';
+
+// 지도 영역을 가장자리에서 ratio(0~0.5)만큼 안으로 좁힘 — 바깥쪽 숙소 제외용
+function insetBounds(b: Bounds, ratio: number): Bounds {
+  const latPad = (b.north - b.south) * ratio;
+  const lngPad = (b.east - b.west) * ratio;
+  return {
+    south: b.south + latPad,
+    north: b.north - latPad,
+    west: b.west + lngPad,
+    east: b.east - lngPad,
+  };
+}
 
 function setPinActive(el: HTMLElement, active: boolean) {
   el.style.background = active ? 'var(--ink-1)' : '#fff';
@@ -16,17 +28,21 @@ export function ResultsMap({
   onOpen,
   hoveredId,
   likedIds,
+  onBoundsChange,
 }: {
   cards: ListingCardResponse[];
   onOpen: (c: ListingCardResponse) => void;
   hoveredId: number | null;
   likedIds: Set<number>;
+  onBoundsChange?: (bounds: Bounds) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapController | null>(null);
   const [ready, setReady] = useState(false);
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
+  const onBoundsChangeRef = useRef(onBoundsChange);
+  onBoundsChangeRef.current = onBoundsChange;
   const likedIdsRef = useRef(likedIds);
   likedIdsRef.current = likedIds;
   // listingId → 핀 DOM + 오버레이 핸들 + 하트 element
@@ -40,15 +56,19 @@ export function ResultsMap({
   useEffect(() => {
     if (!ref.current) return;
     let cancelled = false;
+    let cleanupIdle: (() => void) | undefined;
     createMap(ref.current, { center: { lat: 37.495, lng: 127.04 }, level: 6 })
       .then(map => {
         if (cancelled) return;
         mapRef.current = map;
         setReady(true);
+        // 지도 이동/줌이 멈추면 현재 영역을 부모에 알림(검색 조건 갱신)
+        cleanupIdle = map.onIdle(() => onBoundsChangeRef.current?.(insetBounds(map.getBounds(), 0.15)));
       })
       .catch(err => console.error(err));
     return () => {
       cancelled = true;
+      cleanupIdle?.();
       mapRef.current = null;
     };
   }, []);
@@ -58,20 +78,9 @@ export function ResultsMap({
     const map = mapRef.current;
     if (!map) return;
 
+    // 지도는 사용자가 제어(map bounds 검색) — 결과로 지도를 옮기지 않고 마커만 다시 그림
     pinsRef.current.forEach(({ handle }) => handle.remove());
     pinsRef.current.clear();
-
-    // 현재 페이지 핀들의 중심으로 부드럽게 이동(줌 유지)
-    const coords = cards
-      .filter(c => c.lat != null && c.lng != null)
-      .map(c => ({ lat: c.lat!, lng: c.lng! }));
-    if (coords.length > 0) {
-      const center = {
-        lat: coords.reduce((s, c) => s + c.lat, 0) / coords.length,
-        lng: coords.reduce((s, c) => s + c.lng, 0) / coords.length,
-      };
-      map.panTo(center);
-    }
 
     cards.forEach(c => {
       if (c.lat == null || c.lng == null) return;
