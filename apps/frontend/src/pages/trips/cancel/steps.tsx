@@ -172,38 +172,6 @@ function RadioRow({ label, checked, onClick }: { label: string; checked: boolean
   );
 }
 
-export function SendMessageStep({
-  hostName,
-  message,
-  setMessage,
-}: {
-  hostName: string;
-  message: string;
-  setMessage: (v: string) => void;
-}) {
-  return (
-    <div>
-      <h1 style={titleStyle}>{hostName}님께 취소 사유를 알려주세요</h1>
-      <textarea
-        value={message}
-        onChange={e => setMessage(e.target.value)}
-        placeholder="상황을 설명해주세요"
-        style={{
-          width: '100%',
-          minHeight: 120,
-          padding: 16,
-          borderRadius: 10,
-          border: '1px solid var(--line-strong)',
-          fontSize: 16,
-          fontFamily: 'var(--font-sans)',
-          resize: 'vertical',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
-  );
-}
-
 export function ConfirmStep({
   total,
   refund,

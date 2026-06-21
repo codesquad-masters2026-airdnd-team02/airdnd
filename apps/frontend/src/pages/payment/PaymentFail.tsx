@@ -1,14 +1,11 @@
-import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { cancelPayment } from '../../shared/api/payment';
 
 /**
  * 토스 결제창이 결제 실패/취소 시 리다이렉트하는 페이지.
- * URL: /payments/fail?code=...&message=...&orderId=...
+ * URL: /payments/fail?code=...&message=...
  *
- * 마운트 시 cancelPayment(orderId)로 잡아둔 예약 hold를 best-effort로 해제한다.
- * 정리(cancel)는 부가 작업이라, 실패하든 말든 실패 화면은 그대로 보여준다.
- * confirm(결제 승인)은 절대 호출하지 않는다.
+ * 실패해도 예약(PENDING)·결제(READY)는 그대로 둔다. 선점 해제는 TTL이 전담하고,
+ * 사용자는 15분 내 다시 결제(prepare 재요청)할 수 있다. confirm은 절대 호출하지 않는다.
  */
 
 /** 흔한 사용자 취소만 따로 안내. 나머지는 토스 message(한글 사유)를 그대로 쓴다. */
@@ -22,21 +19,6 @@ export function PaymentFail() {
   const [params] = useSearchParams();
   const code = params.get('code');
   const message = params.get('message');
-  const orderId = params.get('orderId');
-
-  // StrictMode(개발 모드)에서 useEffect가 2번 실행돼도 cancel은 정확히 1번만.
-  const cleanedRef = useRef(false);
-
-  useEffect(() => {
-    if (cleanedRef.current) return;
-    cleanedRef.current = true;
-
-    // orderId 없으면 풀 hold가 없으니 정리 생략 — 메시지만 표시.
-    if (!orderId) return;
-
-    // best-effort: 404/409 등 어떤 에러가 나도 무시(실패 화면은 그대로).
-    cancelPayment(orderId).catch(() => {});
-  }, [orderId]);
 
   return (
     <div style={wrapStyle}>

@@ -21,7 +21,6 @@ public class Payment {
     @Column(nullable = false, unique = true)
     private String orderId;
 
-    // TOSS 승인 후 채워짐
     private String paymentKey;
 
     @Column(nullable = false)
@@ -33,15 +32,16 @@ public class Payment {
 
     @Column(nullable = false, unique = true)
     private Long reservationId;
-    
-    // TOSS 승인 후 채워짐
+
     private String method;
 
-    // TOSS 승인 후 채워짐
     private LocalDateTime approvedAt;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    private LocalDateTime canceledAt;
+    private String cancelReason;
 
     @Builder(access = AccessLevel.PRIVATE)
     private Payment(String orderId, BigDecimal amount, Long reservationId) {
@@ -63,17 +63,14 @@ public class Payment {
     public boolean isReady() {
         return this.status.equals(PaymentStatus.READY);
     }
-    public boolean isCanceled() {
-        return this.status.equals(PaymentStatus.CANCELED);
-    }
     public boolean isDone(){
         return this.status.equals(PaymentStatus.DONE);
     }
-    public boolean isFailed(){
-        return this.status.equals(PaymentStatus.FAILED);
-    }
     public boolean isEqualAmount(BigDecimal amount) {
         return this.amount.compareTo(amount) == 0;
+    }
+    public boolean isRefunded(){
+        return this.status.equals(PaymentStatus.REFUNDED);
     }
 
     public void complete(String paymentKey, String method, LocalDateTime localDateTime){
@@ -82,8 +79,12 @@ public class Payment {
         this.approvedAt = localDateTime;
         this.status = PaymentStatus.DONE; // 승인 완료
     }
-
     public void cancel(){
         this.status = PaymentStatus.CANCELED;
+    }
+    public void refund(String cancelReason, LocalDateTime canceledAt){
+        this.cancelReason = cancelReason;
+        this.canceledAt = canceledAt;
+        this.status = PaymentStatus.REFUNDED;
     }
 }

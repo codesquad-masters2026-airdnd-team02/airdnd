@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
+import codesquad.airdnd.global.auth.CurrentMemberInfo;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,14 +111,13 @@ public class ReservationService {
 	}
 
 	@Transactional
-	public void cancelReservation(Long guestId, Long reservationId) {
+	public Reservation cancelReservation(Long guestId, Long reservationId) {
 		Reservation reservation = getOwnedReservation(guestId, reservationId);
 
 		reservation.cancelByGuest();
 		resDateRepository.deleteByReservationId(reservationId);
 
-		// 환불 로직
-		// paymentService.refund();
+        return reservation;
 	}
 
 	private Reservation getOwnedReservation(Long guestId, Long reservationId) {

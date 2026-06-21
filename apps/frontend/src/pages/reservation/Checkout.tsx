@@ -6,7 +6,7 @@ import { ReservationSummary } from './components/ReservationSummary';
 import { PaymentModal, type PayStatus } from './components/PaymentModal';
 import { createReservationMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
 import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
-import { preparePayment, cancelPayment } from '../../shared/api/payment';
+import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
 import { Icon } from '../../shared/Icon';
 import { won } from '../../shared/utils';
@@ -32,12 +32,48 @@ export function Checkout() {
 
   const reserveMutation = useMutation(createReservationMutation());
 
+  // 만든 예약을 sessionStorage에 보관 → 재시도/새로고침 시 createReservation을 건너뛰고
+  // prepare만 재요청(백엔드가 기존 READY 결제 재사용). 키를 숙소+날짜에 묶어 다른 예약과 안 섞이게.
+  // 선점 해제는 TTL이 전담. 만료/확정된 예약은 prepare가 거절(아래)하면 키를 비운다.
+  const storageKey = `resv:${listing.id}:${search.range?.a ?? ''}:${search.range?.b ?? ''}`;
+
   function fail(message: string) {
     setPayError(message);
     setPayStatus('fail');
   }
 
+  /** 주어진 예약으로 prepare → 토스 결제창 호출. 예약 생성 여부와 무관하게 재사용된다. */
+  async function openPayment(resId: number) {
+    let prepare;
+    try {
+      prepare = await preparePayment(resId);
+    } catch (e) {
+      // 예약이 만료/확정·취소/삭제돼 더 못 쓰면, 보관한 키를 비워 다음 클릭이 새 예약을 만들게 한다.
+      if (e instanceof ApiError && e.code && UNUSABLE_RESERVATION_CODES.has(e.code)) {
+        sessionStorage.removeItem(storageKey);
+      }
+      fail(e instanceof Error ? e.message : '결제 준비에 실패했어요.');
+      return;
+    }
+    try {
+      // 결제창 호출. 결제 성공/실패는 토스가 success/fail 페이지로 리다이렉트한다.
+      await startCardPayment(prepare);
+    } catch (e) {
+      // 결제창을 닫아도(X) 예약(PENDING)·결제(READY)는 그대로 둔다.
+      // 선점 해제는 TTL에 맡기고, 사용자는 15분 내 다시 결제(prepare 재요청)할 수 있다.
+      fail(e instanceof Error ? e.message : '결제가 취소되었어요.');
+    }
+  }
+
   function handlePay() {
+    // 같은 숙소·날짜로 이미 만든 예약이 있으면 createReservation을 건너뛰고 바로 prepare 재요청.
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved) {
+      setPayStatus('loading');
+      void openPayment(Number(saved));
+      return;
+    }
+
     let body;
     try {
       body = toReservationRequest(search);
@@ -50,28 +86,13 @@ export function Checkout() {
       { path: { listingId: listing.id }, query: { guest: GUEST_STUB }, body },
       {
         onSuccess: async (res) => {
-          const reservationId = res.data?.reservationId;
-          if (reservationId == null) {
+          const newId = res.data?.reservationId;
+          if (newId == null) {
             fail('예약 번호를 받지 못했어요.');
             return;
           }
-          let prepare;
-          try {
-            prepare = await preparePayment(reservationId);
-          } catch (e) {
-            // prepare 실패 — 아직 hold(READY 결제)가 없으니 cancel 불필요.
-            fail(e instanceof Error ? e.message : '결제 준비에 실패했어요.');
-            return;
-          }
-          try {
-            // 결제창 호출. 결제 성공/실패는 토스가 success/fail 페이지로 리다이렉트한다.
-            await startCardPayment(prepare);
-          } catch (e) {
-            // 사용자가 결제창을 닫는(X) 등 요청이 중단되면 리다이렉트 없이 여기로 떨어진다.
-            // failUrl을 안 거치므로 잡아둔 hold를 여기서 직접 해제한다(best-effort).
-            cancelPayment(prepare.orderId).catch(() => {});
-            fail(e instanceof Error ? e.message : '결제가 취소되었어요.');
-          }
+          sessionStorage.setItem(storageKey, String(newId)); // 보관 → 재시도/새로고침 시 재사용
+          await openPayment(newId);
         },
         onError: (err) => fail(reservationErrorMessage(err)),
       },
