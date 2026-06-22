@@ -25,7 +25,7 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   const onLogout = async () => {
     setMenuOpen(false);
     try {
-      await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
+      await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch {
       /* 네트워크 실패해도 클라이언트 상태는 비운다 */
     }
