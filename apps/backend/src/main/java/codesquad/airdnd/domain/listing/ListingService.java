@@ -1,6 +1,7 @@
 package codesquad.airdnd.domain.listing;
 
 import java.util.List;
+import java.util.Map;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -14,6 +15,7 @@ import codesquad.airdnd.domain.listing.dto.response.HostListingSummary;
 import codesquad.airdnd.domain.listing.dto.response.HostListingsList;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
+import codesquad.airdnd.domain.listing.repository.ListingImageRepository;
 import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.member.MemberRepository;
@@ -35,6 +37,7 @@ public class ListingService {
 	private static final double LON_MAX = 131.9;
 
 	private final ListingRepository listingRepository;
+	private final ListingImageRepository listingImageRepository;
 	private final MemberRepository memberRepository;
 
 	private final KakaoGeocodingService kakaoGeocodingService;
@@ -55,12 +58,18 @@ public class ListingService {
 		Member host = memberRepository.getReferenceById(hostId);
 		List<Listing> listings = listingRepository.findAllByHost(host);
 
+		Map<Long, String> imageMap = listingImageRepository.findCoverByHostId(hostId);
+
 		return new HostListingsList(
 			listings.stream()
-				.map(listing -> HostListingSummary.from(listing,
+				.map(listing -> HostListingSummary.from(
+					listing,
 					regionCodeService.getAddressSummary(
 						listing.getAddress().getSidoCode(),
-						listing.getAddress().getSigunguCode())))
+						listing.getAddress().getSigunguCode()
+					),
+					imageMap.get(listing.getId())
+					))
 				.toList()
 		);
 	}

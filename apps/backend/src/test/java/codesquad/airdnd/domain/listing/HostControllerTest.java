@@ -138,7 +138,7 @@ class HostControllerTest {
 	void getHostListings_success() throws Exception {
 		HostListingsList response = new HostListingsList(List.of(
 			new HostListingSummary(1L, "테스트 숙소", RoomType.ENTIRE_PLACE, "강남구, 서울",
-				new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000), ListingState.APPROVED)
+				new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000), ListingState.APPROVED, "cover.jpg")
 		));
 		given(listingService.getHostListings(anyLong())).willReturn(response);
 

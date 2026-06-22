@@ -30,6 +30,7 @@ import codesquad.airdnd.domain.listing.entity.Capacity;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.entity.ListingState;
 import codesquad.airdnd.domain.listing.entity.RoomType;
+import codesquad.airdnd.domain.listing.repository.ListingImageRepository;
 import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.member.MemberRepository;
@@ -44,6 +45,9 @@ class ListingServiceTest {
 
 	@Mock
 	private ListingRepository listingRepository;
+
+	@Mock
+	private ListingImageRepository listingImageRepository;
 
 	@Mock
 	private KakaoGeocodingService kakaoGeocodingService;

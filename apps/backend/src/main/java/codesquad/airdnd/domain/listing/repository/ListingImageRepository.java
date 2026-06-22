@@ -14,11 +14,22 @@ public interface ListingImageRepository extends JpaRepository<ListingImage, Long
 	@Query("select i from ListingImage i where i.listing.id in :listingIds order by i.sortOrder asc")
 	List<ListingImage> findAllByListingIds(@Param("listingIds") List<Long> listingIds);
 
+	@Query("select i from ListingImage i where i.listing.host.id = :hostId and i.sortOrder = 0")
+	List<ListingImage> findCoversByHostId(@Param("hostId") Long hostId);
+
 	default Map<Long, List<String>> findImagesByListingIds(List<Long> listingIds) {
 		return findAllByListingIds(listingIds).stream()
 			.collect(Collectors.groupingBy(
 				img -> img.getListing().getId(),
 				Collectors.mapping(ListingImage::getImageUrl, Collectors.toList())
+			));
+	}
+
+	default Map<Long, String> findCoverByHostId(Long hostId) {
+		return findCoversByHostId(hostId).stream()
+			.collect(Collectors.toMap(
+				img -> img.getListing().getId(),
+				ListingImage::getImageUrl
 			));
 	}
 }
