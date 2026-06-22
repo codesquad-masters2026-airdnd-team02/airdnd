@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { LISTINGS } from '../pages/Results';
 import { API_BASE } from './api/config';
+import { refreshAccessToken, onSessionExpired } from './api/refresh';
 import type { SearchState, Listing } from '../types';
 
 const DEFAULT_SEARCH: SearchState = {
@@ -44,16 +45,33 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   // 앱 로드 시 서버 세션을 조회해 로그인 상태를 확정한다 (localStorage 플래그는 깜빡임 방지용 초기값일 뿐, 서버가 진실).
   useEffect(() => {
     let alive = true;
-    fetch(`${API_BASE}/api/auth/session`, { credentials: 'include' })
-      .then((res) => res.json())
-      .then((json) => {
-        if (alive) setLoggedIn(Boolean(json?.data?.authenticated));
-      })
-      .catch(() => {
-        /* 조회 실패 시 기존 플래그 유지 */
-      });
+
+    // GET /api/auth/session → authenticated 여부. (permitAll 이라 401 대신 authenticated:false 로 응답)
+    const checkSession = (): Promise<boolean> =>
+      fetch(`${API_BASE}/api/auth/session`, { credentials: 'include' })
+        .then((res) => res.json())
+        .then((json) => Boolean(json?.data?.authenticated))
+        .catch(() => false);
+
+    (async () => {
+      let authed = await checkSession();
+      // 직전까지 로그인 상태였는데 미인증이면(=액세스 토큰 만료로 추정) 재발급을 시도하고 다시 확인한다.
+      // → 리프레시 토큰(14일)이 살아있으면 새로고침해도 로그인이 끊기지 않는다.
+      if (!authed && localStorage.getItem(LOGIN_FLAG_KEY) === 'true') {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) authed = await checkSession();
+      }
+      if (alive) setLoggedIn(authed);
+    })();
+
+    // 어떤 API 호출이든 재발급이 끝내 실패하면(리프레시 만료/무효) 로그인 상태를 내린다.
+    const unsubscribe = onSessionExpired(() => {
+      if (alive) setLoggedIn(false);
+    });
+
     return () => {
       alive = false;
+      unsubscribe();
     };
   }, []);
 
