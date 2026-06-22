@@ -29,7 +29,14 @@ export function ResultCard({
   const images = card.images ?? [];
   const [idx, setIdx] = useState(0);
   const [hovered, setHovered] = useState(false);
-  const go = (delta: number) => setIdx(i => Math.min(images.length - 1, Math.max(0, i + delta)));
+  // 실제로 넘겨서 도달한 최대 인덱스까지만 이미지 로드(첫 장만 즉시, 나머지는 넘길 때)
+  const [maxLoaded, setMaxLoaded] = useState(0);
+  const go = (delta: number) =>
+    setIdx(i => {
+      const next = Math.min(images.length - 1, Math.max(0, i + delta));
+      setMaxLoaded(m => Math.max(m, next));
+      return next;
+    });
 
   return (
     <div
@@ -71,9 +78,22 @@ export function ResultCard({
                 style={{
                   flex: '0 0 100%',
                   height: '100%',
-                  background: `url(${src}) center/cover`,
+                  background: 'var(--surface-alt-2)',
                 }}
-              />
+              >
+                {/* 도달한 슬라이드만 실제 img 요청. 첫 장은 즉시·높은 우선순위 */}
+                {i <= maxLoaded && (
+                  <img
+                    src={src}
+                    alt=""
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={i === 0 ? 'high' : 'auto'}
+                    decoding="async"
+                    draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                )}
+              </div>
             ))}
           </div>
         )}

@@ -29,12 +29,15 @@ export function ResultsMap({
   hoveredId,
   likedIds,
   onBoundsChange,
+  focusSignal = 0,
 }: {
   cards: ListingCardResponse[];
   onOpen: (c: ListingCardResponse) => void;
   hoveredId: number | null;
   likedIds: Set<number>;
   onBoundsChange?: (bounds: Bounds) => void;
+  // 검색 시마다 증가 — 지도를 결과 위치로 이동시키는 신호
+  focusSignal?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapController | null>(null);
@@ -43,6 +46,24 @@ export function ResultsMap({
   onOpenRef.current = onOpen;
   const onBoundsChangeRef = useRef(onBoundsChange);
   onBoundsChangeRef.current = onBoundsChange;
+  // 검색으로 지도를 옮기는 중에는 idle→재검색을 무시(이동된 지도가 API 유발 방지)
+  const suppressUntilRef = useRef(0);
+  // 검색 신호 받았으나 아직 결과가 안 온 경우, 다음 카드 렌더 때 이동
+  const pendingFocusRef = useRef(false);
+
+  // 결과 카드들이 모두 보이도록 지도 이동(프로그램적). 이동 동안 idle 억제
+  function focusToCards() {
+    const map = mapRef.current;
+    if (!map) return;
+    const coords = cards
+      .filter(c => c.lat != null && c.lng != null)
+      .map(c => ({ lat: c.lat!, lng: c.lng! }));
+    if (coords.length === 0) return;
+    // 즉시 이동. 이동 동안 idle→재검색 억제
+    suppressUntilRef.current = Date.now() + 800;
+    map.fitBounds(coords);
+    pendingFocusRef.current = false;
+  }
   const likedIdsRef = useRef(likedIds);
   likedIdsRef.current = likedIds;
   // listingId → 핀 DOM + 오버레이 핸들 + 하트 element
@@ -63,7 +84,11 @@ export function ResultsMap({
         mapRef.current = map;
         setReady(true);
         // 지도 이동/줌이 멈추면 현재 영역을 부모에 알림(검색 조건 갱신)
-        cleanupIdle = map.onIdle(() => onBoundsChangeRef.current?.(insetBounds(map.getBounds(), 0.15)));
+        // 단, 검색으로 인한 프로그램적 이동은 억제(재검색 방지)
+        cleanupIdle = map.onIdle(() => {
+          if (Date.now() < suppressUntilRef.current) return;
+          onBoundsChangeRef.current?.(insetBounds(map.getBounds(), 0.15));
+        });
       })
       .catch(err => console.error(err));
     return () => {
@@ -72,6 +97,14 @@ export function ResultsMap({
       mapRef.current = null;
     };
   }, []);
+
+  // 검색 신호 → 다음 카드 렌더 시 지도 이동(pending만 세움).
+  // 카드 effect보다 먼저 선언해야 같은 커밋(캐시된 결과)에서도 pending이 먼저 세팅됨
+  useEffect(() => {
+    if (focusSignal === 0) return;
+    pendingFocusRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSignal]);
 
   // 카드(페이지) 변경 시 기존 마커 제거 후 새로 그림
   useEffect(() => {
@@ -110,6 +143,9 @@ export function ResultsMap({
       });
       if (c.id != null) pinsRef.current.set(c.id, { el, handle, heart });
     });
+
+    // 검색 직후 결과가 도착했으면 그 결과로 지도 이동
+    if (pendingFocusRef.current) focusToCards();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, cardsKey]);
 

@@ -40,7 +40,7 @@ export interface MapController {
   setCenter(coord: Coord): void;
   /** 지도 중심 이동(애니메이션, 줌 유지) */
   panTo(coord: Coord): void;
-  /** 주어진 좌표들이 모두 보이도록 영역 맞춤(센터+줌 자동) */
+  /** 주어진 좌표들이 모두 보이도록 영역 맞춤(센터+줌 자동, 즉시) */
   fitBounds(coords: Coord[]): void;
   /** 현재 보이는 지도 영역 */
   getBounds(): Bounds;

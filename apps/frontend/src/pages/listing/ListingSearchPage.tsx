@@ -2,19 +2,63 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
+import type { SearchSegment } from '../../components/SearchBar';
+import { FilterModal } from '../../components/FilterModal';
 import { SaveToWishlistModal } from '../../components/SaveToWishlistModal';
 import { removeWishlistItem } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { ListingCardResponse, ListingSearchCondition } from '../../shared/api/generated/types.gen';
+import type { SearchState } from '../../types';
 import type { Bounds } from '../../shared/map';
 import { ResultCard } from './ResultCard';
 import { ResultsMap } from './ResultsMap';
 import { Pagination } from './Pagination';
 
+// SearchState(+지도 영역) → 백엔드 검색 조건. 빈 필터는 보내지 않음
+function buildCondition(s: SearchState, bounds: Bounds | null): ListingSearchCondition {
+  const condition: ListingSearchCondition = {};
+  if (bounds) condition.mapBounds = bounds;
+  // 지도 이동 검색(bounds) 중에는 지역 필터 무시 — 지도 영역이 우선
+  if (!bounds && s.region?.sidoCode) {
+    condition.region = {
+      sidoCode: s.region.sidoCode,
+      sigunguCode: s.region.sigunguCode ?? undefined,
+    };
+  }
+  if (s.range?.a && s.range?.b) {
+    condition.dateRange = { checkIn: s.range.a, checkOut: s.range.b };
+  }
+  const g = s.guests;
+  if (s.guestLabel && g) {
+    condition.guestCount = {
+      adults: g.adult || undefined,
+      children: g.child || undefined,
+      infants: g.infant || undefined,
+      pets: g.pet || undefined,
+    };
+  }
+  if (s.priceMin != null || s.priceMax != null) {
+    condition.priceRange = {
+      minPrice: s.priceMin ?? undefined,
+      maxPrice: s.priceMax ?? undefined,
+    };
+  }
+  return condition;
+}
+
 export function Results() {
   const navigate = useNavigate();
-  const { search } = useAppState();
+  const { search, setSearch } = useAppState();
+  // 검색 버튼 누른 시점의 조건 스냅샷(편집 중 즉시 재조회 방지)
+  const [appliedSearch, setAppliedSearch] = useState<SearchState>(search);
+  // 상단 검색 pill 클릭 시 헤더에서 인라인 확장 + 눌린 구역 패널 열기
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchSeg, setSearchSeg] = useState<SearchSegment>('dest');
+  // 필터 모달
+  const [filterOpen, setFilterOpen] = useState(false);
+  // 검색 시 지도를 결과로 이동시키는 신호
+  const [focusSignal, setFocusSignal] = useState(0);
   // listingId 기준 좋아요 오버라이드(서버 isWishlisted 위에 세션 변경분)
   const [liked, setLiked] = useState<Record<number, boolean>>({});
   // listingId → wishlistId (unlike 시 DELETE 대상)
@@ -28,7 +72,7 @@ export function Results() {
   const [page, setPage] = useState(0);
   // 지도 영역 필터(idle 시 갱신). 지도 이동하면 페이징 초기화 후 해당 영역으로 재검색
   const [mapBounds, setMapBounds] = useState<Bounds | null>(null);
-  const condition = (mapBounds ? { mapBounds } : {}) as ListingSearchCondition;
+  const condition = buildCondition(appliedSearch, mapBounds);
   const listingsQuery = useQuery(
     getListingsOptions({
       query: { condition, pageRequest: { page, size: 20 } },
@@ -91,11 +135,31 @@ export function Results() {
   const onOpen = (c: ListingCardResponse) => {
     if (c.id != null) navigate(`/listings/${c.id}`);
   };
-  const onSearchPill = () => navigate('/');
+  const onSearchPill = (seg: SearchSegment) => {
+    setSearchSeg(seg);
+    setSearchExpanded(true);
+  };
 
   return (
     <div>
-      <Header mode="compact" search={search} onSearchPill={onSearchPill} />
+      <Header
+        mode="compact"
+        search={search}
+        onSearchPill={onSearchPill}
+        onFilter={() => setFilterOpen(true)}
+        searchExpanded={searchExpanded}
+        searchInitial={searchSeg}
+        onSearchChange={setSearch}
+        onSearchSubmit={() => {
+          setAppliedSearch(search);
+          // 새 검색은 지역/조건 기준 — 이전 지도 영역 필터 해제 후 지도를 결과로 이동
+          setMapBounds(null);
+          setPage(0);
+          setFocusSignal(n => n + 1);
+          setSearchExpanded(false);
+        }}
+        onSearchClose={() => setSearchExpanded(false)}
+      />
       <div style={{ display: 'flex' }}>
         {/* Listing list (페이지 전체가 스크롤 — 스크롤바는 화면 맨 우측) */}
         <div
@@ -162,9 +226,24 @@ export function Results() {
             hoveredId={hoveredId}
             likedIds={new Set(cards.filter(c => c.id != null && isLiked(c)).map(c => c.id!))}
             onBoundsChange={onBoundsChange}
+            focusSignal={focusSignal}
           />
         </div>
       </div>
+
+      <FilterModal
+        open={filterOpen}
+        value={search}
+        onChange={setSearch}
+        onClose={() => setFilterOpen(false)}
+        onApply={() => {
+          setAppliedSearch(search);
+          setPage(0);
+          setFilterOpen(false);
+        }}
+        onReset={() => setSearch({ ...search, priceMin: null, priceMax: null })}
+        resultCount={totalElements}
+      />
 
       <SaveToWishlistModal
         open={saveFor !== null}
