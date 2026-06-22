@@ -1,6 +1,7 @@
 package codesquad.airdnd.domain.listing.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import codesquad.airdnd.domain.listing.dto.query.MapBoundsFilter;
 import codesquad.airdnd.domain.listing.dto.query.PriceRangeFilter;
 import codesquad.airdnd.domain.listing.dto.query.RegionFilter;
 import codesquad.airdnd.domain.listing.dto.request.ListingSearchCondition;
+import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.entity.ListingState;
 import lombok.RequiredArgsConstructor;
 
@@ -62,6 +64,20 @@ public class ListingQueryRepositoryImpl implements ListingQueryRepository {
 			pageable,
 			countQuery::fetchOne
 		);
+	}
+
+	@Override
+	public Optional<Listing> findDetailById(Long listingId) {
+		Listing result = queryFactory
+			.selectFrom(listing)
+			.join(listing.host).fetchJoin()
+			.where(
+				listing.id.eq(listingId),
+				listing.state.eq(ListingState.APPROVED)
+			)
+			.fetchOne();
+
+		return Optional.ofNullable(result);
 	}
 
 	private BooleanExpression[] filters(ListingSearchCondition condition) {

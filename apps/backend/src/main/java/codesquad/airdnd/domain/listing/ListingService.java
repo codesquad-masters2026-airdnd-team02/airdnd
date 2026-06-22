@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import codesquad.airdnd.domain.listing.dto.request.ListingCreateRequest;
 import codesquad.airdnd.domain.listing.dto.response.HostListingSummary;
 import codesquad.airdnd.domain.listing.dto.response.HostListingsList;
-import codesquad.airdnd.domain.listing.dto.response.ListingDetail;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.repository.ListingRepository;
@@ -64,16 +63,6 @@ public class ListingService {
 						listing.getAddress().getSigunguCode())))
 				.toList()
 		);
-	}
-
-	@Transactional(readOnly = true)
-	public ListingDetail getListingDetail(Long hostId, Long listingsId) {
-		Member host = memberRepository.getReferenceById(hostId);
-		Listing listing = findById(listingsId);
-
-		validateOwner(listing, host);
-
-		return ListingDetail.from(listing);
 	}
 
 	public void activate(Long hostId, Long listingsId) {

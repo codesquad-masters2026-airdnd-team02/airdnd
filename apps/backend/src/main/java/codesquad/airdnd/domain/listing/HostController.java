@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import codesquad.airdnd.domain.listing.dto.request.ListingCreateRequest;
 import codesquad.airdnd.domain.listing.dto.response.HostListingsList;
-import codesquad.airdnd.domain.listing.dto.response.ListingDetail;
 import codesquad.airdnd.global.response.ApiResponse;
 import codesquad.airdnd.global.auth.CurrentMember;
 import codesquad.airdnd.global.auth.CurrentMemberInfo;
@@ -41,14 +40,6 @@ public class HostController {
 		return ResponseEntity.ok(ApiResponse.success(hostListings));
 	}
 
-	@GetMapping("/{listingsId}")
-	public ResponseEntity<ApiResponse<ListingDetail>> getHostListingDetail(
-		@CurrentMember CurrentMemberInfo memberInfo,
-		@PathVariable Long listingsId
-	) {
-		ListingDetail listingDetail = listingService.getListingDetail(memberInfo.id(), listingsId);
-		return ResponseEntity.ok(ApiResponse.success(listingDetail));
-	}
 
 	@PatchMapping("/{listingsId}/activate")
 	public ResponseEntity<ApiResponse<Void>> activateListing(

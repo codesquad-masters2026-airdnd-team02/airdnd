@@ -1,21 +1,7 @@
 import { Icon } from '../../../../shared/Icon';
 import { AMENITIES } from '../constants';
+import { amenityIcon } from '../../../../shared/amenities';
 import type { ListingFormData } from '../../../../types';
-
-const AMENITY_ICONS: Record<string, string> = {
-  '주방': 'utensils',
-  '무선 인터넷': 'wifi',
-  '에어컨': 'wind',
-  '헤어드라이어': 'wind',
-  '세탁기': 'washing-machine',
-  '무료 주차': 'car',
-  'TV': 'tv',
-  '수영장': 'waves',
-  '반려동물 동반 가능': 'paw-print',
-  '조식 포함': 'coffee',
-  '헬스장': 'dumbbell',
-  '엘리베이터': 'arrow-up-down',
-};
 
 export function AmenitiesStep({
   form,
@@ -54,7 +40,7 @@ export function AmenitiesStep({
                 transition: 'all 120ms ease',
               }}
             >
-              <Icon name={AMENITY_ICONS[a] ?? 'home'} size={26} color="var(--ink-1)" />
+              <Icon name={amenityIcon(a)} size={26} color="var(--ink-1)" />
               <span style={{ fontSize: 15, fontWeight: checked ? 700 : 500 }}>{a}</span>
             </button>
           );

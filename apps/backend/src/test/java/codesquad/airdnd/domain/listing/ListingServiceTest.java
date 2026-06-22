@@ -25,7 +25,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import codesquad.airdnd.domain.listing.dto.request.ListingCreateRequest;
 import codesquad.airdnd.domain.listing.dto.response.HostListingsList;
-import codesquad.airdnd.domain.listing.dto.response.ListingDetail;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Capacity;
 import codesquad.airdnd.domain.listing.entity.Listing;
@@ -124,7 +123,7 @@ class ListingServiceTest {
 			ListingCreateRequest request = new ListingCreateRequest(
 				"테스트 숙소", "도쿄도 신주쿠구 1", "101호", "16001",
 				35.6895, 139.6917,
-				RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
+				RoomType.ENTIRE_PLACE, 2, 1, 1, 1, fiveImages(), "설명",
 				BigDecimal.valueOf(50000), Set.of()
 			);
 
@@ -188,58 +187,6 @@ class ListingServiceTest {
 
 			// then
 			assertThat(result.listings().get(0).addressSummary()).isEqualTo("강남구, 서울");
-		}
-	}
-
-	// ===== getListingDetail =====
-
-	@Nested
-	@DisplayName("숙소 상세 조회 (getListingDetail)")
-	class GetListingDetail {
-
-		@Test
-		@DisplayName("본인 숙소 상세 조회 시 ListingDetail을 반환한다")
-		void returnsListingDetail() {
-			// given
-			Listing listing = approvedListing(host);
-			ReflectionTestUtils.setField(listing, "id", 1L);
-			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
-
-			// when
-			ListingDetail result = listingService.getListingDetail(HOST_ID, 1L);
-
-			// then
-			assertThat(result.listingId()).isEqualTo(1L);
-			assertThat(result.name()).isEqualTo("테스트 숙소");
-			assertThat(result.hostName()).isEqualTo("testHost");
-			assertThat(result.roomType()).isEqualTo(RoomType.ENTIRE_PLACE);
-		}
-
-		@Test
-		@DisplayName("본인 소유가 아닌 숙소 조회 시 NOT_LISTING_OWNER 예외가 발생한다")
-		void throwsExceptionWhenNotOwner() {
-			// given
-			Listing listing = approvedListing(host);
-			given(listingRepository.findById(1L)).willReturn(Optional.of(listing));
-
-			// when & then
-			assertThatThrownBy(() -> listingService.getListingDetail(OTHER_ID, 1L))
-				.isInstanceOf(BusinessException.class)
-				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.NOT_LISTING_OWNER);
-		}
-
-		@Test
-		@DisplayName("존재하지 않는 숙소 조회 시 INTERNAL_SERVER_ERROR 예외가 발생한다")
-		void throwsExceptionWhenListingNotFound() {
-			// given
-			given(listingRepository.findById(99L)).willReturn(Optional.empty());
-
-			// when & then
-			assertThatThrownBy(() -> listingService.getListingDetail(HOST_ID, 99L))
-				.isInstanceOf(BusinessException.class)
-				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -412,9 +359,13 @@ class ListingServiceTest {
 		return new ListingCreateRequest(
 			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
 			37.5012, 127.0396,
-			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
+			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, fiveImages(), "설명",
 			BigDecimal.valueOf(50000), Set.of()
 		);
+	}
+
+	private List<String> fiveImages() {
+		return List.of("img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg", "img5.jpg");
 	}
 
 	private Address seoulGangnamAddress() {

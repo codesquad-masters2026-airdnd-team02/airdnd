@@ -31,6 +31,13 @@ export interface MarkerHandle {
   remove(): void;
 }
 
+export interface CircleHandle {
+  /** 표시/숨김 */
+  setVisible(visible: boolean): void;
+  /** 지도에서 제거 */
+  remove(): void;
+}
+
 export interface MapController {
   /** 한 단계 확대(애니메이션) */
   zoomIn(): void;
@@ -48,6 +55,10 @@ export interface MapController {
   onIdle(cb: () => void): () => void;
   /** HTML 마커 추가. 핸들 반환 */
   addHtmlMarker(options: HtmlMarkerOptions): MarkerHandle;
+  /** 현재 줌 레벨(작을수록 확대) */
+  getLevel(): number;
+  /** 반경 원(미터) 추가. 핸들 반환 */
+  addCircle(center: Coord, radiusMeters: number): CircleHandle;
   /** 컨테이너 휠 줌을 애니메이션 줌으로 대체. 정리 함수 반환 */
   enableWheelZoom(): () => void;
 }
@@ -82,7 +93,7 @@ export function loadMapSdk(): Promise<void> {
 /** 지도 생성 + 컨트롤러 반환 */
 export async function createMap(
   container: HTMLElement,
-  opts: { center: Coord; level?: number },
+  opts: { center: Coord; level?: number; zoomable?: boolean },
 ): Promise<MapController> {
   await loadMapSdk();
 
@@ -90,6 +101,9 @@ export async function createMap(
     center: new window.kakao.maps.LatLng(opts.center.lat, opts.center.lng),
     level: opts.level ?? 6,
   });
+
+  // zoomable:false → 휠/더블클릭 줌 비활성(프로그램적 zoomIn/zoomOut은 동작)
+  if (opts.zoomable === false) map.setZoomable(false);
 
   const setLevel = (next: number) =>
     map.setLevel(Math.min(MAX_LEVEL, Math.max(MIN_LEVEL, next)), { animate: { duration: 200 } });
@@ -127,6 +141,23 @@ export async function createMap(
       return {
         setZIndex: z => overlay.setZIndex(z),
         remove: () => overlay.setMap(null),
+      };
+    },
+    getLevel: () => map.getLevel(),
+    addCircle: (center, radiusMeters) => {
+      const circle = new window.kakao.maps.Circle({
+        center: new window.kakao.maps.LatLng(center.lat, center.lng),
+        radius: radiusMeters,
+        strokeWeight: 0,
+        strokeColor: '#222222',
+        strokeOpacity: 0,
+        fillColor: '#222222',
+        fillOpacity: 0.18,
+      });
+      circle.setMap(map);
+      return {
+        setVisible: visible => circle.setMap(visible ? map : null),
+        remove: () => circle.setMap(null),
       };
     },
     enableWheelZoom: () => {

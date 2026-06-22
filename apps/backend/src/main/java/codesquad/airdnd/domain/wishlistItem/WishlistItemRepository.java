@@ -20,11 +20,10 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Wish
 
     Optional<WishlistItem> findByWishlist_IdAndListing_Id(Long wishlistId, Long listingId);
 
-	List<WishlistItem> findByListingIdIn(Collection<Long> listing_id);
-
-	default Set<Long> findItemsByListingIds(List<Long> listingIds) {
-		return findByListingIdIn(listingIds).stream()
-			.map(item -> item.getListing().getId())
-			.collect(Collectors.toSet());
-	}
+	@Query("""
+      	select wi.listing.id
+     	from WishlistItem wi
+    	where wi.wishlist.member.id = :memberId and wi.listing.id in :listingIds
+	""")
+	Set<Long> findWishlistedListingIds(Long memberId, Collection<Long> listingIds);
 }

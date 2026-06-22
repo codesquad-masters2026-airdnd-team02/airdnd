@@ -28,6 +28,10 @@ declare global {
     setMap(map: KakaoMap | null): void;
   }
 
+  interface KakaoCircle {
+    setMap(map: KakaoMap | null): void;
+  }
+
   interface Window {
     kakao: {
       /** 우편번호 서비스 */
@@ -61,6 +65,16 @@ declare global {
           yAnchor?: number;
           zIndex?: number;
         }) => KakaoCustomOverlay;
+        Circle: new (options: {
+          center: KakaoLatLng;
+          radius: number;
+          strokeWeight?: number;
+          strokeColor?: string;
+          strokeOpacity?: number;
+          strokeStyle?: string;
+          fillColor?: string;
+          fillOpacity?: number;
+        }) => KakaoCircle;
         event: {
           addListener(target: unknown, type: string, callback: () => void): void;
           removeListener(target: unknown, type: string, callback: () => void): void;

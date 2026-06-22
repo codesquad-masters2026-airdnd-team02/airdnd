@@ -49,6 +49,8 @@ import {
   Dumbbell,
   ArrowUpDown,
   SlidersHorizontal,
+  Grip,
+  CalendarX,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -104,6 +106,8 @@ const ICONS: Record<string, LucideIcon> = {
   dumbbell: Dumbbell,
   'arrow-up-down': ArrowUpDown,
   sliders: SlidersHorizontal,
+  grip: Grip,
+  'calendar-x': CalendarX,
 };
 
 interface IconProps {
