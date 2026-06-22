@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import { LoginModal } from './LoginModal';
 import { useAppState } from '../shared/AppState';
+import { useToast } from '../shared/Toast';
 import { API_BASE } from '../shared/api/config';
 import { SearchBar, type SearchSegment } from './SearchBar';
 import logoSvg from '../assets/logo.svg';
@@ -37,6 +38,7 @@ export function Header({
 }: HeaderProps) {
   const navigate = useNavigate();
   const { isLoggedIn, setLoggedIn } = useAppState();
+  const toast = useToast();
   const onLogo = () => navigate('/');
   const onHosting = () => navigate('/host');
   const go = (path: string) => {
@@ -51,6 +53,7 @@ export function Header({
       /* 네트워크 실패해도 클라이언트 상태는 비운다 */
     }
     setLoggedIn(false);
+    toast.show("로그아웃되었어요");
     navigate('/');
   };
   const compact = mode === 'compact';

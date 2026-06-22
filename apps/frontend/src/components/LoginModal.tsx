@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import { useAppState } from '../shared/AppState';
+import { useToast } from '../shared/Toast';
 import { API_BASE } from '../shared/api/config';
 
 interface LoginModalProps {
@@ -16,6 +17,7 @@ interface LoginModalProps {
  */
 export function LoginModal({ open, onClose }: LoginModalProps) {
   const navigate = useNavigate();
+  const toast = useToast();
   const { setLoggedIn } = useAppState();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -61,6 +63,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       });
       if (res.status === 200) {
         setLoggedIn(true);
+        toast.success("로그인되었어요");
         onClose();
         navigate('/');
       } else {

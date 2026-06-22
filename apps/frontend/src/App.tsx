@@ -18,6 +18,7 @@ import { SignupPage } from './pages/auth/SignupPage';
 import { PaymentSuccess } from './pages/payment/PaymentSuccess';
 import { PaymentFail } from './pages/payment/PaymentFail';
 import { AppStateProvider } from './shared/AppState';
+import { ToastProvider } from './shared/Toast';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -31,6 +32,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppStateProvider>
+        <ToastProvider>
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="/payments/fail" element={<PaymentFail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </ToastProvider>
       </AppStateProvider>
     </BrowserRouter>
   );
