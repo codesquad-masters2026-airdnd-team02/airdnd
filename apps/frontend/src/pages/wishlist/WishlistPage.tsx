@@ -5,6 +5,7 @@ import { Icon } from '../../shared/Icon';
 import { ConfirmDeleteWishlistModal } from '../../components/ConfirmDeleteWishlistModal';
 import { deleteWishlist, ApiError } from '../../shared/api/wishlist';
 import { API_BASE } from '../../shared/api/config';
+import { refreshingFetch } from '../../shared/api/http';
 import type { WishlistSummary } from '../../types';
 
 export function WishlistPage() {
@@ -20,7 +21,7 @@ export function WishlistPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/wishlists`, { credentials: 'include' })
+    refreshingFetch(`${API_BASE}/api/wishlists`, { credentials: 'include' })
       .then(res => res.json())
       .then(json => setWishlists(json.data ?? []))
       .catch(() => {})
