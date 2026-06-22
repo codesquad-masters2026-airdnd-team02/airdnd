@@ -123,7 +123,8 @@ class ListingServiceTest {
 			ListingCreateRequest request = new ListingCreateRequest(
 				"테스트 숙소", "도쿄도 신주쿠구 1", "101호", "16001",
 				35.6895, 139.6917,
-				RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
+				RoomType.ENTIRE_PLACE, 2, 1, 1, 1,
+				List.of("img1", "img2", "img3", "img4", "img5"), "설명",
 				BigDecimal.valueOf(50000), Set.of()
 			);
 
@@ -229,7 +230,7 @@ class ListingServiceTest {
 		}
 
 		@Test
-		@DisplayName("존재하지 않는 숙소 조회 시 INTERNAL_SERVER_ERROR 예외가 발생한다")
+		@DisplayName("존재하지 않는 숙소 조회 시 LISTING_NOT_FOUND 예외가 발생한다")
 		void throwsExceptionWhenListingNotFound() {
 			// given
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
@@ -238,7 +239,7 @@ class ListingServiceTest {
 			assertThatThrownBy(() -> listingService.getListingDetail(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
+				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
 		}
 	}
 
@@ -305,7 +306,7 @@ class ListingServiceTest {
 		}
 
 		@Test
-		@DisplayName("존재하지 않는 숙소 활성화 시 INTERNAL_SERVER_ERROR 예외가 발생한다")
+		@DisplayName("존재하지 않는 숙소 활성화 시 LISTING_NOT_FOUND 예외가 발생한다")
 		void throwsExceptionWhenListingNotFound() {
 			// given
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
@@ -314,7 +315,7 @@ class ListingServiceTest {
 			assertThatThrownBy(() -> listingService.activate(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
+				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
 		}
 	}
 
@@ -367,7 +368,7 @@ class ListingServiceTest {
 		}
 
 		@Test
-		@DisplayName("존재하지 않는 숙소 비활성화 시 INTERNAL_SERVER_ERROR 예외가 발생한다")
+		@DisplayName("존재하지 않는 숙소 비활성화 시 LISTING_NOT_FOUND 예외가 발생한다")
 		void throwsExceptionWhenListingNotFound() {
 			// given
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
@@ -376,7 +377,7 @@ class ListingServiceTest {
 			assertThatThrownBy(() -> listingService.deactivate(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
+				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
 		}
 	}
 
@@ -411,7 +412,8 @@ class ListingServiceTest {
 		return new ListingCreateRequest(
 			"테스트 숙소", "서울 강남구 테헤란로 152", "101호", "06236",
 			37.5012, 127.0396,
-			RoomType.ENTIRE_PLACE, 2, 1, 1, 1, "설명",
+			RoomType.ENTIRE_PLACE, 2, 1, 1, 1,
+			List.of("img1", "img2", "img3", "img4", "img5"), "설명",
 			BigDecimal.valueOf(50000), Set.of()
 		);
 	}
