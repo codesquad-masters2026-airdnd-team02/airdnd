@@ -11,13 +11,6 @@ import {
 import { HOST_STUB } from '../../shared/api/hostMapping';
 import type { HostListing, ListingState } from '../../types';
 
-import listing1 from '../../assets/listing-1.png';
-import listing2 from '../../assets/listing-2.png';
-import listing3 from '../../assets/listing-3.png';
-import listing4 from '../../assets/listing-4.png';
-
-const FALLBACK_IMAGES = [listing1, listing2, listing3, listing4];
-
 const STATE_BADGE: Record<ListingState, { text: string; bg: string }> = {
   APPROVED: { text: '활성',    bg: 'rgba(17,137,23,0.9)' },
   INACTIVE: { text: '비활성',  bg: 'rgba(0,0,0,0.5)' },
@@ -115,13 +108,13 @@ export function HostDashboard() {
               gridTemplateColumns: 'repeat(3, 1fr)',
               gap: 24,
             }}>
-              {listings.map((l, i) => (
+              {listings.map((l) => (
                 <ListingCard
                   key={l.id}
                   listing={l}
-                  fallbackImg={FALLBACK_IMAGES[i % 4]}
                   onEdit={() => onEdit(l)}
                   onToggleActive={() => onToggleActive(l.id)}
+                  onOpen={() => navigate(`/listings/${l.id}`)}
                 />
               ))}
             </div>
@@ -134,18 +127,20 @@ export function HostDashboard() {
 
 function ListingCard({
   listing: l,
-  fallbackImg,
   onEdit,
   onToggleActive,
+  onOpen,
 }: {
   listing: HostListing;
-  fallbackImg: string;
   onEdit: () => void;
   onToggleActive: () => void;
+  onOpen: () => void;
 }) {
-  const imgSrc = l.imageUrls[0] || fallbackImg;
+  const imgSrc = l.imageUrls[0];
   const badge = STATE_BADGE[l.state ?? (l.active ? 'APPROVED' : 'INACTIVE')];
   const canToggle = l.state === 'APPROVED' || l.state === 'INACTIVE' || l.state == null;
+  // 검토 중(PENDING)·거절(REJECTED)은 상세 진입 불가
+  const canOpen = l.state !== 'PENDING' && l.state !== 'REJECTED';
 
   return (
     <div style={{
@@ -160,14 +155,18 @@ function ListingCard({
       onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
       onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow-sm)')}
     >
-      {/* Image */}
-      <div style={{ position: 'relative', height: 200 }}>
-        <img
-          src={imgSrc}
-          alt={l.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          onError={e => { (e.currentTarget as HTMLImageElement).src = fallbackImg; }}
-        />
+      {/* Image — 클릭 시 상세 이동(검토 중 제외) */}
+      <div
+        onClick={canOpen ? onOpen : undefined}
+        style={{ position: 'relative', height: 200, cursor: canOpen ? 'pointer' : 'default', background: 'var(--surface-alt-2)' }}
+      >
+        {imgSrc && (
+          <img
+            src={imgSrc}
+            alt={l.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        )}
         {/* State badge */}
         <span style={{
           position: 'absolute',

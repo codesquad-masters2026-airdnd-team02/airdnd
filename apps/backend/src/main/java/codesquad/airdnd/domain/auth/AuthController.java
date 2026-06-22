@@ -3,7 +3,7 @@ package codesquad.airdnd.domain.auth;
 import codesquad.airdnd.domain.auth.dto.LoginRequest;
 import codesquad.airdnd.domain.auth.dto.SessionResponse;
 import codesquad.airdnd.domain.auth.dto.SignupRequest;
-import codesquad.airdnd.global.ApiResponse;
+import codesquad.airdnd.global.response.ApiResponse;
 import codesquad.airdnd.global.auth.security.AirdndUserDetails;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;

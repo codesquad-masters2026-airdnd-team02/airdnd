@@ -10,7 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import codesquad.airdnd.domain.listing.ListingRepository;
+import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
