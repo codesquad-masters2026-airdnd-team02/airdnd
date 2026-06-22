@@ -21,6 +21,7 @@ import codesquad.airdnd.domain.listing.entity.Capacity;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.entity.ListingImage;
 import codesquad.airdnd.domain.listing.entity.RoomType;
+import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.member.Member;
 
 @DataJpaTest

@@ -11,7 +11,7 @@ import { startCardPayment } from '../../shared/payment/toss';
 import { Icon } from '../../shared/Icon';
 import { won } from '../../shared/utils';
 import { nightsOf } from './utils';
-import { LISTINGS } from '../Results';
+import { LISTINGS } from '../../shared/demoListings';
 import { useAppState } from '../../shared/AppState';
 import tossLogo from '../../assets/toss-logo.png';
 import gpayLogo from '../../assets/gpay-logo.png';

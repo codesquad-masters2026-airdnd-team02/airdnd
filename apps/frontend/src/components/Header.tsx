@@ -1,16 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
+import { SearchBar, type SearchSegment } from './SearchBar';
 import logoSvg from '../assets/logo.svg';
 import type { SearchState } from '../types';
 
 interface HeaderProps {
   mode?: 'full' | 'compact' | 'minimal';
   search?: SearchState;
-  onSearchPill?: () => void;
+  // pill의 어느 구역을 눌렀는지 전달(해당 패널 열기)
+  onSearchPill?: (seg: SearchSegment) => void;
+  // 검색바 옆 필터 버튼
+  onFilter?: () => void;
+  // compact 전용: pill이 검색바로 인라인 확장된 상태
+  searchExpanded?: boolean;
+  // 확장 시 바로 열어둘 세그먼트
+  searchInitial?: SearchSegment;
+  onSearchChange?: (s: SearchState) => void;
+  onSearchSubmit?: () => void;
+  onSearchClose?: () => void;
 }
 
-export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
+export function Header({
+  mode = 'full',
+  search,
+  onSearchPill,
+  onFilter,
+  searchExpanded = false,
+  searchInitial,
+  onSearchChange,
+  onSearchSubmit,
+  onSearchClose,
+}: HeaderProps) {
   const navigate = useNavigate();
   const onLogo = () => navigate('/');
   const onHosting = () => navigate('/host');
@@ -23,6 +44,19 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // 검색바 인라인 확장: 닫힐 때 collapse 애니메이션 후 언마운트
+  const [showSearch, setShowSearch] = useState(false);
+  const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    if (searchExpanded) {
+      setShowSearch(true);
+      setClosing(false);
+    } else {
+      setClosing((prev) => (showSearch ? true : prev));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchExpanded]);
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -33,22 +67,91 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // showSearch: 검색바 렌더 여부(닫힘 애니메이션 동안 유지). expanded: 레이아웃 확장 상태
+  const expanded = compact && showSearch;
+
   return (
-    <header
-      style={{
-        position: solid ? 'sticky' : 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 40,
-        height: solid ? 80 : 94,
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 48px',
-        background: solid ? 'var(--surface)' : 'transparent',
-        borderBottom: solid ? '1px solid var(--line)' : 'none',
-      }}
-    >
+    <>
+      {/* 확장 시 뒤 콘텐츠를 살짝 어둡게 — 검색바 강조. 바깥 클릭 시 접힘 */}
+      {expanded && (
+        <div
+          className={closing ? 'search-dim-exit' : 'search-dim-enter'}
+          onMouseDown={onSearchClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 30,
+            background: 'rgba(0,0,0,0.18)',
+          }}
+        />
+      )}
+      {/* 흰색 헤더 패널 — 검색바 높이만큼 아래로 확장(오버레이, 콘텐츠 안 밀림) */}
+      {expanded && (
+        <div
+          className={closing ? 'header-panel-collapse' : 'header-panel-expand'}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 35,
+            background: 'var(--surface)',
+            borderBottom: '1px solid var(--line)',
+            boxShadow: '0 6px 16px rgba(0,0,0,0.06)',
+          }}
+        />
+      )}
+      {/* 검색바 오버레이 — flow 밖(fixed)이라 아래 콘텐츠를 밀지 않음 */}
+      {expanded && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 12,
+            left: 0,
+            right: 0,
+            zIndex: 45,
+            display: 'flex',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className={closing ? 'searchbar-collapse' : 'searchbar-expand'}
+            style={{ pointerEvents: 'auto' }}
+            onAnimationEnd={(e) => {
+              // 자식(팝오버) 애니메이션 버블 무시 — wrapper 자신만 처리
+              if (e.target !== e.currentTarget) return;
+              if (closing) {
+                setShowSearch(false);
+                setClosing(false);
+              }
+            }}
+          >
+            <SearchBar
+              value={search!}
+              onChange={onSearchChange!}
+              onSearch={onSearchSubmit!}
+              fluid
+              initialActive={searchInitial}
+            />
+          </div>
+        </div>
+      )}
+      <header
+        style={{
+          position: solid ? 'sticky' : 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 40,
+          height: solid ? 80 : 94,
+          padding: '0 48px',
+          display: 'flex',
+          alignItems: 'center',
+          background: solid ? 'var(--surface)' : 'transparent',
+          borderBottom: solid && !expanded ? '1px solid var(--line)' : 'none',
+        }}
+      >
       {/* Left: wordmark */}
       <div style={{ flex: 1 }}>
         <img
@@ -59,16 +162,18 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
         />
       </div>
 
-      {/* Center: search pill (compact) / nav (full) / 없음 (minimal) */}
-      {compact ? (
+      {/* Center: search pill (compact) / nav (full) / 없음 (minimal). 펼침 시 pill 숨김(검색바는 오버레이) */}
+      {compact && expanded ? (
+        <div style={{ flex: 'none' }} />
+      ) : compact ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <div
-          onClick={onSearchPill}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 0,
             height: 48,
-            padding: '0 8px 0 20px',
+            padding: '0 8px 0 8px',
             borderRadius: 60,
             flexShrink: 0,
             border: '1px solid var(--line-strong)',
@@ -77,18 +182,25 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
             background: '#fff',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap' }}>
-            {search?.dates || '날짜 입력'}
-          </span>
+          <PillSection seg="dest" onClick={onSearchPill}>
+            <span style={{ fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', color: search?.destination ? 'var(--ink-1)' : 'var(--ink-3)' }}>
+              {search?.destination || '지역 검색'}
+            </span>
+          </PillSection>
           <PillDivider />
-          <span style={{ fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap' }}>
-            {search?.priceLabel || '금액대'}
-          </span>
+          <PillSection seg="date" onClick={onSearchPill}>
+            <span style={{ fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', color: search?.dates ? 'var(--ink-1)' : 'var(--ink-3)' }}>
+              {search?.dates || '날짜 입력'}
+            </span>
+          </PillSection>
           <PillDivider />
-          <span style={{ fontSize: 14, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
-            {search?.guestLabel || '게스트 추가'}
-          </span>
+          <PillSection seg="guest" onClick={onSearchPill}>
+            <span style={{ fontSize: 14, color: search?.guestLabel ? 'var(--ink-1)' : 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+              {search?.guestLabel || '인원 추가'}
+            </span>
+          </PillSection>
           <span
+            onClick={() => onSearchPill?.('dest')}
             style={{
               marginLeft: 14,
               width: 34,
@@ -103,6 +215,33 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
           >
             <Icon name="search" size={16} color="#fff" />
           </span>
+        </div>
+        {/* 필터 버튼 */}
+        <button
+          onClick={onFilter}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            height: 40,
+            padding: '0 14px',
+            borderRadius: 60,
+            flexShrink: 0,
+            border: '1px solid var(--line-strong)',
+            background: '#fff',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--ink-1)',
+            transition: 'background 120ms ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-alt-2)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+        >
+          <Icon name="sliders" size={15} color="var(--ink-1)" />
+          필터
+        </button>
         </div>
       ) : mode === 'full' ? (
         <nav
@@ -213,7 +352,8 @@ export function Header({ mode = 'full', search, onSearchPill }: HeaderProps) {
           )}
         </div>
       </div>
-    </header>
+      </header>
+    </>
   );
 }
 
@@ -272,6 +412,34 @@ function MenuItem({
           {badge}
         </span>
       )}
+    </div>
+  );
+}
+
+function PillSection({
+  seg,
+  onClick,
+  children,
+}: {
+  seg: SearchSegment;
+  onClick?: (seg: SearchSegment) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      onClick={() => onClick?.(seg)}
+      style={{
+        padding: '0 12px',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        borderRadius: 60,
+        transition: 'background 120ms ease',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-alt-2)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {children}
     </div>
   );
 }
