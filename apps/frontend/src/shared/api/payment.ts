@@ -1,4 +1,5 @@
 import { API_BASE as BASE } from './config';
+import { refreshingFetch } from './http';
 
 /** POST /api/payments/{resId}/prepare 가 돌려주는 결제 준비 정보.
  *  orderId/orderName/successUrl/failUrl/amount 모두 서버가 확정한 값으로, 그대로 토스에 넘긴다. */
@@ -48,8 +49,9 @@ export const UNUSABLE_RESERVATION_CODES = new Set(['RESERVATION_006', 'RESERVATI
 
 /** 예약(resId)에 대한 결제를 준비한다. 예약은 PENDING 상태여야 하고, 인증 회원(스텁: id=1)의 것이어야 한다. */
 export async function preparePayment(reservationId: number): Promise<PaymentPrepareResponse> {
-  const res = await fetch(`${BASE}/api/payments/${reservationId}/prepare`, {
+  const res = await refreshingFetch(`${BASE}/api/payments/${reservationId}/prepare`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
   });
 
@@ -70,17 +72,17 @@ export async function preparePayment(reservationId: number): Promise<PaymentPrep
  * POST /api/payments/confirm — 토스 결제 승인.
  * amount는 반드시 JSON 숫자로 전송한다(URL 문자열 그대로 보내지 말 것).
  *
- * TODO: 실제 세션 인증 도입 시 fetch에 `credentials: 'include'`를 추가하고,
- *       백엔드 WebConfig의 `allowCredentials(true)`와 한 쌍으로 맞춘다(prepare도 동일).
- *       지금은 LoginArgumentResolver가 회원을 고정(id=1)해 세션이 쓰이지 않으므로 생략.
+ * 인증은 쿠키의 JWT 액세스 토큰으로 처리한다(credentials: 'include', 백엔드 allowCredentials(true)와 한 쌍).
+ * 액세스 토큰 만료 시 refreshingFetch 가 401을 감지해 자동 재발급 후 재시도한다.
  */
 export async function confirmPayment(params: {
   orderId: string;
   paymentKey: string;
   amount: number;
 }): Promise<PaymentConfirmResult> {
-  const res = await fetch(`${BASE}/api/payments/confirm`, {
+  const res = await refreshingFetch(`${BASE}/api/payments/confirm`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });

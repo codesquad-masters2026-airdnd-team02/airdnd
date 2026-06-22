@@ -1,5 +1,6 @@
 import type { WishlistSummary } from '../../types';
 import { API_BASE as BASE } from './config';
+import { refreshingFetch } from './http';
 
 /** 백엔드 ApiResponse 봉투 */
 interface Envelope<T> {
@@ -23,7 +24,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await refreshingFetch(`${BASE}${path}`, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     ...init,
