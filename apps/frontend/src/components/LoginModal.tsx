@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import { useAppState } from '../shared/AppState';
+import { API_BASE } from '../shared/api/config';
 
 interface LoginModalProps {
   open: boolean;
@@ -50,10 +51,12 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('http://localhost:8080/login', {
+      // 세션 폼 로그인(/login) → JWT 발급 REST 로그인(/api/auth/login, JSON)으로 전환.
+      // 토큰은 httpOnly 쿠키로 내려오므로 credentials:'include'만 있으면 별도 토큰 저장이 필요 없다.
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ userId: username.trim(), password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: username.trim(), password }),
         credentials: 'include',
       });
       if (res.status === 200) {
@@ -224,7 +227,13 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <SocialButton label="네이버로 로그인">
             <span style={{ color: '#03C75A', fontSize: 22, fontWeight: 900 }}>N</span>
           </SocialButton>
-          <SocialButton label="구글로 로그인">
+          <SocialButton
+            label="구글로 로그인"
+            onClick={() => {
+              // 백엔드 OAuth2 인가 엔드포인트로 이동 → Google 로그인 → 백엔드 콜백에서 JWT 쿠키 발급 후 프론트로 복귀
+              window.location.href = `${API_BASE}/oauth2/authorization/google`;
+            }}
+          >
             <GoogleG />
           </SocialButton>
           <SocialButton label="애플로 로그인">
@@ -273,10 +282,11 @@ function fieldStyle(focused: boolean, top: boolean) {
   } as const;
 }
 
-function SocialButton({ label, children }: { label: string; children: React.ReactNode }) {
+function SocialButton({ label, children, onClick }: { label: string; children: React.ReactNode; onClick?: () => void }) {
   return (
     <button
       aria-label={label}
+      onClick={onClick}
       style={{
         width: 64,
         height: 56,
