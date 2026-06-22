@@ -222,11 +222,8 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
         </div>
 
-        {/* 소셜 로그인 */}
+        {/* 구글 로그인 */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-          <SocialButton label="네이버로 로그인">
-            <span style={{ color: '#03C75A', fontSize: 22, fontWeight: 900 }}>N</span>
-          </SocialButton>
           <SocialButton
             label="구글로 로그인"
             onClick={() => {
@@ -235,9 +232,6 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             }}
           >
             <GoogleG />
-          </SocialButton>
-          <SocialButton label="애플로 로그인">
-            <AppleLogo />
           </SocialButton>
         </div>
 
@@ -329,10 +323,3 @@ function GoogleG() {
   );
 }
 
-function AppleLogo() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="#000" aria-hidden>
-      <path d="M16.365 1.43c0 1.14-.42 2.2-1.12 2.98-.84.94-2.2 1.66-3.32 1.57-.14-1.13.46-2.32 1.12-3.05.74-.83 2.04-1.46 3.32-1.5zM20.6 17.06c-.6 1.38-.88 1.99-1.65 3.21-1.07 1.7-2.58 3.82-4.46 3.83-1.66.02-2.09-1.08-4.35-1.07-2.26.01-2.73 1.09-4.4 1.07-1.88-.02-3.31-1.92-4.38-3.62C-1.13 17.07-1.41 11.4 1.05 8.4 2.21 6.99 3.99 6.1 5.7 6.1c1.74 0 2.83 1.08 4.27 1.08 1.4 0 2.25-1.08 4.27-1.08 1.52 0 3.13.83 4.28 2.26-3.76 2.06-3.15 7.43.08 8.7z" />
-    </svg>
-  );
-}
