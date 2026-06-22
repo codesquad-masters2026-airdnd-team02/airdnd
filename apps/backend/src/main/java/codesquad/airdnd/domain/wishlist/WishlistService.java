@@ -33,7 +33,7 @@ public class WishlistService {
     private final WishlistItemRepository wishlistItemRepository;
 
     public List<WishlistResponse> getWishlists(){
-        Member member = authUtils.getCurrentMember(); // TODO: Stub
+        Member member = authUtils.getCurrentMember();
         return wishlistRepository.findWishlistsByMember(member.getId());
     }
 
