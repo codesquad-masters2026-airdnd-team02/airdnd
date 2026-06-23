@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { client } from './shared/api/generated/client.gen'
 import './index.css'
 import App from './App.tsx'
+import { refreshingFetch } from './shared/api/http'
 
 // OpenAPI가 @ModelAttribute(condition/pageRequest)를 중첩 객체로 노출하지만,
 // 서버는 flat 쿼리(size=, cursor=)를 기대한다. 객체명 prefix 없이 한 단계 펼쳐 직렬화.
@@ -31,10 +32,15 @@ function flatQuerySerializer(query: Record<string, unknown>): string {
   return sp.toString()
 }
 
-// 생성 클라이언트 baseUrl을 env로 통일(재생성 전에도 즉시 적용).
-// 재생성 후에는 openapi-ts runtimeConfigPath(hey-api.ts)가 동일하게 보장.
+// 자동생성 API 클라이언트 런타임 설정 (client.gen.ts 는 재생성 시 덮어써지므로 여기서 덮어쓴다).
+// - baseUrl: env로 통일. WSL2에선 브라우저가 localhost 로만 백엔드에 닿으므로 127.0.0.1 은 불가.
+// - credentials: 모든 요청에 세션 쿠키 동반(SameSite=Lax).
+// - fetch: 401(액세스 만료) 시 자동 재발급+재시도하는 래퍼 → host/listing 등 생성 클라이언트 경로 전반에 적용.
+// - querySerializer: @ModelAttribute 바인딩용 flat 쿼리 직렬화.
 client.setConfig({
   baseUrl: import.meta.env.VITE_API_BASE_URL,
+  credentials: 'include',
+  fetch: refreshingFetch,
   querySerializer: flatQuerySerializer,
 })
 

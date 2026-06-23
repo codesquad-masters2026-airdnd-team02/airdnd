@@ -33,10 +33,11 @@ public class WishlistService {
     private final WishlistItemRepository wishlistItemRepository;
 
     public List<WishlistResponse> getWishlists(){
-        Member member = authUtils.getCurrentMember(); // TODO: Stub
+        Member member = authUtils.getCurrentMember();
         return wishlistRepository.findWishlistsByMember(member.getId());
     }
 
+    // TODO: 반환 DTO 규격대로 한 번에 가져와 이미지만 파싱한다면?
     public WishlistDetailResponse getWishlist(Long wishlistId){
         List<WishlistDetailQueryResult> detailList = wishlistRepository.findDetail(wishlistId);
 

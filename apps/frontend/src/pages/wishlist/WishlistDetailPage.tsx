@@ -14,6 +14,7 @@ import {
   ApiError,
 } from '../../shared/api/wishlist';
 import { API_BASE } from '../../shared/api/config';
+import { refreshingFetch } from '../../shared/api/http';
 import type { WishlistDetail, WishlistDetailItem } from '../../types';
 
 export function WishlistDetailPage() {
@@ -45,7 +46,7 @@ export function WishlistDetailPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE}/api/wishlists/${wishlistId}`)
+    refreshingFetch(`${API_BASE}/api/wishlists/${wishlistId}`, { credentials: 'include' })
       .then(res => res.json())
       .then(json => setDetail(json.data ?? null))
       .catch(() => {})
