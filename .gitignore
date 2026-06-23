@@ -55,4 +55,6 @@ uploads/
 docker/
 
 # 테스트용 sql 파일
+seed/
 seed.sql
+seed-listings.sql
