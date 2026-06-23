@@ -130,4 +130,8 @@ public class Reservation {
     public void confirm(){
         this.state = ReservationState.CONFIRMED;
     }
+
+	public boolean isCompleted() {
+		return state == ReservationState.COMPLETED;
+	}
 }

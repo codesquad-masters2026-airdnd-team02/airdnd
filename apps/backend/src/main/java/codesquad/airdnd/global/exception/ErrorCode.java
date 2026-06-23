@@ -55,6 +55,9 @@ public enum ErrorCode {
     // ===== Review =====
     INVALID_REVIEW_RATING(HttpStatus.BAD_REQUEST, "REVIEW_001", "별점은 1~5 사이여야 합니다."),
     NOT_FOUND_REVIEW_SUMMARY(HttpStatus.NOT_FOUND, "REVIEW_002", "리뷰 통계를 찾을 수 없습니다."),
+    REVIEW_NOT_RESERVATION_OWNER(HttpStatus.FORBIDDEN, "REVIEW_003", "예약한 본인만 리뷰를 작성할 수 있습니다."),
+    REVIEW_RESERVATION_NOT_COMPLETED(HttpStatus.CONFLICT, "REVIEW_004", "완료된 예약만 리뷰를 작성할 수 있습니다."),
+    DUPLICATE_REVIEW(HttpStatus.CONFLICT, "REVIEW_005", "이미 작성한 리뷰가 있습니다."),
     ;
 	private final HttpStatus httpStatus;
 	private final String code;
