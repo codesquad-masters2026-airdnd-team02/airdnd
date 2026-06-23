@@ -19,6 +19,8 @@ import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.repository.ListingImageRepository;
 import codesquad.airdnd.domain.listing.repository.ListingQueryRepository;
+import codesquad.airdnd.domain.review.entity.ListingReviewSummary;
+import codesquad.airdnd.domain.review.repository.ListingReviewSummaryRepository;
 import codesquad.airdnd.domain.wishlistItem.WishlistItemRepository;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
@@ -34,6 +36,7 @@ public class ListingSearchService {
 	private final ListingImageRepository imageRepository;
 	private final WishlistItemRepository wishlistItemRepository;
 	private final RegionCodeService regionCodeService;
+	private final ListingReviewSummaryRepository reviewSummaryRepository;
 
 	public PageResponse<ListingCardResponse> search(
 		Long guestId, ListingSearchCondition condition, ListingPageRequest pageRequest
@@ -70,13 +73,20 @@ public class ListingSearchService {
 
 		Long wishlistId = guestId == null ? null : wishlistItemRepository.findWishlistId(guestId, listingsId);
 
-		// TODO: 리뷰 도메인 구현 후 실제 평점/리뷰 수로 교체
+		ReviewSummary reviewSummary = reviewSummaryRepository.findById(listingsId)
+			.map(this::toReviewSummary)
+			.orElseGet(() -> new ReviewSummary(0, null));
+
 		return ListingDetailResponse.from(
 			listing,
-			new ReviewSummary(0, null),
+			reviewSummary,
 			addressSummary,
                 wishlistId
 		);
+	}
+
+	private ReviewSummary toReviewSummary(ListingReviewSummary summary) {
+		return new ReviewSummary(summary.getReviewCount(), summary.getAverageRating());
 	}
 
 }
