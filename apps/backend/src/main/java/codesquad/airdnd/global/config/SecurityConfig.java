@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -65,15 +66,19 @@ public class SecurityConfig {
                 // 세션을 만들지 않는다(JWT로 무상태 인증).
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 접근 가능한 엔드포인트
+                        // auth 도메인 전체 + OAuth2 콜백 + Swagger (인증 없이 접근)
+                        // TODO: 배포 시 Swagger(/v3/api-docs, /swagger-ui)는 prod 프로파일에서 비노출 처리 — 별도 배포 브랜치에서 작업
                         .requestMatchers(
-                                "/api/auth/login", "/api/auth/signup",
-                                "/api/auth/session", "/api/auth/refresh", "/api/auth/logout",
+                                "/api/auth/**",
                                 // OAuth2 인가 요청/콜백 엔드포인트
                                 "/oauth2/**", "/login/oauth2/**",
                                 // Swagger / OpenAPI
                                 "/v3/api-docs/**", "/swagger-ui/**"
                         ).permitAll()
+                        // 비회원도 숙소 목록/상세는 조회 가능(GET 한정).
+                        // GET 으로 스코프하지 않으면 POST /api/listings/{id}/reservations(예약 생성)까지 열리므로 주의.
+                        .requestMatchers(HttpMethod.GET, "/api/listings/**").permitAll()
+                        // 결제/예약/위시리스트/호스트 등 나머지는 모두 로그인 필요
                         .anyRequest().authenticated()
                 )
                 // 소셜 로그인: 사용자 매핑 서비스 + 성공/실패 핸들러 연결
