@@ -52,7 +52,7 @@ class ListingControllerTest {
 			new Capacity(2, 1, 1, 1), Set.of(),
 			new ReviewSummary(0, null),
 			new HostInfo(1L, "testHost", "profile.png"),
-			true
+			7L
 		);
 		given(listingSearchService.getListingDetail(anyLong(), eq(1L))).willReturn(detail);
 
@@ -62,7 +62,7 @@ class ListingControllerTest {
 			.andExpect(jsonPath("$.data.listingId").value(1L))
 			.andExpect(jsonPath("$.data.location").value("강남구, 서울"))
 			.andExpect(jsonPath("$.data.host.name").value("testHost"))
-			.andExpect(jsonPath("$.data.isWishlisted").value(true));
+			.andExpect(jsonPath("$.data.wishlistId").value(7L));
 	}
 
 	@Test

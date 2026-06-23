@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -20,9 +21,18 @@ import org.locationtech.jts.geom.Point;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import codesquad.airdnd.domain.listing.dto.query.ListingSearchResponse;
+import codesquad.airdnd.domain.listing.dto.request.ListingPageRequest;
+import codesquad.airdnd.domain.listing.dto.request.ListingSearchCondition;
+import codesquad.airdnd.domain.listing.dto.response.ListingCardResponse;
 import codesquad.airdnd.domain.listing.dto.response.ListingDetailResponse;
+import codesquad.airdnd.domain.wishlistItem.dto.query.WishlistedListing;
+import codesquad.airdnd.global.response.PageResponse;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Amenity;
 import codesquad.airdnd.domain.listing.entity.Capacity;
@@ -69,7 +79,6 @@ class ListingSearchServiceTest {
 			ReflectionTestUtils.setField(listing, "id", 1L);
 			given(listingQueryRepository.findDetailById(1L)).willReturn(Optional.of(listing));
 			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
-			given(wishlistItemRepository.existsByMemberIdAndListingId(GUEST_ID, 1L)).willReturn(false);
 
 			// when
 			ListingDetailResponse result = listingSearchService.getListingDetail(GUEST_ID, 1L);
@@ -83,24 +92,41 @@ class ListingSearchServiceTest {
 		}
 
 		@Test
-		@DisplayName("회원이 찜한 숙소면 isWishlisted가 true다")
+		@DisplayName("회원이 찜한 숙소면 담긴 위시리스트의 wishlistId를 반환한다")
 		void marksWishlisted() {
 			// given
 			Listing listing = approvedListing();
 			ReflectionTestUtils.setField(listing, "id", 1L);
 			given(listingQueryRepository.findDetailById(1L)).willReturn(Optional.of(listing));
 			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
-			given(wishlistItemRepository.existsByMemberIdAndListingId(GUEST_ID, 1L)).willReturn(true);
+			given(wishlistItemRepository.findWishlistId(GUEST_ID, 1L)).willReturn(7L);
 
 			// when
 			ListingDetailResponse result = listingSearchService.getListingDetail(GUEST_ID, 1L);
 
 			// then
-			assertThat(result.isWishlisted()).isTrue();
+			assertThat(result.wishlistId()).isEqualTo(7L);
 		}
 
 		@Test
-		@DisplayName("비로그인(guestId null)이면 위시리스트 조회 없이 isWishlisted가 false다")
+		@DisplayName("찜하지 않은 숙소면 wishlistId가 null이다")
+		void notWishlisted() {
+			// given
+			Listing listing = approvedListing();
+			ReflectionTestUtils.setField(listing, "id", 1L);
+			given(listingQueryRepository.findDetailById(1L)).willReturn(Optional.of(listing));
+			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
+			given(wishlistItemRepository.findWishlistId(GUEST_ID, 1L)).willReturn(null);
+
+			// when
+			ListingDetailResponse result = listingSearchService.getListingDetail(GUEST_ID, 1L);
+
+			// then
+			assertThat(result.wishlistId()).isNull();
+		}
+
+		@Test
+		@DisplayName("비로그인(guestId null)이면 위시리스트 조회 없이 wishlistId가 null이다")
 		void notWishlistedWhenAnonymous() {
 			// given
 			Listing listing = approvedListing();
@@ -112,8 +138,8 @@ class ListingSearchServiceTest {
 			ListingDetailResponse result = listingSearchService.getListingDetail(null, 1L);
 
 			// then
-			assertThat(result.isWishlisted()).isFalse();
-			then(wishlistItemRepository).should(never()).existsByMemberIdAndListingId(any(), any());
+			assertThat(result.wishlistId()).isNull();
+			then(wishlistItemRepository).should(never()).findWishlistId(any(), any());
 		}
 
 		@Test
@@ -127,6 +153,65 @@ class ListingSearchServiceTest {
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
+		}
+	}
+
+	@Nested
+	@DisplayName("숙소 검색 (search)")
+	class Search {
+
+		private static final Long GUEST_ID = 10L;
+
+		@Test
+		@DisplayName("찜한 숙소 카드에는 담긴 wishlistId가, 안 찜한 카드에는 null이 채워진다")
+		void mapsWishlistIdPerCard() {
+			// given - 숙소 1, 2 중 1만 wishlistId=7 에 담겨 있음
+			Page<ListingSearchResponse> page = new PageImpl<>(List.of(
+				searchResponse(1L), searchResponse(2L)
+			));
+			given(listingQueryRepository.searchListings(any(), any())).willReturn(page);
+			given(imageRepository.findImagesByListingIds(any())).willReturn(Map.of());
+			given(wishlistItemRepository.findWishlistedPairs(eq(GUEST_ID), any()))
+				.willReturn(List.of(new WishlistedListing(1L, 7L)));
+
+			// when
+			PageResponse<ListingCardResponse> result =
+				listingSearchService.search(GUEST_ID, new ListingSearchCondition(null, null, null, null, null), pageRequest());
+
+			// then
+			assertThat(result.content())
+				.extracting(ListingCardResponse::id, ListingCardResponse::wishlistId)
+				.containsExactly(
+					tuple(1L, 7L),
+					tuple(2L, null)
+				);
+		}
+
+		@Test
+		@DisplayName("비로그인(guestId null)이면 위시리스트 조회 없이 모든 카드의 wishlistId가 null이다")
+		void noWishlistLookupWhenAnonymous() {
+			// given
+			Page<ListingSearchResponse> page = new PageImpl<>(List.of(searchResponse(1L)));
+			given(listingQueryRepository.searchListings(any(), any())).willReturn(page);
+			given(imageRepository.findImagesByListingIds(any())).willReturn(Map.of());
+
+			// when
+			PageResponse<ListingCardResponse> result =
+				listingSearchService.search(null, new ListingSearchCondition(null, null, null, null, null), pageRequest());
+
+			// then
+			assertThat(result.content()).extracting(ListingCardResponse::wishlistId).containsOnlyNulls();
+			then(wishlistItemRepository).should(never()).findWishlistedPairs(any(), any());
+		}
+
+		private ListingSearchResponse searchResponse(Long id) {
+			return new ListingSearchResponse(
+				id, point(37.5, 127.0), "숙소" + id, new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000)
+			);
+		}
+
+		private ListingPageRequest pageRequest() {
+			return new ListingPageRequest(0, 20);
 		}
 	}
 
