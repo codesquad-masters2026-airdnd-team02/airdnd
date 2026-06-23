@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from '../shared/Icon';
-import { LoginModal } from './LoginModal';
 import { useAppState } from '../shared/AppState';
 import { useToast } from '../shared/Toast';
 import { API_BASE } from '../shared/api/config';
@@ -37,10 +37,18 @@ export function Header({
   onSearchClose,
 }: HeaderProps) {
   const navigate = useNavigate();
-  const { isLoggedIn, setLoggedIn } = useAppState();
+  const queryClient = useQueryClient();
+  const { isLoggedIn, setLoggedIn, openLogin } = useAppState();
   const toast = useToast();
   const onLogo = () => navigate('/');
-  const onHosting = () => navigate('/host');
+  // 비로그인 시 호스트 페이지로 이동하지 않고 로그인 모달로 유도. 로그인 성공(폼/구글) 시 호스트 페이지로 이어서 이동.
+  const onHosting = () => {
+    if (!isLoggedIn) {
+      openLogin('호스팅을 시작하려면 로그인이 필요해요.', () => navigate('/host'), { type: 'host' });
+      return;
+    }
+    navigate('/host');
+  };
   const go = (path: string) => {
     setMenuOpen(false);
     navigate(path);
@@ -53,13 +61,13 @@ export function Header({
       /* 네트워크 실패해도 클라이언트 상태는 비운다 */
     }
     setLoggedIn(false);
+    queryClient.clear(); // 직전 사용자의 캐시가 다음 화면에 남지 않도록 비운다
     toast.show("로그아웃되었어요");
     navigate('/');
   };
   const compact = mode === 'compact';
   const solid = compact || mode === 'minimal';
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 검색바 인라인 확장: 닫힐 때 collapse 애니메이션 후 언마운트
@@ -347,28 +355,29 @@ export function Header({
                 padding: '8px 0',
               }}
             >
-              <MenuItem icon="heart" onClick={() => go('/wishlists')}>위시리스트</MenuItem>
-              <MenuItem icon="briefcase" onClick={() => go('/trips')}>여행</MenuItem>
-              <MenuItem icon="message-circle" badge={2} onClick={() => go('/mypage')}>메시지</MenuItem>
-              <MenuItem icon="user" onClick={() => go('/mypage')}>프로필</MenuItem>
-
-              <Divider />
-
-              <MenuItem icon="bell" badge={1} onClick={() => go('/mypage')}>알림</MenuItem>
-              <MenuItem icon="settings" onClick={() => go('/mypage')}>계정 설정</MenuItem>
-              <MenuItem icon="help-circle" onClick={() => go('/mypage')}>도움말 센터</MenuItem>
-
-              <Divider />
-
-              <MenuItem icon="building-2" onClick={() => go('/host')}>호스팅 하기</MenuItem>
-              <MenuItem icon="layout-dashboard" onClick={() => go('/admin')}>관리자 페이지</MenuItem>
-
-              <Divider />
-
               {isLoggedIn ? (
-                <MenuItem icon="log-out" onClick={onLogout}>로그아웃</MenuItem>
+                <>
+                  <MenuItem icon="heart" onClick={() => go('/wishlists')}>위시리스트</MenuItem>
+                  <MenuItem icon="briefcase" onClick={() => go('/trips')}>여행</MenuItem>
+                  <MenuItem icon="message-circle" badge={2} onClick={() => go('/mypage')}>메시지</MenuItem>
+                  <MenuItem icon="user" onClick={() => go('/mypage')}>프로필</MenuItem>
+
+                  <Divider />
+
+                  <MenuItem icon="bell" badge={1} onClick={() => go('/mypage')}>알림</MenuItem>
+                  <MenuItem icon="settings" onClick={() => go('/mypage')}>계정 설정</MenuItem>
+                  <MenuItem icon="help-circle" onClick={() => go('/mypage')}>도움말 센터</MenuItem>
+
+                  <Divider />
+
+                  <MenuItem icon="building-2" onClick={() => go('/host')}>호스팅 하기</MenuItem>
+
+                  <Divider />
+
+                  <MenuItem icon="log-out" onClick={onLogout}>로그아웃</MenuItem>
+                </>
               ) : (
-                <MenuItem icon="user" onClick={() => { setMenuOpen(false); setLoginOpen(true); }}>
+                <MenuItem icon="user" onClick={() => { setMenuOpen(false); openLogin(); }}>
                   로그인
                 </MenuItem>
               )}
@@ -377,8 +386,6 @@ export function Header({
         </div>
       </div>
       </header>
-
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
   );
 }

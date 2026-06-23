@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Results } from './pages/listing/ListingSearchPage';
@@ -17,8 +18,11 @@ import { WishlistDetailPage } from './pages/wishlist/WishlistDetailPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { PaymentSuccess } from './pages/payment/PaymentSuccess';
 import { PaymentFail } from './pages/payment/PaymentFail';
-import { AppStateProvider } from './shared/AppState';
-import { ToastProvider } from './shared/Toast';
+import { AppStateProvider, useAppState } from './shared/AppState';
+import { ToastProvider, useToast } from './shared/Toast';
+import { LoginModal } from './components/LoginModal';
+import { SaveToWishlistModal } from './components/SaveToWishlistModal';
+import { fetchListingWishlistId } from './shared/api/wishlist';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -26,6 +30,48 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
+}
+
+// 전역 로그인 모달: 401(세션 만료) 시 AppState가 열어 로그인을 유도한다.
+// Header 없이 HostHeader 만 쓰는 페이지에서도 동작하도록 App 레벨에 단일 인스턴스로 둔다.
+function GlobalLoginModal() {
+  const { loginOpen, loginNotice, closeLogin } = useAppState();
+  return <LoginModal open={loginOpen} notice={loginNotice} onClose={closeLogin} />;
+}
+
+// OAuth 복귀 후 하트 저장 의도를 "그 자리에서" 처리한다(상세로 이동하지 않음).
+// 이미 담긴 숙소면 안내 토스트, 아니면 전역 저장 모달을 띄운다. App 레벨이라 어느 페이지에 있든 동작.
+function GlobalSaveFlow() {
+  const { pendingSaveHeart, clearPendingSaveHeart } = useAppState();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [saveFor, setSaveFor] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (pendingSaveHeart == null) return;
+    const listingId = pendingSaveHeart;
+    clearPendingSaveHeart();
+    fetchListingWishlistId(listingId)
+      .then((wid) => {
+        if (wid != null) toast.show('이미 위시리스트에 저장한 숙소예요');
+        else setSaveFor(listingId);
+      })
+      .catch(() => setSaveFor(listingId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSaveHeart]);
+
+  return (
+    <SaveToWishlistModal
+      open={saveFor != null}
+      listingId={saveFor}
+      onClose={() => setSaveFor(null)}
+      onSaved={(name) => {
+        setSaveFor(null);
+        toast.show(`'${name}'에 저장했어요`);
+        queryClient.invalidateQueries(); // 다른 페이지의 하트도 갱신되도록
+      }}
+    />
+  );
 }
 
 export default function App() {
@@ -56,6 +102,8 @@ export default function App() {
           <Route path="/payments/fail" element={<PaymentFail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <GlobalLoginModal />
+        <GlobalSaveFlow />
       </ToastProvider>
       </AppStateProvider>
     </BrowserRouter>
