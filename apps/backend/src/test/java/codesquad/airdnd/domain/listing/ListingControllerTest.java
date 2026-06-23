@@ -78,6 +78,30 @@ class ListingControllerTest {
 	}
 
 	@Test
+	@DisplayName("비로그인(익명)이어도 숙소 상세를 200으로 조회할 수 있다")
+	void getListingDetail_allowsAnonymous() throws Exception {
+		// given - 익명: 리졸버가 호출하는 getCurrentMember()가 MEMBER_NOT_FOUND를 던지는 상황
+		given(authUtils.getCurrentMember()).willThrow(new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+		ListingDetailResponse detail = new ListingDetailResponse(
+			1L, "테스트 숙소", "멋진 숙소",
+			List.of("img1"),
+			37.5012, 127.0396, "강남구, 서울",
+			BigDecimal.valueOf(50000),
+			new Capacity(2, 1, 1, 1), Set.of(),
+			new ReviewSummary(0, null),
+			new HostInfo(1L, "testHost", "profile.png"),
+			null // 비로그인 → wishlistId 없음
+		);
+		// 익명이면 guestId=null 로 호출됨
+		given(listingSearchService.getListingDetail(isNull(), eq(1L))).willReturn(detail);
+
+		mockMvc.perform(get("/api/listings/1"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data.listingId").value(1L));
+	}
+
+	@Test
 	@DisplayName("존재하지 않는 숙소 상세 조회 시 404 응답과 LISTING_001 코드를 반환한다")
 	void getListingDetail_failsWhenNotFound() throws Exception {
 		willThrow(new BusinessException(ErrorCode.LISTING_NOT_FOUND))
