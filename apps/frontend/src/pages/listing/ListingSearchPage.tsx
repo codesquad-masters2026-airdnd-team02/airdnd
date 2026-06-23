@@ -8,7 +8,11 @@ import { SaveToWishlistModal } from '../../components/SaveToWishlistModal';
 import { removeWishlistItem, fetchListingWishlistId } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
-import type { ListingCardResponse, ListingSearchCondition } from '../../shared/api/generated/types.gen';
+import type {
+  CurrentMemberInfo,
+  ListingCardResponse,
+  ListingSearchCondition,
+} from '../../shared/api/generated/types.gen';
 import type { SearchState } from '../../types';
 import type { Bounds } from '../../shared/map';
 import { ResultCard } from './ResultCard';
@@ -74,7 +78,8 @@ export function Results() {
   const condition = buildCondition(appliedSearch, mapBounds);
   const listingsQuery = useQuery(
     getListingsOptions({
-      query: { condition, pageRequest: { page, size: 20 } },
+      // @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
+      query: { guest: {} as CurrentMemberInfo, condition, pageRequest: { page, size: 20 } },
     }),
   );
   const pageData = listingsQuery.data?.data;

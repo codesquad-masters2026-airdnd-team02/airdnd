@@ -21,6 +21,7 @@ const STATE_LABEL: Record<NonNullable<ReservationSummary['state']>, string> = {
   GUEST_CANCELED: '취소됨',
   HOST_CANCELED: '취소됨',
   COMPLETED: '여행 완료',
+  EXPIRED: '만료됨',
 };
 
 function dayMark(dateStr: string | null | undefined): { wd: string; day: string } {
