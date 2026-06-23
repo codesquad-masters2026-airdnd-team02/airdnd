@@ -89,10 +89,11 @@ export function Detail() {
   const [savedWishlistId, setSavedWishlistId] = useState<number | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
 
-  // 상세 응답의 isWishlisted로 초기 저장 상태 반영
+  // 상세 응답의 wishlistId로 초기 저장 상태 + 삭제 대상 반영(null이면 미저장)
   useEffect(() => {
-    if (d?.isWishlisted != null) setSaved(d.isWishlisted);
-  }, [d?.isWishlisted, d?.listingId]);
+    setSaved(d?.wishlistId != null);
+    setSavedWishlistId(d?.wishlistId ?? null);
+  }, [d?.wishlistId, d?.listingId]);
 
   const onToggleSave = () => {
     if (!saved) {
