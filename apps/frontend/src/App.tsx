@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Results } from './pages/listing/ListingSearchPage';
 import { Detail } from './pages/Detail';
@@ -74,6 +74,25 @@ function GlobalSaveFlow() {
   );
 }
 
+// OAuth 복귀 시 백엔드가 붙인 ?auth=signup|login 을 읽어 성공 메시지를 띄우고 파라미터를 정리한다.
+// (구글 로그인은 전체 리다이렉트라 LoginModal 의 토스트를 못 타므로 여기서 처리)
+function OAuthResultToast() {
+  const toast = useToast();
+  const [params, setParams] = useSearchParams();
+
+  useEffect(() => {
+    const auth = params.get('auth');
+    if (auth !== 'signup' && auth !== 'login') return;
+    toast.success(auth === 'signup' ? '회원가입이 완료되었어요. 환영합니다!' : '로그인되었어요');
+    const next = new URLSearchParams(params);
+    next.delete('auth');
+    setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -104,6 +123,7 @@ export default function App() {
         </Routes>
         <GlobalLoginModal />
         <GlobalSaveFlow />
+        <OAuthResultToast />
       </ToastProvider>
       </AppStateProvider>
     </BrowserRouter>
