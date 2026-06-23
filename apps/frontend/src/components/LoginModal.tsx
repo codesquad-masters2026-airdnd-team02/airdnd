@@ -71,10 +71,10 @@ export function LoginModal({ open, onClose, notice }: LoginModalProps) {
         // 로그인 전(비로그인)에 받아둔 캐시는 위시리스트 상태(wishlistId)가 비어 있으므로,
         // 인증 상태로 다시 받아 하트 등 사용자별 정보를 갱신한다.
         queryClient.invalidateQueries();
-        // 로그인 전 하려던 동작(예: 예약 단계 이동)이 있으면 이어서 실행, 없으면 홈으로.
-        const resumed = runAfterLogin();
+        // 로그인 전 하려던 동작(예: 예약 단계 이동)이 있으면 이어서 실행한다.
+        // 없으면 별도 이동 없이 현재(모달을 띄운) 페이지에 그대로 머문다.
+        runAfterLogin();
         onClose();
-        if (!resumed) navigate('/');
       } else {
         setError('아이디 또는 비밀번호가 올바르지 않습니다.');
       }
