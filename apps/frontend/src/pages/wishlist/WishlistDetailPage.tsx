@@ -236,6 +236,7 @@ export function WishlistDetailPage() {
                 key={item.listingId}
                 item={item}
                 removing={removingId === item.listingId}
+                onOpen={() => navigate(`/listings/${item.listingId}`)}
                 onEditNote={() => openNote(item)}
                 onRemove={() => removeItem(item.listingId)}
               />
@@ -291,10 +292,11 @@ function PillButton({ children }: { children: React.ReactNode }) {
 }
 
 function ListingCard({
-  item, removing, onEditNote, onRemove,
+  item, removing, onOpen, onEditNote, onRemove,
 }: {
   item: WishlistDetailItem;
   removing: boolean;
+  onOpen: () => void;
   onEditNote: () => void;
   onRemove: () => void;
 }) {
@@ -305,6 +307,7 @@ function ListingCard({
     <div>
       <div
         style={{ position: 'relative', cursor: 'pointer' }}
+        onClick={onOpen}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
@@ -334,7 +337,10 @@ function ListingCard({
         <button
           aria-label="위시리스트에서 제거"
           disabled={removing}
-          onClick={onRemove}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
           style={{
             position: 'absolute', top: 12, right: 12,
             width: 30, height: 30, borderRadius: '50%',
@@ -349,7 +355,10 @@ function ListingCard({
       </div>
 
       <div style={{ marginTop: 14 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-1)' }}>
+        <div
+          onClick={onOpen}
+          style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-1)', cursor: 'pointer' }}
+        >
           {item.listingName}
         </div>
         <div style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 4 }}>
