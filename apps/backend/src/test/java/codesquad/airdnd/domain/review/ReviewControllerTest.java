@@ -18,10 +18,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.review.dto.request.ReviewCreateRequest;
+import codesquad.airdnd.domain.review.dto.response.ReviewResponse;
+import codesquad.airdnd.domain.review.dto.response.ReviewerInfo;
+import codesquad.airdnd.global.response.CursorPageResponse;
 import codesquad.airdnd.global.auth.AuthUtils;
 import codesquad.airdnd.global.auth.LoginArgumentResolver;
 import codesquad.airdnd.global.exception.BusinessException;
@@ -163,6 +168,29 @@ class ReviewControllerTest {
 			mockMvc.perform(delete("/api/reviews/{id}", REVIEW_ID))
 				.andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.code").value("REVIEW_007"));
+		}
+	}
+
+	@Nested
+	@DisplayName("GET /api/listings/{listingId}/reviews")
+	class GetReviews {
+
+		@Test
+		@DisplayName("리뷰 목록을 200과 커서 페이지 구조로 반환한다")
+		void success() throws Exception {
+			ReviewResponse review = new ReviewResponse(
+				7L, new ReviewerInfo(1L, "게스트", "p.png"), 5, "좋아요", null);
+			CursorPageResponse<ReviewResponse> page = CursorPageResponse.of(
+				List.of(review), 7L, true);
+			given(reviewService.getReviews(eq(10L), any())).willReturn(page);
+
+			mockMvc.perform(get("/api/listings/{id}/reviews", 10L))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.data.nextCursor").value(7L))
+				.andExpect(jsonPath("$.data.hasNext").value(true))
+				.andExpect(jsonPath("$.data.content[0].rating").value(5))
+				.andExpect(jsonPath("$.data.content[0].author.nickname").value("게스트"));
 		}
 	}
 }

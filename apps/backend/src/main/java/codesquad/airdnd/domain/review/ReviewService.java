@@ -3,14 +3,21 @@ package codesquad.airdnd.domain.review;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+import org.springframework.data.domain.Limit;
+
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.member.MemberRepository;
 import codesquad.airdnd.domain.reservation.ReservationRepository;
 import codesquad.airdnd.domain.reservation.entity.Reservation;
+import codesquad.airdnd.domain.review.dto.request.ReviewCursorRequest;
+import codesquad.airdnd.domain.review.dto.response.ReviewResponse;
 import codesquad.airdnd.domain.review.entity.Review;
 import codesquad.airdnd.domain.review.repository.ReviewRepository;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
+import codesquad.airdnd.global.response.CursorPageResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -50,5 +57,20 @@ public class ReviewService {
 
 		reviewRepository.delete(review);
 		summaryService.removeReview(review.getListingId(), review.getRating());
+	}
+
+	@Transactional(readOnly = true)
+	public CursorPageResponse<ReviewResponse> getReviews(Long listingId, ReviewCursorRequest request) {
+		int size = request.sizeOrDefault();
+		List<Review> rows = reviewRepository.findByReservation_Listing_IdAndIdLessThanOrderByIdDesc(
+			listingId, request.cursorOrMax(), Limit.of(size + 1));
+
+		boolean hasNext = rows.size() > size;
+		List<Review> page = hasNext ? rows.subList(0, size) : rows;
+
+		List<ReviewResponse> content = page.stream().map(ReviewResponse::from).toList();
+		Long nextCursor = page.isEmpty() ? null : page.get(page.size() - 1).getId();
+
+		return CursorPageResponse.of(content, nextCursor, hasNext);
 	}
 }

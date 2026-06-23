@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -13,14 +14,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Limit;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.member.MemberRepository;
 import codesquad.airdnd.domain.reservation.ReservationRepository;
 import codesquad.airdnd.domain.reservation.entity.Reservation;
+import codesquad.airdnd.domain.review.dto.request.ReviewCursorRequest;
+import codesquad.airdnd.domain.review.dto.response.ReviewResponse;
 import codesquad.airdnd.domain.review.entity.Review;
 import codesquad.airdnd.domain.review.repository.ReviewRepository;
+import codesquad.airdnd.global.response.CursorPageResponse;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 
@@ -149,6 +155,63 @@ class ReviewServiceTest {
 
 			then(reviewRepository).should(never()).delete(any());
 			then(summaryService).shouldHaveNoInteractions();
+		}
+	}
+
+	@Nested
+	@DisplayName("리뷰 목록 (getReviews, 커서 페이징)")
+	class GetReviews {
+
+		@Test
+		@DisplayName("size보다 1개 더 조회되면 마지막을 잘라내고 nextCursor와 hasNext를 채운다")
+		void cursorPaging() {
+			given(reservation.isOwnedBy(MEMBER_ID)).willReturn(true);
+			given(reservation.isCompleted()).willReturn(true);
+			given(author.getId()).willReturn(MEMBER_ID);
+			given(author.getNickname()).willReturn("게스트");
+
+			Review r30 = review(30L, 5, "리뷰30");
+			Review r20 = review(20L, 4, "리뷰20");
+			Review r10 = review(10L, 3, "리뷰10");
+			// size=2인데 3개 반환(size+1) → hasNext
+			given(reviewRepository.findByReservation_Listing_IdAndIdLessThanOrderByIdDesc(
+				eq(LISTING_ID), anyLong(), any(Limit.class)))
+				.willReturn(List.of(r30, r20, r10));
+
+			CursorPageResponse<ReviewResponse> result =
+				reviewService.getReviews(LISTING_ID, new ReviewCursorRequest(null, 2));
+
+			assertThat(result.content()).hasSize(2);
+			assertThat(result.hasNext()).isTrue();
+			assertThat(result.nextCursor()).isEqualTo(20L);
+			assertThat(result.content().get(0).rating()).isEqualTo(5);
+			assertThat(result.content().get(0).author().nickname()).isEqualTo("게스트");
+		}
+
+		@Test
+		@DisplayName("size 이하로 조회되면 hasNext는 false다")
+		void lastPage() {
+			given(reservation.isOwnedBy(MEMBER_ID)).willReturn(true);
+			given(reservation.isCompleted()).willReturn(true);
+			given(author.getId()).willReturn(MEMBER_ID);
+
+			Review r10 = review(10L, 3, "리뷰10");
+			given(reviewRepository.findByReservation_Listing_IdAndIdLessThanOrderByIdDesc(
+				eq(LISTING_ID), anyLong(), any(Limit.class)))
+				.willReturn(List.of(r10));
+
+			CursorPageResponse<ReviewResponse> result =
+				reviewService.getReviews(LISTING_ID, new ReviewCursorRequest(null, 2));
+
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.hasNext()).isFalse();
+			assertThat(result.nextCursor()).isEqualTo(10L);
+		}
+
+		private Review review(long id, int rating, String content) {
+			Review review = Review.create(reservation, author, rating, content);
+			ReflectionTestUtils.setField(review, "id", id);
+			return review;
 		}
 	}
 }
