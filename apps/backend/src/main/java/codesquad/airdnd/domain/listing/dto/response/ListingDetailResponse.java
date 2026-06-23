@@ -24,10 +24,10 @@ public record ListingDetailResponse(
 	Set<Amenity> amenities,
 	ReviewSummary review,
 	HostInfo host,
-	boolean isWishlisted
+	Long wishlistId
 ) {
 	public static ListingDetailResponse from(
-		Listing listing, ReviewSummary review, String addressSummary, boolean isWishlisted
+		Listing listing, ReviewSummary review, String addressSummary, Long wishlistId
 	) {
 		Address address = listing.getAddress();
 
@@ -49,7 +49,7 @@ public record ListingDetailResponse(
 			listing.getAmenities(),
 			review,
 			HostInfo.from(listing.getHost()),
-			isWishlisted
+                wishlistId
 		);
 	}
 }
