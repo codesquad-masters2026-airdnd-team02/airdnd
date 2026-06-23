@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
+import { LoginModal } from './LoginModal';
+import { useAppState } from '../shared/AppState';
+import { useToast } from '../shared/Toast';
+import { API_BASE } from '../shared/api/config';
 import { SearchBar, type SearchSegment } from './SearchBar';
 import logoSvg from '../assets/logo.svg';
 import type { SearchState } from '../types';
@@ -33,15 +37,29 @@ export function Header({
   onSearchClose,
 }: HeaderProps) {
   const navigate = useNavigate();
+  const { isLoggedIn, setLoggedIn } = useAppState();
+  const toast = useToast();
   const onLogo = () => navigate('/');
   const onHosting = () => navigate('/host');
   const go = (path: string) => {
     setMenuOpen(false);
     navigate(path);
   };
+  const onLogout = async () => {
+    setMenuOpen(false);
+    try {
+      await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      /* 네트워크 실패해도 클라이언트 상태는 비운다 */
+    }
+    setLoggedIn(false);
+    toast.show("로그아웃되었어요");
+    navigate('/');
+  };
   const compact = mode === 'compact';
   const solid = compact || mode === 'minimal';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 검색바 인라인 확장: 닫힐 때 collapse 애니메이션 후 언마운트
@@ -347,12 +365,20 @@ export function Header({
 
               <Divider />
 
-              <MenuItem icon="log-out" onClick={() => go('/')}>로그아웃</MenuItem>
+              {isLoggedIn ? (
+                <MenuItem icon="log-out" onClick={onLogout}>로그아웃</MenuItem>
+              ) : (
+                <MenuItem icon="user" onClick={() => { setMenuOpen(false); setLoginOpen(true); }}>
+                  로그인
+                </MenuItem>
+              )}
             </div>
           )}
         </div>
       </div>
       </header>
+
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
   );
 }

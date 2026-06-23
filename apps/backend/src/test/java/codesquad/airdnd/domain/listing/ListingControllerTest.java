@@ -11,8 +11,12 @@ import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
+import codesquad.airdnd.domain.member.Member;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +31,7 @@ import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 
 @WebMvcTest(ListingController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(LoginArgumentResolver.class)
 class ListingControllerTest {
 
@@ -38,6 +43,13 @@ class ListingControllerTest {
 
 	@MockitoBean
 	private AuthUtils authUtils;
+
+	@BeforeEach
+	void setUpCurrentMember() {
+		Member member = Member.builder().nickname("guest").build();
+		ReflectionTestUtils.setField(member, "id", 1L);
+		given(authUtils.getCurrentMember()).willReturn(member);
+	}
 
 	// ===== GET /api/listings/{listingsId} =====
 
