@@ -5,7 +5,7 @@ import { Header } from '../../components/Header';
 import type { SearchSegment } from '../../components/SearchBar';
 import { FilterModal } from '../../components/FilterModal';
 import { SaveToWishlistModal } from '../../components/SaveToWishlistModal';
-import { removeWishlistItem } from '../../shared/api/wishlist';
+import { removeWishlistItem, fetchListingWishlistId } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { ListingCardResponse, ListingSearchCondition } from '../../shared/api/generated/types.gen';
@@ -49,7 +49,7 @@ function buildCondition(s: SearchState, bounds: Bounds | null): ListingSearchCon
 
 export function Results() {
   const navigate = useNavigate();
-  const { search, setSearch } = useAppState();
+  const { search, setSearch, isLoggedIn, openLogin } = useAppState();
   // 검색 버튼 누른 시점의 조건 스냅샷(편집 중 즉시 재조회 방지)
   const [appliedSearch, setAppliedSearch] = useState<SearchState>(search);
   // 상단 검색 pill 클릭 시 헤더에서 인라인 확장 + 눌린 구역 패널 열기
@@ -109,6 +109,27 @@ export function Results() {
   const onHeart = (c: ListingCardResponse) => {
     const listingId = c.id;
     if (listingId == null) return;
+    // 비로그인 시 저장 모달 대신 로그인 모달로 유도.
+    // 로그인 성공 후: 이미 저장된 숙소면 하트만 채우고 안내, 아니면 저장 모달을 연다.
+    if (!isLoggedIn) {
+      openLogin(
+        '위시리스트에 저장하려면 로그인이 필요해요.',
+        () => {
+          fetchListingWishlistId(listingId)
+            .then((wid) => {
+              if (wid != null) {
+                setWishlistOverride((prev) => ({ ...prev, [listingId]: wid }));
+                showToast('이미 위시리스트에 저장한 숙소예요');
+              } else {
+                setSaveFor(listingId);
+              }
+            })
+            .catch(() => setSaveFor(listingId));
+        },
+        { type: 'saveHeart', listingId, from: window.location.pathname },
+      );
+      return;
+    }
     const wishlistId = wishlistIdOf(c);
     if (wishlistId == null) {
       setSaveFor(listingId);
