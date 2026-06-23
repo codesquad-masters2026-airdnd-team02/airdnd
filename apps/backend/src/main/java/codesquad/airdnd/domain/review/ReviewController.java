@@ -2,6 +2,7 @@ package codesquad.airdnd.domain.review;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,5 +34,14 @@ public class ReviewController {
 		Long reviewId = reviewService.create(guest.id(), reservationId, request.rating(), request.content());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.success(ReviewCreatedResponse.from(reviewId)));
+	}
+
+	@Operation(summary = "게스트 리뷰 삭제")
+	@DeleteMapping("/reviews/{reviewId}")
+	public ResponseEntity<ApiResponse<Void>> deleteReview(
+		@CurrentMember CurrentMemberInfo guest, @PathVariable Long reviewId
+	) {
+		reviewService.delete(guest.id(), reviewId);
+		return ResponseEntity.ok(ApiResponse.success());
 	}
 }

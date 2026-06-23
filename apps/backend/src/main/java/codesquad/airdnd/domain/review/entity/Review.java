@@ -76,6 +76,14 @@ public class Review {
 			.build();
 	}
 
+	public boolean isWrittenBy(Long memberId) {
+		return author.getId().equals(memberId);
+	}
+
+	public Long getListingId() {
+		return reservation.getListing().getId();
+	}
+
 	private static void validateOwner(Reservation reservation, Member author) {
 		if (!reservation.isOwnedBy(author.getId())) {
 			throw new BusinessException(ErrorCode.REVIEW_NOT_RESERVATION_OWNER);

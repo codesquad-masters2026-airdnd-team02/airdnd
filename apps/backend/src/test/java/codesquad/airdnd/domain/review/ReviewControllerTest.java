@@ -34,6 +34,7 @@ class ReviewControllerTest {
 
 	private static final Long MEMBER_ID = 1L;
 	private static final Long RES_ID = 100L;
+	private static final Long REVIEW_ID = 500L;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -125,6 +126,43 @@ class ReviewControllerTest {
 					.content(body(5, "좋아요")))
 				.andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.code").value("REVIEW_003"));
+		}
+	}
+
+	@Nested
+	@DisplayName("DELETE /api/reviews/{reviewId}")
+	class DeleteReview {
+
+		@Test
+		@DisplayName("삭제 성공 시 200을 반환한다")
+		void success() throws Exception {
+			mockMvc.perform(delete("/api/reviews/{id}", REVIEW_ID))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true));
+
+			then(reviewService).should().delete(MEMBER_ID, REVIEW_ID);
+		}
+
+		@Test
+		@DisplayName("리뷰가 없으면 404와 REVIEW_006을 반환한다")
+		void notFound() throws Exception {
+			willThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND))
+				.given(reviewService).delete(MEMBER_ID, REVIEW_ID);
+
+			mockMvc.perform(delete("/api/reviews/{id}", REVIEW_ID))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("REVIEW_006"));
+		}
+
+		@Test
+		@DisplayName("본인 리뷰가 아니면 403과 REVIEW_007을 반환한다")
+		void notAuthor() throws Exception {
+			willThrow(new BusinessException(ErrorCode.REVIEW_NOT_AUTHOR))
+				.given(reviewService).delete(MEMBER_ID, REVIEW_ID);
+
+			mockMvc.perform(delete("/api/reviews/{id}", REVIEW_ID))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("REVIEW_007"));
 		}
 	}
 }

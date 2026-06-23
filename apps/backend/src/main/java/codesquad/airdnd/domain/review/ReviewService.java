@@ -38,4 +38,17 @@ public class ReviewService {
 		summaryService.addReview(reservation.getListing(), rating);
 		return review.getId();
 	}
+
+	@Transactional
+	public void delete(Long memberId, Long reviewId) {
+		Review review = reviewRepository.findById(reviewId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+
+		if (!review.isWrittenBy(memberId)) {
+			throw new BusinessException(ErrorCode.REVIEW_NOT_AUTHOR);
+		}
+
+		reviewRepository.delete(review);
+		summaryService.removeReview(review.getListingId(), review.getRating());
+	}
 }

@@ -58,6 +58,8 @@ public enum ErrorCode {
     REVIEW_NOT_RESERVATION_OWNER(HttpStatus.FORBIDDEN, "REVIEW_003", "예약한 본인만 리뷰를 작성할 수 있습니다."),
     REVIEW_RESERVATION_NOT_COMPLETED(HttpStatus.CONFLICT, "REVIEW_004", "완료된 예약만 리뷰를 작성할 수 있습니다."),
     DUPLICATE_REVIEW(HttpStatus.CONFLICT, "REVIEW_005", "이미 작성한 리뷰가 있습니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_006", "존재하지 않는 리뷰입니다."),
+    REVIEW_NOT_AUTHOR(HttpStatus.FORBIDDEN, "REVIEW_007", "본인이 작성한 리뷰만 삭제할 수 있습니다."),
     ;
 	private final HttpStatus httpStatus;
 	private final String code;
