@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Icon } from '../../shared/Icon';
 import { getReviews } from '../../shared/api/generated/sdk.gen';
 import type { ReviewResponse } from '../../shared/api/generated/types.gen';
@@ -16,7 +16,7 @@ const PAGE_SIZE = 20;
 
 /**
  * "후기 모두 보기" 모달. GET /api/listings/{listingId}/reviews 커서 페이징.
- * 열릴 때 첫 페이지를 불러오고, hasNext면 "더 보기"로 nextCursor 이어 받는다.
+ * 열릴 때 첫 페이지를 불러오고, 하단 sentinel이 보이면 무한 스크롤로 다음 페이지를 이어 받는다.
  */
 export function AllReviewsModal({ open, listingId, totalReviews, onClose }: AllReviewsModalProps) {
   const [items, setItems] = useState<ReviewResponse[]>([]);
@@ -24,6 +24,8 @@ export function AllReviewsModal({ open, listingId, totalReviews, onClose }: AllR
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const loadPage = useCallback(
     async (nextCursor: number | undefined) => {
@@ -56,6 +58,22 @@ export function AllReviewsModal({ open, listingId, totalReviews, onClose }: AllR
     loadPage(undefined);
   }, [open, loadPage]);
 
+  // 무한 스크롤: 하단 sentinel이 스크롤 영역에 들어오면 다음 페이지 로드
+  useEffect(() => {
+    if (!open || !hasNext || loading) return;
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadPage(cursor);
+      },
+      { root, rootMargin: '160px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [open, hasNext, loading, cursor, loadPage]);
+
   if (!open) return null;
 
   return (
@@ -72,6 +90,7 @@ export function AllReviewsModal({ open, listingId, totalReviews, onClose }: AllR
       }}
     >
       <div
+        ref={scrollRef}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 'min(720px, 92vw)',
@@ -106,26 +125,12 @@ export function AllReviewsModal({ open, listingId, totalReviews, onClose }: AllR
           ))}
         </div>
 
-        {hasNext && (
-          <button
-            onClick={() => loadPage(cursor)}
-            disabled={loading}
-            style={{
-              marginTop: 28,
-              height: 48,
-              padding: '0 24px',
-              border: '1px solid var(--ink-1)',
-              borderRadius: 10,
-              background: '#fff',
-              cursor: loading ? 'default' : 'pointer',
-              fontSize: 15,
-              fontWeight: 600,
-              color: 'var(--ink-1)',
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {loading ? '불러오는 중…' : '더 보기'}
-          </button>
+        {hasNext && <div ref={sentinelRef} style={{ height: 1 }} />}
+
+        {loading && items.length > 0 && (
+          <div style={{ textAlign: 'center', padding: '20px 0', fontSize: 14, color: 'var(--ink-3)' }}>
+            불러오는 중…
+          </div>
         )}
       </div>
     </div>
