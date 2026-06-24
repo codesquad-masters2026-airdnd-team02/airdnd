@@ -382,10 +382,10 @@ export function Detail() {
         </div>
 
         {/* Section 3: 평점 요약 (개요와 동일 평점 값) */}
-        <DetailRatings rating={v.rating} reviews={v.reviews} />
+        <DetailRatings rating={v.rating} reviews={v.reviews} listingId={v.id} />
 
         {/* Section 4: 후기 그리드 */}
-        <DetailReviews reviews={v.reviews} />
+        <DetailReviews reviews={v.reviews} listingId={v.id} />
 
         {/* Section 7: 위치 */}
         <DetailLocation location={v.loc} lat={v.lat} lng={v.lng} />

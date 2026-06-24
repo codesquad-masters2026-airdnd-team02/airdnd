@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Icon } from '../../shared/Icon';
+import { AllReviewsModal } from './AllReviewsModal';
 
 interface DetailReviewsProps {
   reviews: number; // 총 후기 수(개요와 동일 값, 현재 목)
+  listingId: number; // 후기 모두 보기 조회 대상
 }
 
 interface MockReview {
@@ -23,7 +26,9 @@ const MOCK_REVIEWS: MockReview[] = [
 ];
 
 // 레퍼런스: 후기 2열 그리드 + 모두 보기
-export function DetailReviews({ reviews }: DetailReviewsProps) {
+export function DetailReviews({ reviews, listingId }: DetailReviewsProps) {
+  const [allOpen, setAllOpen] = useState(false);
+
   return (
     <div style={{ padding: '40px 0', borderTop: '1px solid var(--line)' }}>
       <div
@@ -40,6 +45,7 @@ export function DetailReviews({ reviews }: DetailReviewsProps) {
       </div>
 
       <button
+        onClick={() => setAllOpen(true)}
         style={{
           marginTop: 40,
           height: 48,
@@ -58,6 +64,13 @@ export function DetailReviews({ reviews }: DetailReviewsProps) {
       >
         후기 {reviews}개 모두 보기
       </button>
+
+      <AllReviewsModal
+        open={allOpen}
+        listingId={allOpen ? listingId : null}
+        totalReviews={reviews}
+        onClose={() => setAllOpen(false)}
+      />
     </div>
   );
 }
