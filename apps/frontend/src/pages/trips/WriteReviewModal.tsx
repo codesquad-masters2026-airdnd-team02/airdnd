@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../../shared/Icon';
 import { createReview } from '../../shared/api/generated/sdk.gen';
-import type { CurrentMemberInfo } from '../../shared/api/generated/types.gen';
-
-// @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
-const MEMBER_STUB = {} as CurrentMemberInfo;
 
 interface WriteReviewModalProps {
   open: boolean;
@@ -44,7 +40,6 @@ export function WriteReviewModal({ open, reservationId, listingTitle, onClose, o
     try {
       const res = await createReview({
         path: { reservationId },
-        query: { guest: MEMBER_STUB },
         body: { rating, content: content.trim() || undefined },
       });
       if (res.error) {

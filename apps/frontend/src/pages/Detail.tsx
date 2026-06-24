@@ -9,7 +9,6 @@ import { toReservationRequest } from '../shared/api/reservationMapping';
 import { SaveToWishlistModal } from '../components/SaveToWishlistModal';
 import { removeWishlistItem, fetchListingWishlistId } from '../shared/api/wishlist';
 import { getHostListingDetailOptions } from '../shared/api/generated/@tanstack/react-query.gen';
-import type { CurrentMemberInfo } from '../shared/api/generated/types.gen';
 import { AMENITY_ENUM_TO_KR } from '../shared/amenities';
 import { won } from '../shared/utils';
 import { LISTINGS } from '../shared/demoListings';
@@ -45,10 +44,8 @@ export function Detail() {
   // 실제 상세 API (GET /api/listings/{listingsId}). 로딩/실패 시 데모로 폴백
   const listingId = id != null ? Number(id) : NaN;
   const detailQuery = useQuery({
-    // @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
     ...getHostListingDetailOptions({
       path: { listingsId: listingId },
-      query: { guest: {} as CurrentMemberInfo },
     }),
     enabled: Number.isFinite(listingId),
   });

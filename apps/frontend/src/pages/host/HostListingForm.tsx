@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import logoSvg from '../../assets/logo.svg';
 import { createListingMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
-import { toCreateRequest, HOST_STUB, TEMP_LISTING_COORDINATES } from '../../shared/api/hostMapping';
+import { toCreateRequest, TEMP_LISTING_COORDINATES } from '../../shared/api/hostMapping';
 import { useHostListings } from '../../shared/useHostListings';
 import type { HostListing, ListingFormData } from '../../types';
 import { DaumPostcodeModal } from './listing-form/components/DaumPostcodeModal';
@@ -170,7 +170,7 @@ export function HostListingForm() {
       return;
     }
     createMutation.mutate(
-      { body: toCreateRequest({ ...form, imageUrls: form.imageUrls.filter(u => u.trim()) }), query: { memberInfo: HOST_STUB } },
+      { body: toCreateRequest({ ...form, imageUrls: form.imageUrls.filter(u => u.trim()) }) },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: [{ _id: 'getHostListings' }] });

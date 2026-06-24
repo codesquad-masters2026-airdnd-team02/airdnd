@@ -9,7 +9,6 @@ import { removeWishlistItem, fetchListingWishlistId } from '../../shared/api/wis
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type {
-  CurrentMemberInfo,
   ListingCardResponse,
   ListingSearchCondition,
 } from '../../shared/api/generated/types.gen';
@@ -78,8 +77,7 @@ export function Results() {
   const condition = buildCondition(appliedSearch, mapBounds);
   const listingsQuery = useQuery(
     getListingsOptions({
-      // @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
-      query: { guest: {} as CurrentMemberInfo, condition, pageRequest: { page, size: 20 } },
+      query: { condition, pageRequest: { page, size: 20 } },
     }),
   );
   const pageData = listingsQuery.data?.data;

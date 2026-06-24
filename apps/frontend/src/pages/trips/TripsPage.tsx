@@ -6,15 +6,13 @@ import { Header } from '../../components/Header';
 import { Icon } from '../../shared/Icon';
 import { useAppState } from '../../shared/AppState';
 import { getMyReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
-import type { CurrentMemberInfo, ReservationSummary } from '../../shared/api/generated/types.gen';
+import type { ReservationSummary } from '../../shared/api/generated/types.gen';
 import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
 import { WriteReviewModal } from './WriteReviewModal';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-// @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
-const MEMBER_STUB = {} as CurrentMemberInfo;
 
 const STATE_LABEL: Record<NonNullable<ReservationSummary['state']>, string> = {
   PENDING: '대기 중',
@@ -48,7 +46,7 @@ function rangeLabel(a?: string, b?: string): string {
 }
 
 export function TripsPage() {
-  const query = useQuery(getMyReservationsOptions({ query: { memberInfo: MEMBER_STUB } }));
+  const query = useQuery(getMyReservationsOptions());
   const queryClient = useQueryClient();
   const { canceledIds } = useAppState();
   const reservations = query.data?.data?.reservations ?? [];
