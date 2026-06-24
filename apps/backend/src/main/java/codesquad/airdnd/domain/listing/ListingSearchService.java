@@ -2,8 +2,9 @@ package codesquad.airdnd.domain.listing;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
+import codesquad.airdnd.domain.wishlistItem.dto.query.WishlistedListing;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,12 +46,16 @@ public class ListingSearchService {
 
 		Map<Long, List<String>> imageMap = imageRepository.findImagesByListingIds(listingIds);
 
-		Set<Long> wishlistedIds = guestId == null
-				? Set.of()
-				: wishlistItemRepository.findWishlistedListingIds(guestId, listingIds);
+		Map<Long, Long> wishlistIdByListing = guestId == null
+				? Map.of()
+				: wishlistItemRepository.findWishlistedPairs(guestId, listingIds).stream()
+                    .collect(Collectors.toMap(
+                            WishlistedListing::listingId,
+                            WishlistedListing::wishlistId
+                    ));
 
 		Page<ListingCardResponse> cardPage = page.map(c -> ListingCardResponse.from(
-			c, imageMap.getOrDefault(c.id(), List.of()), wishlistedIds.contains(c.id())
+			c, imageMap.getOrDefault(c.id(), List.of()), wishlistIdByListing.get(c.id())
 		));
 
 		return PageResponse.from(cardPage);
@@ -63,17 +68,14 @@ public class ListingSearchService {
 		Address address = listing.getAddress();
 		String addressSummary = regionCodeService.getAddressSummary(address.getSidoCode(), address.getSigunguCode());
 
-		boolean isWishlisted = false;
-		if (guestId != null) {
-			isWishlisted = wishlistItemRepository.existsByMemberIdAndListingId(guestId, listingsId);
-		}
+		Long wishlistId = guestId == null ? null : wishlistItemRepository.findWishlistId(guestId, listingsId);
 
 		// TODO: 리뷰 도메인 구현 후 실제 평점/리뷰 수로 교체
 		return ListingDetailResponse.from(
 			listing,
 			new ReviewSummary(0, null),
 			addressSummary,
-			isWishlisted
+                wishlistId
 		);
 	}
 

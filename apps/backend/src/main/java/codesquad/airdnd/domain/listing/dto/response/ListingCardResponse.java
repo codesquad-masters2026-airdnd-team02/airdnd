@@ -18,10 +18,10 @@ public record ListingCardResponse(
 
 	List<String> images,
 
-	boolean isWishlisted
+	Long wishlistId
 ) {
 	public static ListingCardResponse from(
-		ListingSearchResponse searchResponse, List<String> images, boolean isWishlisted
+		ListingSearchResponse searchResponse, List<String> images, Long wishlistId
 	) {
 		return new ListingCardResponse(
 			searchResponse.id(),
@@ -31,7 +31,7 @@ public record ListingCardResponse(
 			searchResponse.capacity(),
 			searchResponse.pricePerNight(), //todo: 계산 로직
 			images,
-			isWishlisted
+                wishlistId
 		);
 	}
 }

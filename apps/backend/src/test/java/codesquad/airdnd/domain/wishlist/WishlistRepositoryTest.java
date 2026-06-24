@@ -141,12 +141,8 @@ class WishlistRepositoryTest {
 	void findDetailItem_returnsListingInfoWithImagesOrdered() {
 		// given
 		Listing listing = em.persist(buildListing("숙소", member));
-		ListingImage first = ListingImage.builder().imageUrl("first").sortOrder(1).build();
-		ListingImage second = ListingImage.builder().imageUrl("second").sortOrder(2).build();
-		first.assignListing(listing);
-		second.assignListing(listing);
-		em.persist(first);
-		em.persist(second);
+		em.persist(listingImage(listing, "second", 2));
+		em.persist(listingImage(listing, "first", 1));
 		em.flush();
 
 		// when
@@ -197,5 +193,11 @@ class WishlistRepositoryTest {
 
 	private Point point(double lat, double lng) {
 		return new GeometryFactory().createPoint(new Coordinate(lng, lat));
+	}
+
+	private ListingImage listingImage(Listing listing, String imageUrl, int sortOrder) {
+		ListingImage image = ListingImage.builder().imageUrl(imageUrl).sortOrder(sortOrder).build();
+		image.assignListing(listing);
+		return image;
 	}
 }

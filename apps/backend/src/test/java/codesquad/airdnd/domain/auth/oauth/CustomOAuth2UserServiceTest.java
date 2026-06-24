@@ -51,6 +51,7 @@ class CustomOAuth2UserServiceTest {
         OAuth2UserPrincipal principal = service.toPrincipal("google", googleAttributes());
 
         assertThat(principal.getMember()).isSameAs(existing);
+        assertThat(principal.isNewUser()).isFalse();
         then(memberRepository).should(never()).save(any());
     }
 
@@ -65,6 +66,7 @@ class CustomOAuth2UserServiceTest {
         OAuth2UserPrincipal principal = service.toPrincipal("google", googleAttributes());
 
         Member saved = principal.getMember();
+        assertThat(principal.isNewUser()).isTrue();
         assertThat(saved.getOauthProvider()).isEqualTo("google");
         assertThat(saved.getOauthId()).isEqualTo("google-sub-123");
         assertThat(saved.getNickname()).isEqualTo("테스터");

@@ -1,6 +1,7 @@
 package codesquad.airdnd.domain.auth.oauth;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -56,12 +57,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
 
-        // (provider, oauthId)로 기존 회원을 찾고 없으면 새로 가입시킨다.
-        Member member = memberRepository.findByOauthProviderAndOauthId(provider, oauthId)
-                .orElseGet(() -> memberRepository.save(
-                        Member.ofOAuth(provider, oauthId, resolveNickname(name, email), picture)));
+        // (provider, oauthId)로 기존 회원을 찾고 없으면 새로 가입시킨다. 신규 가입 여부를 함께 표시한다.
+        Optional<Member> found = memberRepository.findByOauthProviderAndOauthId(provider, oauthId);
+        boolean isNewUser = found.isEmpty();
+        Member member = found.orElseGet(() -> memberRepository.save(
+                Member.ofOAuth(provider, oauthId, resolveNickname(name, email), picture)));
 
-        return new OAuth2UserPrincipal(member, attributes);
+        return new OAuth2UserPrincipal(member, attributes, isNewUser);
     }
 
     /**
