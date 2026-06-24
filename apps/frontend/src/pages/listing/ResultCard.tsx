@@ -20,7 +20,8 @@ export function ResultCard({
   onHeart,
   onHover,
 }: {
-  card: ListingCardResponse;
+  // averageRating/reviewCount는 백엔드 카드 응답에 곧 추가될 필드(미존재 시 평점 미표시)
+  card: ListingCardResponse & { averageRating?: number | null; reviewCount?: number };
   liked: boolean;
   onOpen: () => void;
   onHeart: () => void;
@@ -154,8 +155,21 @@ export function ResultCard({
 
       {/* 정보 */}
       <div style={{ marginTop: 12 }}>
-        <div style={{ fontWeight: 600, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {card.name}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {card.name}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, flexShrink: 0 }}>
+            <Icon name="star" size={12} color="var(--ink-1)" fill="var(--ink-1)" />
+            {(card.reviewCount ?? 0) > 0 ? (
+              <>
+                <span>{(card.averageRating ?? 0).toFixed(2)}</span>
+                <span style={{ color: 'var(--ink-3)' }}>({card.reviewCount})</span>
+              </>
+            ) : (
+              <span>신규</span>
+            )}
+          </div>
         </div>
         <div style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 2 }}>{capacitySummary(card)}</div>
         <div style={{ fontSize: 14, marginTop: 6 }}>
