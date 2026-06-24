@@ -35,7 +35,7 @@ export function Detail() {
   const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
   const onChange = setSearch;
   const onBack = () => navigate('/results');
-  const onReserve = () => navigate(`/listings/${listing.id}/checkout`);
+  const onReserve = () => navigate(`/listings/${id}/checkout`);
 
   useEffect(() => {
     setSelectedListing(listing);
