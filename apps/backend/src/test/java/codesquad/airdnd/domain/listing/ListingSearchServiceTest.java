@@ -243,6 +243,9 @@ class ListingSearchServiceTest {
 			then(wishlistItemRepository).should(never()).findWishlistedPairs(any(), any());
 		}
 
+		// TODO: ListingSearchResponse 생성자 시그니처 드리프트로 컴파일 깨짐
+		//  (record가 BigDecimal 인자를 하나 더 요구 - 6개, 현재 5개 전달).
+		//  listing 도메인 담당이 ListingSearchResponse 변경에 맞춰 인자 보강 필요.
 		private ListingSearchResponse searchResponse(Long id) {
 			return new ListingSearchResponse(
 				id, point(37.5, 127.0), "숙소" + id, new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000)
