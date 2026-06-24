@@ -56,3 +56,6 @@ docker/
 
 # 테스트용 sql 파일
 seed.sql
+
+# 배포/인프라 문서 (로컬 참고용)
+docs/
