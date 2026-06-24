@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../../shared/api/config';
 
 /** 백엔드 SignupRequest 검증 규칙과 동일하게 맞춘 정규식 */
 const RULES = {
@@ -60,7 +61,7 @@ export function SignupPage() {
     if (submitting || !validate()) return;
     setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:8080/api/auth/signup', {
+          const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
