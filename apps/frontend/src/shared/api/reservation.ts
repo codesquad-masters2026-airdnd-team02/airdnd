@@ -33,7 +33,7 @@ interface Envelope<T> {
 export async function cancelReservation(
   reservationId: number,
   cancelReason: string,
-): Promise<RefundResult> {
+): Promise<RefundResult | undefined> {
   const res = await refreshingFetch(`${BASE}/api/reservations/${reservationId}/cancel`, {
     method: 'POST',
     credentials: 'include',
@@ -48,8 +48,9 @@ export async function cancelReservation(
     /* 바디 없음 */
   }
 
-  if (!res.ok || !body?.success || !body.data) {
+  // 환불 성공 시 백엔드가 data 없이 {success:true}만 줄 수 있으므로 data 유무로 실패 판정하지 않는다.
+  if (!res.ok || !body?.success) {
     throw new Error(body?.message ?? `예약 취소에 실패했어요 (${res.status})`);
   }
-  return body.data;
+  return body?.data;
 }
