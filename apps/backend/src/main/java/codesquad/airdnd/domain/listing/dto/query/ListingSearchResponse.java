@@ -12,7 +12,8 @@ public record ListingSearchResponse(
 	Point point,
 	String name,
 	Capacity capacity,
-	BigDecimal pricePerNight
+	BigDecimal pricePerNight,
+	BigDecimal totalPrice
 ) {
 	public double getLatitude() {
 		return point.getY();

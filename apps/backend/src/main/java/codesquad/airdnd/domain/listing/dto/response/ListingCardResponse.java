@@ -21,17 +21,21 @@ public record ListingCardResponse(
 	Long wishlistId
 ) {
 	public static ListingCardResponse from(
-		ListingSearchResponse searchResponse, List<String> images, Long wishlistId
+		ListingSearchResponse searchResponse, List<String> images, Long wishlistId, long nights
 	) {
+		BigDecimal totalPrice = nights > 0
+			? searchResponse.pricePerNight().multiply(BigDecimal.valueOf(nights))
+			: searchResponse.pricePerNight();
+
 		return new ListingCardResponse(
 			searchResponse.id(),
 			searchResponse.getLatitude(),
 			searchResponse.getLongitude(),
 			searchResponse.name(),
 			searchResponse.capacity(),
-			searchResponse.pricePerNight(), //todo: 계산 로직
+			totalPrice,
 			images,
-                wishlistId
+			wishlistId
 		);
 	}
 }

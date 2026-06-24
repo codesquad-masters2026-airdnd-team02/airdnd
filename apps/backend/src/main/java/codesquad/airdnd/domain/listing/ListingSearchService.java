@@ -1,5 +1,6 @@
 package codesquad.airdnd.domain.listing;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import codesquad.airdnd.domain.listing.dto.query.DateRangeFilter;
 import codesquad.airdnd.domain.listing.dto.query.ListingSearchResponse;
 import codesquad.airdnd.domain.listing.dto.request.ListingPageRequest;
 import codesquad.airdnd.domain.listing.dto.request.ListingSearchCondition;
@@ -41,6 +43,15 @@ public class ListingSearchService {
 	public PageResponse<ListingCardResponse> search(
 		Long guestId, ListingSearchCondition condition, ListingPageRequest pageRequest
 	) {
+		DateRangeFilter dateRange = condition.dateRange();
+
+		long nights = dateRange == null
+			? 1
+			: ChronoUnit.DAYS.between(
+			dateRange.checkIn(),
+			dateRange.checkOut()
+		);
+
 		Page<ListingSearchResponse> page = listingQueryRepository.searchListings(condition, pageRequest.toPageable());
 
 		List<Long> listingIds = page.getContent().stream()
@@ -57,8 +68,9 @@ public class ListingSearchService {
                             WishlistedListing::wishlistId
                     ));
 
+
 		Page<ListingCardResponse> cardPage = page.map(c -> ListingCardResponse.from(
-			c, imageMap.getOrDefault(c.id(), List.of()), wishlistIdByListing.get(c.id())
+			c, imageMap.getOrDefault(c.id(), List.of()), wishlistIdByListing.get(c.id()), nights
 		));
 
 		return PageResponse.from(cardPage);
