@@ -42,6 +42,8 @@ import codesquad.airdnd.domain.listing.entity.RoomType;
 import codesquad.airdnd.domain.listing.repository.ListingImageRepository;
 import codesquad.airdnd.domain.listing.repository.ListingQueryRepository;
 import codesquad.airdnd.domain.member.Member;
+import codesquad.airdnd.domain.review.entity.ListingReviewSummary;
+import codesquad.airdnd.domain.review.repository.ListingReviewSummaryRepository;
 import codesquad.airdnd.domain.wishlistItem.WishlistItemRepository;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
@@ -61,6 +63,9 @@ class ListingSearchServiceTest {
 
 	@Mock
 	private RegionCodeService regionCodeService;
+
+	@Mock
+	private ListingReviewSummaryRepository reviewSummaryRepository;
 
 	@InjectMocks
 	private ListingSearchService listingSearchService;
@@ -153,6 +158,40 @@ class ListingSearchServiceTest {
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
 				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
+		}
+
+		@Test
+		@DisplayName("리뷰 통계가 있으면 평점과 리뷰 수를 반환한다")
+		void returnsReviewSummary() {
+			Listing listing = approvedListing();
+			ReflectionTestUtils.setField(listing, "id", 1L);
+			given(listingQueryRepository.findDetailById(1L)).willReturn(Optional.of(listing));
+			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
+
+			ListingReviewSummary summary = ListingReviewSummary.create(listing);
+			summary.addRating(5);
+			summary.addRating(4);
+			given(reviewSummaryRepository.findById(1L)).willReturn(Optional.of(summary));
+
+			ListingDetailResponse result = listingSearchService.getListingDetail(GUEST_ID, 1L);
+
+			assertThat(result.review().reviewCount()).isEqualTo(2);
+			assertThat(result.review().averageRating()).isEqualTo(4.5);
+		}
+
+		@Test
+		@DisplayName("리뷰 통계가 없으면 리뷰 수 0, 평점 null을 반환한다")
+		void returnsEmptyReviewSummary() {
+			Listing listing = approvedListing();
+			ReflectionTestUtils.setField(listing, "id", 1L);
+			given(listingQueryRepository.findDetailById(1L)).willReturn(Optional.of(listing));
+			given(regionCodeService.getAddressSummary("11", "11680")).willReturn("강남구, 서울");
+			given(reviewSummaryRepository.findById(1L)).willReturn(Optional.empty());
+
+			ListingDetailResponse result = listingSearchService.getListingDetail(GUEST_ID, 1L);
+
+			assertThat(result.review().reviewCount()).isZero();
+			assertThat(result.review().averageRating()).isNull();
 		}
 	}
 

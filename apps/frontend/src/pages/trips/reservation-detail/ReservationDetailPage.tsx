@@ -5,7 +5,7 @@ import { Icon } from '../../../shared/Icon';
 import { useAppState } from '../../../shared/AppState';
 import { listingImage } from '../../reservation/utils';
 import { getReservationOptions } from '../../../shared/api/generated/@tanstack/react-query.gen';
-import type { CurrentMemberInfo, GuestCountsResponse } from '../../../shared/api/generated/types.gen';
+import type { GuestCountsResponse } from '../../../shared/api/generated/types.gen';
 import { StayMap } from './StayMap';
 import { ReservationDetailsSection } from './ReservationDetailsSection';
 import { GettingThereSection } from './GettingThereSection';
@@ -14,8 +14,6 @@ import { HostSection } from './HostSection';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-// @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
-const MEMBER_STUB = {} as CurrentMemberInfo;
 
 function fmtDate(dateStr: string | null | undefined): string {
   if (dateStr) {
@@ -44,7 +42,6 @@ export function ReservationDetailPage() {
   const detailQuery = useQuery({
     ...getReservationOptions({
       path: { reservationId },
-      query: { guest: MEMBER_STUB },
     }),
     enabled: Number.isFinite(reservationId),
   });

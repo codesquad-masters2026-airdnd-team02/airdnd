@@ -8,7 +8,10 @@ import { SaveToWishlistModal } from '../../components/SaveToWishlistModal';
 import { removeWishlistItem, fetchListingWishlistId } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
-import type { ListingCardResponse, ListingSearchCondition } from '../../shared/api/generated/types.gen';
+import type {
+  ListingCardResponse,
+  ListingSearchCondition,
+} from '../../shared/api/generated/types.gen';
 import type { SearchState } from '../../types';
 import type { Bounds } from '../../shared/map';
 import { ResultCard } from './ResultCard';

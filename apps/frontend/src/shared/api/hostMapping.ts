@@ -1,12 +1,6 @@
-import type { HostListingSummary, ListingCreateRequest as ApiCreateRequest, CurrentMemberInfo } from './generated/types.gen';
+import type { HostListingSummary, ListingCreateRequest as ApiCreateRequest } from './generated/types.gen';
 import type { HostListing, ListingFormData, RoomType } from '../../types';
 
-/**
- * @Login은 서버에서 세션으로 처리되지만 OpenAPI 스펙에 쿼리 파라미터로 잘못 노출됨.
- * 빈 객체 스텁 - 백엔드가 값을 무시한다. 반드시 빈 객체여야 한다(값을 넣으면
- * `memberInfo[id]=...` 대괄호 쿼리가 생겨 Tomcat이 400으로 거부함).
- */
-export const HOST_STUB = {} as CurrentMemberInfo;
 
 export const ROOM_TYPE_FROM_API: Record<string, RoomType> = {
   ENTIRE_PLACE: '집 전체',

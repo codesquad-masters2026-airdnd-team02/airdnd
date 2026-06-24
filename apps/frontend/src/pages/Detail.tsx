@@ -17,7 +17,7 @@ import { useToast } from '../shared/Toast';
 import { DetailGallery } from './detail/DetailGallery';
 import { DetailOverview } from './detail/DetailOverview';
 import { DetailRatings } from './detail/DetailRatings';
-import { DetailReviews } from './detail/DetailReviews';
+import { DetailReviews, EmptyReviews } from './detail/DetailReviews';
 import { DetailAmenities } from './detail/DetailAmenities';
 import { DetailCalendar } from './detail/DetailCalendar';
 import { DetailDescription } from './detail/DetailDescription';
@@ -44,7 +44,9 @@ export function Detail() {
   // 실제 상세 API (GET /api/listings/{listingsId}). 로딩/실패 시 데모로 폴백
   const listingId = id != null ? Number(id) : NaN;
   const detailQuery = useQuery({
-    ...getHostListingDetailOptions({ path: { listingsId: listingId } }),
+    ...getHostListingDetailOptions({
+      path: { listingsId: listingId },
+    }),
     enabled: Number.isFinite(listingId),
   });
   const d = detailQuery.data?.data;
@@ -376,11 +378,15 @@ export function Detail() {
           </div>
         </div>
 
-        {/* Section 3: 평점 요약 (개요와 동일 평점 값) */}
-        <DetailRatings rating={v.rating} reviews={v.reviews} />
-
-        {/* Section 4: 후기 그리드 */}
-        <DetailReviews reviews={v.reviews} />
+        {/* Section 3+4: 평점/후기. 후기 0개면 빈 상태 하나로 묶어 표시 */}
+        {v.reviews === 0 ? (
+          <EmptyReviews hostName={v.hostName} />
+        ) : (
+          <>
+            <DetailRatings rating={v.rating} reviews={v.reviews} listingId={v.id} />
+            <DetailReviews reviews={v.reviews} listingId={v.id} />
+          </>
+        )}
 
         {/* Section 7: 위치 */}
         <DetailLocation location={v.loc} lat={v.lat} lng={v.lng} />

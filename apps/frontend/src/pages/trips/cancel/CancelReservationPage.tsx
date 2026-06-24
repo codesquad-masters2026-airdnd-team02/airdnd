@@ -8,12 +8,10 @@ import {
   getReservationOptions,
   cancelPreviewOptions,
 } from '../../../shared/api/generated/@tanstack/react-query.gen';
-import type { CurrentMemberInfo, GuestCountsResponse } from '../../../shared/api/generated/types.gen';
+import type { GuestCountsResponse } from '../../../shared/api/generated/types.gen';
 import { cancelReservation as cancelReservationApi } from '../../../shared/api/reservation';
 import { CancelSummaryCard } from './CancelSummaryCard';
 import { SelectReasonStep, ConfirmStep, CANCEL_REASONS } from './steps';
-
-const MEMBER_STUB = {} as CurrentMemberInfo;
 
 const STEPS = ['사유 선택', '취소 확인'];
 
@@ -41,13 +39,13 @@ export function CancelReservationPage() {
   const enabled = Number.isFinite(reservationId);
 
   const detailQuery = useQuery({
-    ...getReservationOptions({ path: { reservationId }, query: { guest: MEMBER_STUB } }),
+    ...getReservationOptions({ path: { reservationId } }),
     enabled,
   });
   const detail = detailQuery.data?.data;
 
   const previewQuery = useQuery({
-    ...cancelPreviewOptions({ path: { reservationId }, query: { guest: MEMBER_STUB } }),
+    ...cancelPreviewOptions({ path: { reservationId } }),
     enabled,
   });
   const refund = previewQuery.data?.data?.refundAmount ?? detail?.totalPrice;
