@@ -18,10 +18,14 @@ public record ListingCardResponse(
 
 	List<String> images,
 
-	Long wishlistId
+	Long wishlistId,
+
+	Double averageRating,
+	int reviewCount
 ) {
 	public static ListingCardResponse from(
-		ListingSearchResponse searchResponse, List<String> images, Long wishlistId, long nights
+		ListingSearchResponse searchResponse, List<String> images, Long wishlistId, long nights,
+		Double averageRating, int reviewCount
 	) {
 		BigDecimal totalPrice = nights > 0
 			? searchResponse.pricePerNight().multiply(BigDecimal.valueOf(nights))
@@ -35,7 +39,9 @@ public record ListingCardResponse(
 			searchResponse.capacity(),
 			totalPrice,
 			images,
-			wishlistId
+			wishlistId,
+			averageRating,
+			reviewCount
 		);
 	}
 }
