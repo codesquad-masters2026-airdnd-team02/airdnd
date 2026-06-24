@@ -24,7 +24,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.domain.review.dto.request.ReviewCreateRequest;
+import codesquad.airdnd.domain.review.dto.response.RatingBucket;
 import codesquad.airdnd.domain.review.dto.response.ReviewResponse;
+import codesquad.airdnd.domain.review.dto.response.ReviewSummaryResponse;
 import codesquad.airdnd.domain.review.dto.response.ReviewerInfo;
 import codesquad.airdnd.global.response.CursorPageResponse;
 import codesquad.airdnd.global.auth.AuthUtils;
@@ -49,6 +51,9 @@ class ReviewControllerTest {
 
 	@MockitoBean
 	private ReviewService reviewService;
+
+	@MockitoBean
+	private ListingReviewSummaryService summaryService;
 
 	@MockitoBean
 	private AuthUtils authUtils;
@@ -191,6 +196,28 @@ class ReviewControllerTest {
 				.andExpect(jsonPath("$.data.hasNext").value(true))
 				.andExpect(jsonPath("$.data.content[0].rating").value(5))
 				.andExpect(jsonPath("$.data.content[0].author.nickname").value("게스트"));
+		}
+	}
+
+	@Nested
+	@DisplayName("GET /api/listings/{listingId}/review-summary")
+	class GetReviewSummary {
+
+		@Test
+		@DisplayName("별점 분포를 200과 5→1 버킷으로 반환한다")
+		void success() throws Exception {
+			ReviewSummaryResponse summary = new ReviewSummaryResponse(4.5, 2, List.of(
+				new RatingBucket(5, 1), new RatingBucket(4, 1), new RatingBucket(3, 0),
+				new RatingBucket(2, 0), new RatingBucket(1, 0)));
+			given(summaryService.getDistribution(10L)).willReturn(summary);
+
+			mockMvc.perform(get("/api/listings/{id}/review-summary", 10L))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.data.averageRating").value(4.5))
+				.andExpect(jsonPath("$.data.reviewCount").value(2))
+				.andExpect(jsonPath("$.data.distribution[0].rating").value(5))
+				.andExpect(jsonPath("$.data.distribution[0].count").value(1));
 		}
 	}
 }

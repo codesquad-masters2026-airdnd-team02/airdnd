@@ -15,6 +15,7 @@ import codesquad.airdnd.domain.review.dto.request.ReviewCreateRequest;
 import codesquad.airdnd.domain.review.dto.request.ReviewCursorRequest;
 import codesquad.airdnd.domain.review.dto.response.ReviewCreatedResponse;
 import codesquad.airdnd.domain.review.dto.response.ReviewResponse;
+import codesquad.airdnd.domain.review.dto.response.ReviewSummaryResponse;
 import codesquad.airdnd.global.auth.CurrentMember;
 import codesquad.airdnd.global.auth.CurrentMemberInfo;
 import codesquad.airdnd.global.response.ApiResponse;
@@ -29,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class ReviewController {
 
 	private final ReviewService reviewService;
+	private final ListingReviewSummaryService summaryService;
 
 	@Operation(summary = "게스트 리뷰 작성")
 	@PostMapping("/reservations/{reservationId}/reviews")
@@ -39,6 +41,12 @@ public class ReviewController {
 		Long reviewId = reviewService.create(guest.id(), reservationId, request.rating(), request.content());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.success(ReviewCreatedResponse.from(reviewId)));
+	}
+
+	@Operation(summary = "숙소 별점 분포 (1~5점 개수)")
+	@GetMapping("/listings/{listingId}/review-summary")
+	public ApiResponse<ReviewSummaryResponse> getReviewSummary(@PathVariable Long listingId) {
+		return ApiResponse.success(summaryService.getDistribution(listingId));
 	}
 
 	@Operation(summary = "숙소 리뷰 목록 (커서 페이징)")

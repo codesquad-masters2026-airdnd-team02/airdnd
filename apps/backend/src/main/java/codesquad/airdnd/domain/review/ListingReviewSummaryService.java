@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import codesquad.airdnd.domain.listing.entity.Listing;
+import codesquad.airdnd.domain.review.dto.response.ReviewSummaryResponse;
 import codesquad.airdnd.domain.review.entity.ListingReviewSummary;
 import codesquad.airdnd.domain.review.repository.ListingReviewSummaryRepository;
 import codesquad.airdnd.global.exception.BusinessException;
@@ -35,6 +36,13 @@ public class ListingReviewSummaryService {
 	@Transactional
 	public void removeReview(Long listingId, int rating) {
 		getSummary(listingId).removeRating(rating);
+	}
+
+	@Transactional(readOnly = true)
+	public ReviewSummaryResponse getDistribution(Long listingId) {
+		return repository.findById(listingId)
+			.map(ReviewSummaryResponse::from)
+			.orElseGet(ReviewSummaryResponse::empty);
 	}
 
 	private ListingReviewSummary getSummary(Long listingId) {

@@ -15,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import codesquad.airdnd.domain.listing.entity.Listing;
+import codesquad.airdnd.domain.review.dto.response.RatingBucket;
+import codesquad.airdnd.domain.review.dto.response.ReviewSummaryResponse;
 import codesquad.airdnd.domain.review.entity.ListingReviewSummary;
 import codesquad.airdnd.domain.review.repository.ListingReviewSummaryRepository;
 import codesquad.airdnd.global.exception.BusinessException;
@@ -111,6 +113,42 @@ class ListingReviewSummaryServiceTest {
 
 			assertThat(existing.getReviewCount()).isEqualTo(1);
 			assertThat(existing.getAverageRating()).isEqualTo(4.0);
+		}
+	}
+
+	@Nested
+	@DisplayName("별점 분포 (getDistribution)")
+	class GetDistribution {
+
+		@Test
+		@DisplayName("통계가 있으면 평균·총개수와 5→1점 버킷을 반환한다")
+		void returnsDistribution() {
+			ListingReviewSummary summary = ListingReviewSummary.create(listing);
+			summary.addRating(5);
+			summary.addRating(5);
+			summary.addRating(3);
+			given(repository.findById(LISTING_ID)).willReturn(Optional.of(summary));
+
+			ReviewSummaryResponse result = service.getDistribution(LISTING_ID);
+
+			assertThat(result.reviewCount()).isEqualTo(3);
+			assertThat(result.averageRating()).isEqualTo((5 + 5 + 3) / 3.0);
+			assertThat(result.distribution()).extracting(RatingBucket::rating).containsExactly(5, 4, 3, 2, 1);
+			assertThat(result.distribution().get(0).count()).isEqualTo(2); // 5점
+			assertThat(result.distribution().get(2).count()).isEqualTo(1); // 3점
+		}
+
+		@Test
+		@DisplayName("통계가 없으면 평균 null·총개수 0·모든 버킷 0을 반환한다")
+		void returnsEmptyWhenAbsent() {
+			given(repository.findById(LISTING_ID)).willReturn(Optional.empty());
+
+			ReviewSummaryResponse result = service.getDistribution(LISTING_ID);
+
+			assertThat(result.reviewCount()).isZero();
+			assertThat(result.averageRating()).isNull();
+			assertThat(result.distribution()).extracting(RatingBucket::rating).containsExactly(5, 4, 3, 2, 1);
+			assertThat(result.distribution()).allSatisfy(b -> assertThat(b.count()).isZero());
 		}
 	}
 }
