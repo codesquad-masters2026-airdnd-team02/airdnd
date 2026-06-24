@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import logoSvg from '../../../assets/logo.svg';
 import { Icon } from '../../../shared/Icon';
 import { useAppState } from '../../../shared/AppState';
+import { useToast } from '../../../shared/Toast';
 import {
   getReservationOptions,
   cancelPreviewOptions,
@@ -33,6 +34,7 @@ function guestSummary(g: GuestCountsResponse | undefined): string {
 
 export function CancelReservationPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const { reservationId: idParam } = useParams();
   const reservationId = Number(idParam);
   const { selectedListing: listing, cancelReservation } = useAppState();
@@ -88,9 +90,16 @@ export function CancelReservationPage() {
   const onConfirm = () => {
     cancelMutation.mutate(undefined, {
       onSuccess: () => {
-        cancelReservation(reservationId); // 즉시 UI 반영
-        queryClient.invalidateQueries();
-        navigate(`/trips/reservation/${reservationId}`);
+        cancelReservation(reservationId); // 로컬 즉시 반영(canceledIds)
+        queryClient.invalidateQueries(); // 예약 상세 재조회 → 취소/환불 상태 반영
+        setShowConfirm(false);
+        toast.success('예약이 취소되고 환불이 완료되었어요.');
+        // replace: 뒤로가기로 취소 페이지(이미 취소된 예약)로 되돌아가지 않게
+        navigate(`/trips/reservation/${reservationId}`, { replace: true });
+      },
+      onError: (e) => {
+        setShowConfirm(false);
+        toast.error(e instanceof Error ? e.message : '예약 취소에 실패했어요.');
       },
     });
   };
