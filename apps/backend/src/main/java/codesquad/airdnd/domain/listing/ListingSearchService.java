@@ -69,9 +69,17 @@ public class ListingSearchService {
                     ));
 
 
-		Page<ListingCardResponse> cardPage = page.map(c -> ListingCardResponse.from(
-			c, imageMap.getOrDefault(c.id(), List.of()), wishlistIdByListing.get(c.id()), nights
-		));
+		Map<Long, ListingReviewSummary> summaryMap = reviewSummaryRepository.findAllById(listingIds).stream()
+			.collect(Collectors.toMap(ListingReviewSummary::getListingId, s -> s));
+
+		Page<ListingCardResponse> cardPage = page.map(c -> {
+			ListingReviewSummary summary = summaryMap.get(c.id());
+			return ListingCardResponse.from(
+				c, imageMap.getOrDefault(c.id(), List.of()), wishlistIdByListing.get(c.id()), nights,
+				summary == null ? null : summary.getAverageRating(),
+				summary == null ? 0 : summary.getReviewCount()
+			);
+		});
 
 		return PageResponse.from(cardPage);
 	}
