@@ -3,8 +3,10 @@ package codesquad.airdnd.domain.wishlist;
 import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.member.Member;
+import codesquad.airdnd.domain.wishlist.dto.query.ListingCoverImageProjection;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailItemQueryResult;
 import codesquad.airdnd.domain.wishlist.dto.query.WishlistDetailQueryResult;
+import codesquad.airdnd.domain.wishlist.dto.query.WishlistSummaryProjection;
 import codesquad.airdnd.domain.wishlist.dto.request.ExistingWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.NewWishlistAddRequest;
 import codesquad.airdnd.domain.wishlist.dto.request.WishlistItemPatchRequest;
@@ -34,7 +36,30 @@ public class WishlistService {
 
     public List<WishlistResponse> getWishlists(){
         Member member = authUtils.getCurrentMember();
-        return wishlistRepository.findWishlistsByMember(member.getId());
+
+        List<WishlistSummaryProjection> summaries = wishlistRepository.findWishlistSummaries(member.getId());
+
+        List<Long> coverListingIds = summaries.stream()
+                .map(WishlistSummaryProjection::getCoverListingId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, String> imageByListing = coverListingIds.isEmpty()
+                ? Map.of()
+                : wishlistRepository.findCoverImages(coverListingIds).stream()
+                        .collect(Collectors.toMap(
+                                ListingCoverImageProjection::getListingId,
+                                ListingCoverImageProjection::getImageUrl,
+                                (a, b) -> a));
+
+        // 조립: 요약 + 대표 이미지.
+        return summaries.stream()
+                .map(s -> new WishlistResponse(
+                        s.getId(),
+                        s.getName(),
+                        s.getItemCount(),
+                        s.getCoverListingId() == null ? null : imageByListing.get(s.getCoverListingId())))
+                .toList();
     }
 
     // TODO: 반환 DTO 규격대로 한 번에 가져와 이미지만 파싱한다면?
