@@ -58,3 +58,6 @@ docker/
 seed/
 seed.sql
 seed-listings.sql
+
+# 배포/인프라 문서 (로컬 참고용)
+docs/
