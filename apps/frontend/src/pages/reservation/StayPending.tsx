@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { SlimHeader } from './components/SlimHeader';
 import { listingImage, nightsOf } from './utils';
 import { won } from '../../shared/utils';
+import { getHostListingDetailOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import { LISTINGS } from '../../shared/demoListings';
 import { useAppState } from '../../shared/AppState';
 
@@ -17,7 +19,24 @@ export function StayPending() {
     return <Navigate to={`/listings/${id ?? ''}`} replace />;
   }
 
-  const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+  const demoListing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+
+  // 예약 대상 숙소를 실제 상세 API로 가져온다(데모는 폴백). 제목/가격/이미지 표시에 사용.
+  const listingId = id != null ? Number(id) : NaN;
+  const detailQuery = useQuery({
+    ...getHostListingDetailOptions({ path: { listingsId: listingId } }),
+    enabled: Number.isFinite(listingId),
+  });
+  const d = detailQuery.data?.data;
+
+  const listing = {
+    ...demoListing,
+    title: d?.name ?? demoListing.title,
+    price: d?.pricePerNight ?? demoListing.price,
+  };
+  // 이미지는 listingImage가 데모 키만 매핑하므로 실 URL을 우선 사용, 없으면 데모 에셋 폴백.
+  const heroImage = d?.images?.[0] ?? listingImage(demoListing.img);
+
   const onDone = () => navigate('/trips');
   const nights = nightsOf(search);
   const total = listing.price * nights;
@@ -62,7 +81,7 @@ export function StayPending() {
         >
           <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', aspectRatio: '1 / 1' }}>
             <motion.img
-              src={listingImage(listing.img)}
+              src={heroImage}
               alt={listing.title}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
