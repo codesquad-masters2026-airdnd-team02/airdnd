@@ -1,0 +1,53 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: airdnd
+
+scrape_configs:
+  # Prometheus 자기 자신
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # app(private) Spring — Micrometer /actuator/prometheus
+  # edge→app:8080 은 private-app-sg 에서 허용됨. (라이브 플립 무관, staged 그대로 scrape)
+  - job_name: airdnd-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["10.0.10.29:8080"]
+        labels:
+          instance: app-private
+
+  # edge 호스트 메트릭 (CPU/메모리/디스크/네트워크)
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          host: edge
+
+  # edge 컨테이너 메트릭
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          host: edge
+
+  # RDS(MySQL) — mysqld_exporter 경유
+  - job_name: mysql-rds
+    static_configs:
+      - targets: ["mysqld-exporter:9104"]
+        labels:
+          db: airdnd-rds
+
+  # ── (선택) app 박스 호스트/컨테이너까지 보려면 ──
+  # app 박스에 node-exporter/cadvisor 를 따로 띄우고 private-app-sg 에
+  # 9100/8080 ← edge 를 추가한 뒤 아래 주석 해제.
+  # - job_name: node-app
+  #   static_configs:
+  #     - targets: ["10.0.10.29:9100"]
+  #       labels: { host: app }
+  # - job_name: cadvisor-app
+  #   static_configs:
+  #     - targets: ["10.0.10.29:8081"]
+  #       labels: { host: app }

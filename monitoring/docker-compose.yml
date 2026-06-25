@@ -1,0 +1,83 @@
+# airdnd 모니터링 스택 (L1 = 메트릭)
+# 배치: edge 박스(public)에서 기동 → Grafana UI 를 브라우저로 접근.
+#   - Prometheus 가 app Spring(10.0.10.29:8080/actuator/prometheus) + RDS + edge 호스트/컨테이너를 scrape
+#   - mysqld_exporter 는 edge(app-sg 소속)에서 RDS:3306 으로 접속(DB-SG 가 app-sg 허용)
+# 사전: cp .env.example .env 채우기 + cp mysqld-exporter/my.cnf.example mysqld-exporter/my.cnf 채우기
+# 기동: docker compose -f monitoring/docker-compose.yml up -d
+name: airdnd-monitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: airdnd-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=3d   # 데모용 단기 보존
+    ports:
+      - "127.0.0.1:9090:9090"              # 호스트 로컬만(외부 비노출). 필요 시 SSM/터널로 확인
+    networks: [monitoring]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: airdnd-grafana
+    restart: unless-stopped
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"                         # ⚠️ teardown 시 SG 19999 대신 3000 ← My IP 임시개방 후 제거
+    networks: [monitoring]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: airdnd-node-exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    networks: [monitoring]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: airdnd-cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks: [monitoring]
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    container_name: airdnd-mysqld-exporter
+    restart: unless-stopped
+    command:
+      - --config.my-cnf=/cfg/my.cnf       # RDS host + monitor 유저 (gitignore)
+    volumes:
+      - ./mysqld-exporter/my.cnf:/cfg/my.cnf:ro
+    networks: [monitoring]
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
