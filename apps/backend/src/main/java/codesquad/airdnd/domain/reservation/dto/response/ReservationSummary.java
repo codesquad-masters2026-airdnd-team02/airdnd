@@ -19,12 +19,16 @@ public record ReservationSummary(
 	String region
 ) {
 	public static ReservationSummary from(Reservation r) {
-		return from(r, null);
+		return from(r, null, null);
 	}
 
 	public static ReservationSummary from(Reservation r, String region) {
+		return from(r, region, null);
+	}
+
+	public static ReservationSummary from(Reservation r, String region, String coverImage) {
 		return new ReservationSummary(
-			null, //todo: r.coverImage(),
+			coverImage,
 			r.getReservationId(),
 			r.getListing().getId(),
 			r.getListing().getName(),

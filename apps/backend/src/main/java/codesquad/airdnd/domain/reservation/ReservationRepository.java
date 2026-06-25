@@ -28,6 +28,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 				SELECT r
 				FROM Reservation r
 					JOIN FETCH r.listing l
+					LEFT JOIN FETCH l.images
 					JOIN FETCH l.host
 					JOIN FETCH r.guest
 				WHERE r.reservationId = :id
