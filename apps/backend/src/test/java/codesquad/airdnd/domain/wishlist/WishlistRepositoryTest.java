@@ -47,6 +47,14 @@ class WishlistRepositoryTest {
 		em.flush();
 	}
 
+	// TODO: 위시리스트 목록 분할 쿼리 @DataJpaTest 커버리지 추가 필요.
+	//  findWishlistSummaries / findCoverImages 는 네이티브 CTE + ROW_NUMBER + 인터페이스
+	//  프로젝션이라 컴파일·서비스 목 테스트로는 실제 실행이 검증되지 않음. 실DB로 확인할 케이스:
+	//  - 빈 위시리스트 -> coverListingId = null
+	//  - 아이템 N개 -> itemCount = N
+	//  - 대표 이미지 = 가장 낮은 sort_order
+	//  - findCoverImages 의 listing_id IN (:ids) 매핑
+
 	// ===== findByIdAndMember_Id =====
 
 	@Test
