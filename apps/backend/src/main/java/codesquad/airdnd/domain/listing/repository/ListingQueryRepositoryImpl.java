@@ -12,7 +12,6 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import codesquad.airdnd.domain.listing.dto.query.DateRangeFilter;
@@ -55,16 +54,23 @@ public class ListingQueryRepositoryImpl implements ListingQueryRepository {
 			.limit(pageable.getPageSize())
 			.fetch();
 
-		JPAQuery<Long> countQuery = queryFactory
-			.select(listing.count())
-			.from(listing)
-			.where(filters(condition));
-
 		return PageableExecutionUtils.getPage(
 			contents,
 			pageable,
-			countQuery::fetchOne
+			() -> countUpTo(condition)
 		);
+	}
+
+	private static final int COUNT_CAP = 1001;
+
+	private long countUpTo(ListingSearchCondition condition) {
+		return queryFactory
+			.select(listing.id)
+			.from(listing)
+			.where(filters(condition))
+			.limit(COUNT_CAP)
+			.fetch()
+			.size();
 	}
 
 	@Override

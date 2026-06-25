@@ -1,4 +1,5 @@
 import { Icon } from '../shared/Icon';
+import { formatResultCount } from '../shared/formatCount';
 import { PricePanel } from './panels/PricePanel';
 import type { SearchState } from '../types';
 
@@ -125,7 +126,7 @@ export function FilterModal({ open, value, onChange, onClose, onApply, onReset, 
               cursor: 'pointer',
             }}
           >
-            숙소 {resultCount.toLocaleString('ko-KR')}개 보기
+            숙소 {formatResultCount(resultCount)}개 보기
           </button>
         </div>
       </div>
