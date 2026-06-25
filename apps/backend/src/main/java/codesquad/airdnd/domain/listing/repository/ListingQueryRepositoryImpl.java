@@ -98,12 +98,14 @@ public class ListingQueryRepositoryImpl implements ListingQueryRepository {
 			return null;
 		}
 
-		return Expressions.numberTemplate(
-			Integer.class,
-			"MBRContains(ST_GeomFromText({0}, 4326, 'axis-order=long-lat'), {1})",
+		// mbrcontains 는 SpatialFunctionContributor 에서 boolean 함수로 등록됨.
+		// WHERE 에 bare 술어로 렌더링되어 SPATIAL 인덱스(spat_listing_lat_lng)를 탄다.
+		// `= 1` 로 감싸면(numberTemplate.eq(1)) 옵티마이저가 인덱스를 못 타 풀스캔이 된다.
+		return Expressions.booleanTemplate(
+			"mbrcontains(ST_GeomFromText({0}, 4326, 'axis-order=long-lat'), {1})",
 			bounds.toPolygonWkt(),
 			listing.address.latLng
-		).eq(1);
+		);
 	}
 
 	private BooleanExpression inRegion(RegionFilter region) {
