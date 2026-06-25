@@ -10,6 +10,8 @@ RUN npm ci
 
 # 소스 복사 후 prod 빌드 (.env + .env.production 적용)
 COPY . .
+# 커밋된 openapi.json 에서 API 클라이언트 생성 (generated/ 는 gitignore라 빌드 시 생성)
+RUN npx openapi-ts
 # tsc 타입체크는 건너뛰고 vite 번들만 생성 (데모 빌드 안정성)
 RUN npx vite build
 
