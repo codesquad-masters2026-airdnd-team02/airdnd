@@ -73,7 +73,9 @@ public class SecurityConfig {
                                 // OAuth2 인가 요청/콜백 엔드포인트
                                 "/oauth2/**", "/login/oauth2/**",
                                 // Swagger / OpenAPI
-                                "/v3/api-docs/**", "/swagger-ui/**"
+                                "/v3/api-docs/**", "/swagger-ui/**",
+                                // Actuator: Prometheus 스크레이프 + 헬스체크 (VPC 내부 전용, edge nginx 에서 외부 차단)
+                                "/actuator/health", "/actuator/prometheus"
                         ).permitAll()
                         // 비회원도 숙소 목록/상세는 조회 가능(GET 한정).
                         // GET 으로 스코프하지 않으면 POST /api/listings/{id}/reservations(예약 생성)까지 열리므로 주의.

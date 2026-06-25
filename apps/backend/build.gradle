@@ -23,6 +23,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
+	// Observability (메트릭): Actuator + Prometheus 레지스트리 → /actuator/prometheus 노출
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
 	// Database
 	runtimeOnly 'com.mysql:mysql-connector-j'
 

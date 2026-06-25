@@ -20,3 +20,21 @@ logging:
 decorator:
   datasource:
     enabled: false
+
+# Observability: Prometheus 스크레이프용 메트릭 노출 (health, prometheus 만)
+# 보안: /actuator 는 VPC 내부(Prometheus) 전용 — edge nginx 에서 외부 차단 전제.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: airdnd-backend
+    distribution:
+      # http.server.requests 히스토그램 버킷 → Grafana 에서 p95/p99 계산
+      percentiles-histogram:
+        http.server.requests: true
