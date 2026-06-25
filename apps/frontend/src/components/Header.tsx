@@ -23,6 +23,10 @@ interface HeaderProps {
   onSearchChange?: (s: SearchState) => void;
   onSearchSubmit?: () => void;
   onSearchClose?: () => void;
+  // compact를 flow 밖(fixed)으로 띄움 — full↔compact 전환 시 레이아웃 점프 방지(메인)
+  overlay?: boolean;
+  // compact 진입 시 위에서 미끄러져 내려오는 애니메이션
+  scrollReveal?: boolean;
 }
 
 export function Header({
@@ -35,6 +39,8 @@ export function Header({
   onSearchChange,
   onSearchSubmit,
   onSearchClose,
+  overlay = false,
+  scrollReveal = false,
 }: HeaderProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -164,8 +170,10 @@ export function Header({
         </div>
       )}
       <header
+        className={compact && scrollReveal ? 'header-reveal' : undefined}
         style={{
-          position: solid ? 'sticky' : 'absolute',
+          // overlay(메인): full/compact 모두 fixed로 고정 → 로고/우측이 제자리 유지, 순간이동 방지
+          position: overlay ? 'fixed' : solid ? 'sticky' : 'absolute',
           top: 0,
           left: 0,
           right: 0,
@@ -175,7 +183,9 @@ export function Header({
           display: 'flex',
           alignItems: 'center',
           background: solid ? 'var(--surface)' : 'transparent',
-          borderBottom: solid && !expanded ? '1px solid var(--line)' : 'none',
+          borderBottom: solid && !expanded ? '1px solid var(--line)' : '1px solid transparent',
+          // overlay 전환을 부드럽게 — 배경/높이/구분선 보간
+          transition: overlay ? 'background 220ms ease, height 220ms ease, border-color 220ms ease' : undefined,
         }}
       >
       {/* Left: wordmark */}
@@ -192,7 +202,10 @@ export function Header({
       {compact && expanded ? (
         <div style={{ flex: 'none' }} />
       ) : compact ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <div
+          className={overlay ? 'pill-fade' : undefined}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}
+        >
         <div
           style={{
             display: 'flex',
@@ -269,20 +282,6 @@ export function Header({
           필터
         </button>
         </div>
-      ) : mode === 'full' ? (
-        <nav
-          style={{
-            display: 'flex',
-            gap: 60,
-            fontSize: 16,
-            color: 'var(--ink-1)',
-            fontWeight: 500,
-          }}
-        >
-          <a className="gnb-link">숙소</a>
-          <a className="gnb-link">체험</a>
-          <a className="gnb-link">온라인 체험</a>
-        </nav>
       ) : null}
 
       {/* Right: hosting button + account pill */}
