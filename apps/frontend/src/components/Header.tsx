@@ -358,14 +358,6 @@ export function Header({
                 <>
                   <MenuItem icon="heart" onClick={() => go('/wishlists')}>위시리스트</MenuItem>
                   <MenuItem icon="briefcase" onClick={() => go('/trips')}>여행</MenuItem>
-                  <MenuItem icon="message-circle" badge={2} onClick={() => go('/mypage')}>메시지</MenuItem>
-                  <MenuItem icon="user" onClick={() => go('/mypage')}>프로필</MenuItem>
-
-                  <Divider />
-
-                  <MenuItem icon="bell" badge={1} onClick={() => go('/mypage')}>알림</MenuItem>
-                  <MenuItem icon="settings" onClick={() => go('/mypage')}>계정 설정</MenuItem>
-                  <MenuItem icon="help-circle" onClick={() => go('/mypage')}>도움말 센터</MenuItem>
 
                   <Divider />
 
