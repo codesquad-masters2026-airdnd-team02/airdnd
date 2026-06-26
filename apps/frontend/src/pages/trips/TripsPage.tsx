@@ -6,14 +6,13 @@ import { Header } from '../../components/Header';
 import { Icon } from '../../shared/Icon';
 import { useAppState } from '../../shared/AppState';
 import { getMyReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
-import type { CurrentMemberInfo, ReservationSummary } from '../../shared/api/generated/types.gen';
+import type { ReservationSummary } from '../../shared/api/generated/types.gen';
 import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
+import { WriteReviewModal } from './WriteReviewModal';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-// @CurrentMember는 서버 인증으로 처리되지만 OpenAPI엔 쿼리 파라미터로 노출됨 — 빈 스텁.
-const MEMBER_STUB = {} as CurrentMemberInfo;
 
 const STATE_LABEL: Record<NonNullable<ReservationSummary['state']>, string> = {
   PENDING: '대기 중',
@@ -21,6 +20,7 @@ const STATE_LABEL: Record<NonNullable<ReservationSummary['state']>, string> = {
   GUEST_CANCELED: '취소됨',
   HOST_CANCELED: '취소됨',
   COMPLETED: '여행 완료',
+  EXPIRED: '만료됨',
 };
 
 function dayMark(dateStr: string | null | undefined): { wd: string; day: string } {
@@ -46,7 +46,7 @@ function rangeLabel(a?: string, b?: string): string {
 }
 
 export function TripsPage() {
-  const query = useQuery(getMyReservationsOptions({ query: { memberInfo: MEMBER_STUB } }));
+  const query = useQuery(getMyReservationsOptions());
   const queryClient = useQueryClient();
   const { canceledIds } = useAppState();
   const reservations = query.data?.data?.reservations ?? [];
@@ -176,6 +176,8 @@ function TripCard({
   const navigate = useNavigate();
   const { canceledIds } = useAppState();
   const [showTimeline, setShowTimeline] = useState(false);
+  const [writeOpen, setWriteOpen] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
   const dates = rangeLabel(r.checkInDate, r.checkOutDate);
   const checkIn = dayMark(r.checkInDate);
   const checkOut = dayMark(r.checkOutDate);
@@ -183,6 +185,7 @@ function TripCard({
     r.state === 'GUEST_CANCELED' ||
     r.state === 'HOST_CANCELED' ||
     (r.reservationId != null && canceledIds.has(r.reservationId));
+  const canReview = r.state === 'COMPLETED' && !isCanceled && r.reservationId != null;
   const stateLabel = busy
     ? '결제창 여는 중…'
     : isCanceled
@@ -290,25 +293,52 @@ function TripCard({
             }}
           >
             <div style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.5 }}>{r.region}</div>
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                if (r.listingId != null) navigate(`/listings/${r.listingId}`);
-              }}
-              style={{
-                flexShrink: 0,
-                border: 'none',
-                borderRadius: 10,
-                background: 'var(--surface-alt-2)',
-                padding: '12px 22px',
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                color: 'var(--ink-1)',
-              }}
-            >
-              찾아가는 길
-            </button>
+            <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+              {canReview && reviewed && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, color: 'var(--ink-3)' }}>
+                  <Icon name="star" size={14} color="var(--ink-1)" fill="var(--ink-1)" />
+                  후기 작성 완료
+                </span>
+              )}
+              {canReview && !reviewed && (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    setWriteOpen(true);
+                  }}
+                  style={{
+                    border: '1px solid var(--ink-1)',
+                    borderRadius: 10,
+                    background: '#fff',
+                    padding: '12px 22px',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    color: 'var(--ink-1)',
+                  }}
+                >
+                  리뷰 쓰기
+                </button>
+              )}
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  if (r.listingId != null) navigate(`/listings/${r.listingId}`);
+                }}
+                style={{
+                  border: 'none',
+                  borderRadius: 10,
+                  background: 'var(--surface-alt-2)',
+                  padding: '12px 22px',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  color: 'var(--ink-1)',
+                }}
+              >
+                찾아가는 길
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -343,6 +373,19 @@ function TripCard({
       </AnimatePresence>
       {/* setShowTimeline 보존 (트리거 추가 시 사용) */}
       <span style={{ display: 'none' }} onClick={() => setShowTimeline(v => !v)} />
+
+      {writeOpen && (
+        <WriteReviewModal
+          open
+          reservationId={r.reservationId ?? null}
+          listingTitle={r.listingTitle ?? undefined}
+          onClose={() => setWriteOpen(false)}
+          onSubmitted={() => {
+            setReviewed(true);
+            setWriteOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

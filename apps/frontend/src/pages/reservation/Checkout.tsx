@@ -5,7 +5,7 @@ import { SlimHeader } from './components/SlimHeader';
 import { ReservationSummary } from './components/ReservationSummary';
 import { PaymentModal, type PayStatus } from './components/PaymentModal';
 import { createReservationMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
-import { GUEST_STUB, toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
+import { toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
 import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
 import { Icon } from '../../shared/Icon';
@@ -83,7 +83,7 @@ export function Checkout() {
     }
     setPayStatus('loading');
     reserveMutation.mutate(
-      { path: { listingId: listing.id }, query: { guest: GUEST_STUB }, body },
+      { path: { listingId: listing.id }, body },
       {
         onSuccess: async (res) => {
           const newId = res.data?.reservationId;

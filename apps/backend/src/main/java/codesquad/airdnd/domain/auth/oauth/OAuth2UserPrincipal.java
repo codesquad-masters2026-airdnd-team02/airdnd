@@ -24,6 +24,8 @@ public class OAuth2UserPrincipal implements OAuth2User {
 
     private final Member member;
     private final Map<String, Object> attributes;
+    /** 이번 소셜 로그인에서 새로 가입한 회원이면 true (성공 핸들러가 회원가입/로그인 메시지를 구분하는 데 사용). */
+    private final boolean newUser;
 
     @Override
     public Map<String, Object> getAttributes() {

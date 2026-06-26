@@ -5,10 +5,13 @@ import { Header } from '../../components/Header';
 import type { SearchSegment } from '../../components/SearchBar';
 import { FilterModal } from '../../components/FilterModal';
 import { SaveToWishlistModal } from '../../components/SaveToWishlistModal';
-import { removeWishlistItem } from '../../shared/api/wishlist';
+import { removeWishlistItem, fetchListingWishlistId } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
-import type { ListingCardResponse, ListingSearchCondition } from '../../shared/api/generated/types.gen';
+import type {
+  ListingCardResponse,
+  ListingSearchCondition,
+} from '../../shared/api/generated/types.gen';
 import type { SearchState } from '../../types';
 import type { Bounds } from '../../shared/map';
 import { ResultCard } from './ResultCard';
@@ -49,7 +52,7 @@ function buildCondition(s: SearchState, bounds: Bounds | null): ListingSearchCon
 
 export function Results() {
   const navigate = useNavigate();
-  const { search, setSearch } = useAppState();
+  const { search, setSearch, isLoggedIn, openLogin } = useAppState();
   // 검색 버튼 누른 시점의 조건 스냅샷(편집 중 즉시 재조회 방지)
   const [appliedSearch, setAppliedSearch] = useState<SearchState>(search);
   // 상단 검색 pill 클릭 시 헤더에서 인라인 확장 + 눌린 구역 패널 열기
@@ -59,10 +62,9 @@ export function Results() {
   const [filterOpen, setFilterOpen] = useState(false);
   // 검색 시 지도를 결과로 이동시키는 신호
   const [focusSignal, setFocusSignal] = useState(0);
-  // listingId 기준 좋아요 오버라이드(서버 isWishlisted 위에 세션 변경분)
-  const [liked, setLiked] = useState<Record<number, boolean>>({});
-  // listingId → wishlistId (unlike 시 DELETE 대상)
-  const [savedAt, setSavedAt] = useState<Record<number, number>>({});
+  // listingId → wishlistId 세션 오버라이드(서버 wishlistId 위에 덮어쓰기).
+  // 값=찜됨(DELETE 대상 wishlistId), null=이번 세션에 해제, 키 없음=서버값 사용
+  const [wishlistOverride, setWishlistOverride] = useState<Record<number, number | null>>({});
   // 저장 모달 대상 listingId (null이면 닫힘)
   const [saveFor, setSaveFor] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -94,8 +96,12 @@ export function Results() {
     setPage(0);
   };
 
-  const isLiked = (c: ListingCardResponse) =>
-    c.id != null && liked[c.id] !== undefined ? liked[c.id] : !!c.isWishlisted;
+  // 카드의 현재 유효 wishlistId(없으면 null=안 찜됨) — 세션 오버라이드 우선, 없으면 서버값
+  const wishlistIdOf = (c: ListingCardResponse): number | null => {
+    if (c.id != null && wishlistOverride[c.id] !== undefined) return wishlistOverride[c.id];
+    return c.wishlistId ?? null;
+  };
+  const isLiked = (c: ListingCardResponse) => wishlistIdOf(c) != null;
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -106,28 +112,38 @@ export function Results() {
   const onHeart = (c: ListingCardResponse) => {
     const listingId = c.id;
     if (listingId == null) return;
-    if (!isLiked(c)) {
-      setSaveFor(listingId);
+    // 비로그인 시 저장 모달 대신 로그인 모달로 유도.
+    // 로그인 성공 후: 이미 저장된 숙소면 하트만 채우고 안내, 아니면 저장 모달을 연다.
+    if (!isLoggedIn) {
+      openLogin(
+        '위시리스트에 저장하려면 로그인이 필요해요.',
+        () => {
+          fetchListingWishlistId(listingId)
+            .then((wid) => {
+              if (wid != null) {
+                setWishlistOverride((prev) => ({ ...prev, [listingId]: wid }));
+                showToast('이미 위시리스트에 저장한 숙소예요');
+              } else {
+                setSaveFor(listingId);
+              }
+            })
+            .catch(() => setSaveFor(listingId));
+        },
+        { type: 'saveHeart', listingId, from: window.location.pathname },
+      );
       return;
     }
-    const wishlistId = savedAt[listingId];
+    const wishlistId = wishlistIdOf(c);
     if (wishlistId == null) {
-      // 서버에서 이미 찜된 항목(이번 세션 외) — wishlistId를 몰라 삭제 불가, 모달로 재처리
       setSaveFor(listingId);
       return;
     }
-    setLiked((prev) => ({ ...prev, [listingId]: false }));
+    // 낙관적 해제 후 DELETE — 실패 시 wishlistId 복원
+    setWishlistOverride((prev) => ({ ...prev, [listingId]: null }));
     removeWishlistItem(wishlistId, listingId)
-      .then(() => {
-        setSavedAt((prev) => {
-          const next = { ...prev };
-          delete next[listingId];
-          return next;
-        });
-        showToast('위시리스트에서 삭제했어요');
-      })
+      .then(() => showToast('위시리스트에서 삭제했어요'))
       .catch(() => {
-        setLiked((prev) => ({ ...prev, [listingId]: true }));
+        setWishlistOverride((prev) => ({ ...prev, [listingId]: wishlistId }));
         showToast('삭제에 실패했어요');
       });
   };
@@ -251,8 +267,7 @@ export function Results() {
         onClose={() => setSaveFor(null)}
         onSaved={(wishlistName, wishlistId) => {
           if (saveFor !== null) {
-            setLiked((prev) => ({ ...prev, [saveFor]: true }));
-            setSavedAt((prev) => ({ ...prev, [saveFor]: wishlistId }));
+            setWishlistOverride((prev) => ({ ...prev, [saveFor]: wishlistId }));
           }
           setSaveFor(null);
           showToast(`'${wishlistName}'에 저장했어요`);

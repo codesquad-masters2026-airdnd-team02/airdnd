@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from '../shared/Icon';
 import { useAppState } from '../shared/AppState';
 import { useToast } from '../shared/Toast';
@@ -8,6 +9,8 @@ import { API_BASE } from '../shared/api/config';
 interface LoginModalProps {
   open: boolean;
   onClose: () => void;
+  /** 세션 만료 등으로 로그인이 필요할 때 모달 상단에 표시할 안내 문구 */
+  notice?: string | null;
 }
 
 /**
@@ -15,10 +18,11 @@ interface LoginModalProps {
  * 에어비앤비 로그인 UI를 본떴으나 입력은 전화번호·이메일 대신 아이디/비밀번호를 받는다.
  * 현재는 UI 골격만 — 실제 인증 API 연동은 추후 작업.
  */
-export function LoginModal({ open, onClose }: LoginModalProps) {
+export function LoginModal({ open, onClose, notice }: LoginModalProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const toast = useToast();
-  const { setLoggedIn } = useAppState();
+  const { setLoggedIn, runAfterLogin, persistIntentForOAuth } = useAppState();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [focused, setFocused] = useState<'id' | 'pw' | null>(null);
@@ -64,8 +68,13 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       if (res.status === 200) {
         setLoggedIn(true);
         toast.success("로그인되었어요");
+        // 로그인 전(비로그인)에 받아둔 캐시는 위시리스트 상태(wishlistId)가 비어 있으므로,
+        // 인증 상태로 다시 받아 하트 등 사용자별 정보를 갱신한다.
+        queryClient.invalidateQueries();
+        // 로그인 전 하려던 동작(예: 예약 단계 이동)이 있으면 이어서 실행한다.
+        // 없으면 별도 이동 없이 현재(모달을 띄운) 페이지에 그대로 머문다.
+        runAfterLogin();
         onClose();
-        navigate('/');
       } else {
         setError('아이디 또는 비밀번호가 올바르지 않습니다.');
       }
@@ -147,6 +156,25 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         >
           로그인 또는 회원 가입
         </h2>
+
+        {/* 로그인 필요 안내(세션 만료 등) */}
+        {notice && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 16,
+              padding: '12px 14px',
+              borderRadius: 10,
+              background: 'var(--surface-alt-2)',
+              border: '1px solid var(--line)',
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: 'var(--ink-1)',
+            }}
+          >
+            {notice}
+          </div>
+        )}
 
         {/* 입력: 아이디 / 비밀번호 (에어비앤비처럼 한 박스에 묶음) */}
         <div
@@ -230,6 +258,9 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <SocialButton
             label="구글로 로그인"
             onClick={() => {
+              // 전체 페이지 리다이렉트로 메모리가 날아가므로, 로그인 전 의도를 sessionStorage 에 저장해 둔다.
+              // 백엔드 콜백이 / 로 복귀시키면 AppState 가 이 의도를 읽어 재생한다.
+              persistIntentForOAuth();
               // 백엔드 OAuth2 인가 엔드포인트로 이동 → Google 로그인 → 백엔드 콜백에서 JWT 쿠키 발급 후 프론트로 복귀
               window.location.href = `${API_BASE}/oauth2/authorization/google`;
             }}

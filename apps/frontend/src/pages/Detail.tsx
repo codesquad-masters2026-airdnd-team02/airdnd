@@ -7,16 +7,17 @@ import { CalendarModal } from '../components/panels/CalendarModal';
 import { GuestPanel } from '../components/panels/GuestPanel';
 import { toReservationRequest } from '../shared/api/reservationMapping';
 import { SaveToWishlistModal } from '../components/SaveToWishlistModal';
-import { removeWishlistItem } from '../shared/api/wishlist';
+import { removeWishlistItem, fetchListingWishlistId } from '../shared/api/wishlist';
 import { getHostListingDetailOptions } from '../shared/api/generated/@tanstack/react-query.gen';
 import { AMENITY_ENUM_TO_KR } from '../shared/amenities';
 import { won } from '../shared/utils';
 import { LISTINGS } from '../shared/demoListings';
 import { useAppState } from '../shared/AppState';
+import { useToast } from '../shared/Toast';
 import { DetailGallery } from './detail/DetailGallery';
 import { DetailOverview } from './detail/DetailOverview';
 import { DetailRatings } from './detail/DetailRatings';
-import { DetailReviews } from './detail/DetailReviews';
+import { DetailReviews, EmptyReviews } from './detail/DetailReviews';
 import { DetailAmenities } from './detail/DetailAmenities';
 import { DetailCalendar } from './detail/DetailCalendar';
 import { DetailDescription } from './detail/DetailDescription';
@@ -29,7 +30,8 @@ type Panel = 'date' | 'guest' | null;
 export function Detail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { search, setSearch, selectedListing, setSelectedListing } = useAppState();
+  const { search, setSearch, selectedListing, setSelectedListing, isLoggedIn, openLogin } = useAppState();
+  const toast = useToast();
   const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
   const onChange = setSearch;
   const onBack = () => navigate('/results');
@@ -42,7 +44,9 @@ export function Detail() {
   // 실제 상세 API (GET /api/listings/{listingsId}). 로딩/실패 시 데모로 폴백
   const listingId = id != null ? Number(id) : NaN;
   const detailQuery = useQuery({
-    ...getHostListingDetailOptions({ path: { listingsId: listingId } }),
+    ...getHostListingDetailOptions({
+      path: { listingsId: listingId },
+    }),
     enabled: Number.isFinite(listingId),
   });
   const d = detailQuery.data?.data;
@@ -89,12 +93,38 @@ export function Detail() {
   const [savedWishlistId, setSavedWishlistId] = useState<number | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
 
-  // 상세 응답의 isWishlisted로 초기 저장 상태 반영
+  // 상세 응답의 wishlistId로 초기 저장 상태 + 삭제 대상 반영(null이면 미저장)
   useEffect(() => {
-    if (d?.isWishlisted != null) setSaved(d.isWishlisted);
-  }, [d?.isWishlisted, d?.listingId]);
+    setSaved(d?.wishlistId != null);
+    setSavedWishlistId(d?.wishlistId ?? null);
+  }, [d?.wishlistId, d?.listingId]);
+
+  // "저장" 의도 실행(로그인 직후 재생용): 이미 담긴 숙소면 하트만 채우고 안내, 아니면 저장 모달을 연다.
+  // 토글이 아니라 저장 전용이므로, 이미 저장된 경우에도 삭제하지 않는다.
+  const runSaveIntent = () => {
+    fetchListingWishlistId(v.id)
+      .then((wid) => {
+        if (wid != null) {
+          setSaved(true);
+          setSavedWishlistId(wid);
+          toast.show('이미 위시리스트에 저장한 숙소예요');
+        } else {
+          setSaveOpen(true);
+        }
+      })
+      .catch(() => setSaveOpen(true));
+  };
 
   const onToggleSave = () => {
+    // 비로그인 시 저장 모달 대신 로그인 모달로 유도. 로그인 성공(폼/구글) 후 저장 의도를 이어서 실행.
+    if (!isLoggedIn) {
+      openLogin('위시리스트에 저장하려면 로그인이 필요해요.', runSaveIntent, {
+        type: 'saveHeart',
+        listingId: v.id,
+        from: window.location.pathname,
+      });
+      return;
+    }
     if (!saved) {
       setSaveOpen(true);
       return;
@@ -112,16 +142,31 @@ export function Detail() {
     }
   };
 
-  function handleReserve() {
-    setError(null);
+  // 날짜·인원 검증 후 예약(결제) 단계로 이동. 검증 실패 시 에러 표시.
+  const proceedReserve = () => {
     try {
-      // 날짜·인원 유효성 검증 (예약 생성은 결제 단계에서 처리)
+      // 예약 생성은 결제 단계에서 처리
       toReservationRequest(search);
     } catch (e) {
       setError(e instanceof Error ? e.message : '예약 정보를 확인해주세요.');
       return;
     }
     onReserve();
+  };
+
+  function handleReserve() {
+    setError(null);
+    // 비로그인 시 결제 단계로 넘기지 않고 로그인 모달로 유도.
+    // 로그인 성공 시 입력해 둔 날짜/인원(전역 search) 그대로 예약 단계로 이어진다.
+    if (!isLoggedIn) {
+      openLogin('예약하려면 로그인이 필요해요.', proceedReserve, {
+        type: 'reserve',
+        listingId: v.id,
+        search,
+      });
+      return;
+    }
+    proceedReserve();
   }
 
   useEffect(() => {
@@ -333,11 +378,15 @@ export function Detail() {
           </div>
         </div>
 
-        {/* Section 3: 평점 요약 (개요와 동일 평점 값) */}
-        <DetailRatings rating={v.rating} reviews={v.reviews} />
-
-        {/* Section 4: 후기 그리드 */}
-        <DetailReviews reviews={v.reviews} />
+        {/* Section 3+4: 평점/후기. 후기 0개면 빈 상태 하나로 묶어 표시 */}
+        {v.reviews === 0 ? (
+          <EmptyReviews hostName={v.hostName} />
+        ) : (
+          <>
+            <DetailRatings rating={v.rating} reviews={v.reviews} listingId={v.id} />
+            <DetailReviews reviews={v.reviews} listingId={v.id} />
+          </>
+        )}
 
         {/* Section 7: 위치 */}
         <DetailLocation location={v.loc} lat={v.lat} lng={v.lng} />

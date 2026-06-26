@@ -44,6 +44,7 @@ public class ListingQueryRepositoryImpl implements ListingQueryRepository {
 					listing.address.latLng,
 					listing.name,
 					listing.capacity,
+					listing.pricePerNight,
 					listing.pricePerNight
 				)
 			)

@@ -1,21 +1,24 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Icon } from '../../shared/Icon';
 import { isGuestFavorite } from '../../shared/guestFavorite';
+import { getReviewSummaryOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 // 라우렐 png — apps/frontend/src/assets/guest-favorite.png
 import guestFavoriteIcon from '../../assets/guest-favorite.png';
 
 interface DetailRatingsProps {
   rating: number; // 개요와 동일 값 사용(현재 목)
   reviews: number;
+  listingId: number; // 별점 분포 조회 대상
 }
 
 // 후기 섹션 헤더: 게스트 선호면 라우렐(별점 중복 표시 X), 아니면 "★ 평점 · 후기 N개"
-export function DetailRatings({ rating, reviews }: DetailRatingsProps) {
+export function DetailRatings({ rating, reviews, listingId }: DetailRatingsProps) {
   const favorite = isGuestFavorite(rating, reviews);
   const [open, setOpen] = useState(false);
 
   const modal = open && (
-    <RatingsModal rating={rating} reviews={reviews} onClose={() => setOpen(false)} />
+    <RatingsModal rating={rating} reviews={reviews} listingId={listingId} onClose={() => setOpen(false)} />
   );
 
   if (favorite) {
@@ -77,10 +80,28 @@ function ShowAllLink({ onClick }: { onClick: () => void }) {
   );
 }
 
-// 별점 분포(목): 대부분 5점
-const STAR_DIST: Record<number, number> = { 5: 0.9, 4: 0.05, 3: 0.02, 2: 0.02, 1: 0.01 };
+function RatingsModal({
+  rating,
+  reviews,
+  listingId,
+  onClose,
+}: {
+  rating: number;
+  reviews: number;
+  listingId: number;
+  onClose: () => void;
+}) {
+  // 모달 열릴 때만 마운트되므로 여기서 분포를 조회한다.
+  const { data } = useQuery({
+    ...getReviewSummaryOptions({ path: { listingId } }),
+    enabled: Number.isFinite(listingId),
+  });
+  const summary = data?.data;
+  const total = summary?.reviewCount ?? reviews;
+  const avg = summary?.averageRating ?? rating;
+  // rating → count 맵 (없으면 0). 막대 폭은 총개수 대비 비율.
+  const countOf = (n: number) => summary?.distribution?.find((b) => b.rating === n)?.count ?? 0;
 
-function RatingsModal({ rating, reviews, onClose }: { rating: number; reviews: number; onClose: () => void }) {
   return (
     <div
       onMouseDown={onClose}
@@ -125,39 +146,43 @@ function RatingsModal({ rating, reviews, onClose }: { rating: number; reviews: n
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
             <Icon name="star" size={30} color="var(--ink-1)" fill="var(--ink-1)" />
             <span style={{ fontSize: 44, fontWeight: 800, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-              {rating.toFixed(rating % 1 === 0 ? 0 : 2)}
+              {avg.toFixed(avg % 1 === 0 ? 0 : 2)}
             </span>
           </div>
 
           <div style={{ fontSize: 20, fontWeight: 700 }}>전체 평점</div>
           <div style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 2, marginBottom: 18 }}>
-            후기 {reviews}건에 근거
+            후기 {total}건에 근거
           </div>
 
-          {[5, 4, 3, 2, 1].map((n) => (
-            <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
-              <span
-                style={{
-                  flex: 1,
-                  height: 10,
-                  borderRadius: 6,
-                  background: 'var(--surface-alt-2)',
-                  border: '1px solid var(--line)',
-                  overflow: 'hidden',
-                }}
-              >
+          {[5, 4, 3, 2, 1].map((n) => {
+            const count = countOf(n);
+            const ratio = total > 0 ? count / total : 0;
+            return (
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
                 <span
                   style={{
-                    display: 'block',
-                    height: '100%',
-                    width: `${(STAR_DIST[n] ?? 0) * 100}%`,
-                    background: 'linear-gradient(90deg, #8B2FB0 0%, #E0245E 60%, #F0533F 100%)',
+                    flex: 1,
+                    height: 10,
+                    borderRadius: 6,
+                    background: 'var(--surface-alt-2)',
+                    border: '1px solid var(--line)',
+                    overflow: 'hidden',
                   }}
-                />
-              </span>
-              <span style={{ width: 12, textAlign: 'right', fontSize: 15, color: 'var(--ink-2)' }}>{n}</span>
-            </div>
-          ))}
+                >
+                  <span
+                    style={{
+                      display: 'block',
+                      height: '100%',
+                      width: `${ratio * 100}%`,
+                      background: 'linear-gradient(90deg, #8B2FB0 0%, #E0245E 60%, #F0533F 100%)',
+                    }}
+                  />
+                </span>
+                <span style={{ width: 12, textAlign: 'right', fontSize: 15, color: 'var(--ink-2)' }}>{n}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

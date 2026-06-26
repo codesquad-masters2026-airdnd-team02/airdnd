@@ -18,20 +18,30 @@ public record ListingCardResponse(
 
 	List<String> images,
 
-	boolean isWishlisted
+	Long wishlistId,
+
+	Double averageRating,
+	int reviewCount
 ) {
 	public static ListingCardResponse from(
-		ListingSearchResponse searchResponse, List<String> images, boolean isWishlisted
+		ListingSearchResponse searchResponse, List<String> images, Long wishlistId, long nights,
+		Double averageRating, int reviewCount
 	) {
+		BigDecimal totalPrice = nights > 0
+			? searchResponse.pricePerNight().multiply(BigDecimal.valueOf(nights))
+			: searchResponse.pricePerNight();
+
 		return new ListingCardResponse(
 			searchResponse.id(),
 			searchResponse.getLatitude(),
 			searchResponse.getLongitude(),
 			searchResponse.name(),
 			searchResponse.capacity(),
-			searchResponse.pricePerNight(), //todo: 계산 로직
+			totalPrice,
 			images,
-			isWishlisted
+			wishlistId,
+			averageRating,
+			reviewCount
 		);
 	}
 }

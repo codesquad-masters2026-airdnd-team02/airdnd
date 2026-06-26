@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../../shared/api/config';
+import { useToast } from '../../shared/Toast';
 
 /** 백엔드 SignupRequest 검증 규칙과 동일하게 맞춘 정규식 */
 const RULES = {
@@ -32,6 +34,7 @@ interface ApiErrorBody {
  */
 export function SignupPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [values, setValues] = useState<Record<Field, string>>({
     userId: '',
     password: '',
@@ -60,7 +63,7 @@ export function SignupPage() {
     if (submitting || !validate()) return;
     setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:8080/api/auth/signup', {
+          const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,6 +76,7 @@ export function SignupPage() {
 
       if (res.status === 201) {
         // 가입 성공 — 가입 후엔 로그인되지 않은 상태이므로 홈으로 이동 후 로그인 유도
+        toast.success('회원가입이 완료되었어요. 로그인해 주세요.');
         navigate('/', { replace: true });
         return;
       }

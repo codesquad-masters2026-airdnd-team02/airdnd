@@ -1,6 +1,14 @@
 import type { WishlistSummary } from '../../types';
 import { API_BASE as BASE } from './config';
 import { refreshingFetch } from './http';
+import { getHostListingDetail } from './generated/sdk.gen';
+
+/** 특정 숙소가 현재 로그인 사용자의 위시리스트에 담겨 있는지 조회. 담겼으면 wishlistId, 아니면 null.
+ *  (로그인 직후 "이미 저장된 숙소" 판별용 — 생성 client 라 인증 쿠키/401 재발급이 자동 적용된다) */
+export async function fetchListingWishlistId(listingId: number): Promise<number | null> {
+  const { data } = await getHostListingDetail({ path: { listingsId: listingId } });
+  return data?.data?.wishlistId ?? null;
+}
 
 /** 백엔드 ApiResponse 봉투 */
 interface Envelope<T> {

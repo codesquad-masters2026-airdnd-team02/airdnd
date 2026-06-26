@@ -40,7 +40,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // 우리 토큰 발급 + 쿠키 부착 (리프레시 토큰은 DB에도 저장됨)
         authTokenService.issueTokens(response, principal.getMember().getId());
 
-        // 프론트로 복귀
-        response.sendRedirect(successRedirectUri);
+        // 프론트로 복귀. 신규 가입/기존 로그인을 쿼리로 알려 프론트가 성공 메시지를 구분해 띄운다.
+        // (successRedirectUri 는 쿼리가 없는 형태(예: https://app/)이므로 ? 로 바로 붙인다)
+        String redirectUri = successRedirectUri + (principal.isNewUser() ? "?auth=signup" : "?auth=login");
+        response.sendRedirect(redirectUri);
     }
 }
