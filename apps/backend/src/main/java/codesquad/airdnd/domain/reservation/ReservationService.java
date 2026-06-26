@@ -82,8 +82,18 @@ public class ReservationService {
 	@Transactional(readOnly = true)
 	public UpcomingReservationResponse getUpcomingReservations(Long userId) {
 		List<Reservation> upcoming = resRepository.findUpcoming(userId, LocalDate.now(clock));
+		return toResponse(upcoming);
+	}
 
-		List<Long> listingIds = upcoming.stream()
+	@Transactional(readOnly = true)
+	public UpcomingReservationResponse getPastReservations(Long userId) {
+		List<Reservation> past = resRepository.findPast(userId, LocalDate.now(clock));
+		return toResponse(past);
+	}
+
+	// 예약 목록 → 응답(커버 이미지 배치 조회로 채움). 목록 조회 공통
+	private UpcomingReservationResponse toResponse(List<Reservation> reservations) {
+		List<Long> listingIds = reservations.stream()
 			.map(r -> r.getListing().getId())
 			.distinct()
 			.toList();
@@ -91,7 +101,7 @@ public class ReservationService {
 			? Map.of()
 			: listingImageRepository.findCoverByListingIds(listingIds);
 
-		List<ReservationSummary> list = upcoming.stream()
+		List<ReservationSummary> list = reservations.stream()
 			.map(r -> toSummary(r, coverByListing.get(r.getListing().getId())))
 			.toList();
 		return new UpcomingReservationResponse(list);
