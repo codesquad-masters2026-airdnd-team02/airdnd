@@ -1,6 +1,5 @@
 import { API_BASE as BASE } from './config';
 import { refreshingFetch } from './http';
-import type { ReservationSummary, UpcomingReservationResponse } from './generated/types.gen';
 
 /** POST /api/reservations/{reservationId}/cancel 의 결과 (예약 취소 + 토스 환불 완료 정보).
  *  백엔드 RefundResponse 와 1:1 대응. 금액은 BigDecimal→number, 날짜는 ISO 문자열. */
@@ -54,26 +53,4 @@ export async function cancelReservation(
     throw new Error(body?.message ?? `예약 취소에 실패했어요 (${res.status})`);
   }
   return body?.data;
-}
-
-/**
- * GET /api/me/reservations/past — 지난 여행 목록(체크아웃이 지난 예약).
- * 응답 형태는 upcoming 과 동일(UpcomingReservationResponse = ReservationSummary[]).
- */
-export async function fetchPastReservations(): Promise<ReservationSummary[]> {
-  const res = await refreshingFetch(`${BASE}/api/me/reservations/past`, {
-    credentials: 'include',
-  });
-
-  let body: Envelope<UpcomingReservationResponse> | null = null;
-  try {
-    body = await res.json();
-  } catch {
-    /* 바디 없음 */
-  }
-
-  if (!res.ok || !body?.success) {
-    throw new Error(body?.message ?? `지난 여행을 불러오지 못했어요 (${res.status})`);
-  }
-  return body?.data?.reservations ?? [];
 }

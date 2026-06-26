@@ -5,10 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
 import { Icon } from '../../shared/Icon';
 import { useAppState } from '../../shared/AppState';
-import { getMyReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
+import { getMyReservationsOptions, getMyPastReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { ReservationSummary } from '../../shared/api/generated/types.gen';
 import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
-import { fetchPastReservations } from '../../shared/api/reservation';
 import { startCardPayment } from '../../shared/payment/toss';
 import { WriteReviewModal } from './WriteReviewModal';
 
@@ -71,11 +70,10 @@ export function TripsPage() {
 
   // 지난 여행은 별도 엔드포인트(체크아웃 지난 예약). 탭 진입 시 조회
   const pastQuery = useQuery({
-    queryKey: ['pastReservations'],
-    queryFn: fetchPastReservations,
+    ...getMyPastReservationsOptions(),
     enabled: tab === 'past',
   });
-  const past = pastQuery.data ?? [];
+  const past = pastQuery.data?.data?.reservations ?? [];
 
   // PENDING 카드 클릭 → 기존 예약으로 결제 이어하기 (상세 안 거치고 prepare → 토스 결제창).
   async function handleResume(reservationId: number) {
