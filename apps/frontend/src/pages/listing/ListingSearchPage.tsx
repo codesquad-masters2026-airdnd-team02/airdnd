@@ -7,6 +7,7 @@ import { FilterModal } from '../../components/FilterModal';
 import { SaveToWishlistModal } from '../../components/SaveToWishlistModal';
 import { removeWishlistItem, fetchListingWishlistId } from '../../shared/api/wishlist';
 import { useAppState } from '../../shared/AppState';
+import { formatResultCount } from '../../shared/formatCount';
 import { getListingsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type {
   ListingCardResponse,
@@ -185,7 +186,7 @@ export function Results() {
           }}
         >
           <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 6 }}>
-            {totalElements.toLocaleString('ko-KR')}개의 숙소 · {search.dates || '날짜 미정'} · {search.guestLabel || '게스트 추가'}
+            {formatResultCount(totalElements)}개의 숙소 · {search.dates || '날짜 미정'} · {search.guestLabel || '게스트 추가'}
           </div>
           <h1
             style={{

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { SlimHeader } from './components/SlimHeader';
 import { ReservationSummary } from './components/ReservationSummary';
 import { PaymentModal, type PayStatus } from './components/PaymentModal';
-import { createReservationMutation } from '../../shared/api/generated/@tanstack/react-query.gen';
+import { createReservationMutation, getHostListingDetailOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import { toReservationRequest, reservationErrorMessage } from '../../shared/api/reservationMapping';
 import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
@@ -22,7 +22,26 @@ export function Checkout() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { search, setSearch, selectedListing } = useAppState();
-  const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+  const demoListing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
+
+  // 예약 대상 숙소를 실제 상세 API로 가져온다(데모는 폴백). 예약 생성/금액/표시에 사용.
+  const listingId = id != null ? Number(id) : NaN;
+  const detailQuery = useQuery({
+    ...getHostListingDetailOptions({ path: { listingsId: listingId } }),
+    enabled: Number.isFinite(listingId),
+  });
+  const d = detailQuery.data?.data;
+
+  // 이미지는 listingImage가 데모 키만 매핑하므로 데모 에셋 유지, 그 외 값은 실데이터 우선.
+  const listing = {
+    ...demoListing,
+    id: d?.listingId ?? (Number.isFinite(listingId) ? listingId : demoListing.id),
+    title: d?.name ?? demoListing.title,
+    price: d?.pricePerNight ?? demoListing.price,
+    rating: d?.review?.averageRating ?? demoListing.rating,
+    reviews: d?.review?.reviewCount ?? demoListing.reviews,
+  };
+
   const onChange = setSearch;
   const onBack = () => navigate(`/listings/${listing.id}`);
 
@@ -228,6 +247,7 @@ export function Checkout() {
               total={total}
               search={search}
               onChange={onChange}
+              imageUrl={d?.images?.[0]}
             />
           </aside>
         </div>

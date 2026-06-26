@@ -11,6 +11,8 @@ interface ReservationSummaryProps {
   total: number;
   search: SearchState;
   onChange: (v: SearchState) => void;
+  /** 상세 API의 실제 이미지 URL. 없으면 데모 에셋으로 폴백. */
+  imageUrl?: string;
 }
 
 export function ReservationSummary({
@@ -20,6 +22,7 @@ export function ReservationSummary({
   total,
   search,
   onChange,
+  imageUrl,
 }: ReservationSummaryProps) {
   return (
     <div
@@ -39,7 +42,7 @@ export function ReservationSummary({
             height: 64,
             borderRadius: 10,
             flexShrink: 0,
-            background: `url(${listingImage(listing.img)}) center/cover`,
+            background: `url(${imageUrl ?? listingImage(listing.img)}) center/cover`,
           }}
         />
         <div style={{ flex: 1 }}>

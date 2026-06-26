@@ -1,5 +1,6 @@
 package codesquad.airdnd.domain.listing;
 
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -14,13 +15,16 @@ import codesquad.airdnd.domain.listing.dto.query.DateRangeFilter;
 import codesquad.airdnd.domain.listing.dto.query.ListingSearchResponse;
 import codesquad.airdnd.domain.listing.dto.request.ListingPageRequest;
 import codesquad.airdnd.domain.listing.dto.request.ListingSearchCondition;
+import codesquad.airdnd.domain.listing.dto.response.ListingBlockedDatesResponse;
 import codesquad.airdnd.domain.listing.dto.response.ListingCardResponse;
 import codesquad.airdnd.domain.listing.dto.response.ListingDetailResponse;
 import codesquad.airdnd.domain.listing.dto.response.ReviewSummary;
+import codesquad.airdnd.domain.reservation.ReservationDateRepository;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
 import codesquad.airdnd.domain.listing.repository.ListingImageRepository;
 import codesquad.airdnd.domain.listing.repository.ListingQueryRepository;
+import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.review.entity.ListingReviewSummary;
 import codesquad.airdnd.domain.review.repository.ListingReviewSummaryRepository;
 import codesquad.airdnd.domain.wishlistItem.WishlistItemRepository;
@@ -39,6 +43,8 @@ public class ListingSearchService {
 	private final WishlistItemRepository wishlistItemRepository;
 	private final RegionCodeService regionCodeService;
 	private final ListingReviewSummaryRepository reviewSummaryRepository;
+	private final ReservationDateRepository reservationDateRepository;
+	private final ListingRepository listingRepository;
 
 	public PageResponse<ListingCardResponse> search(
 		Long guestId, ListingSearchCondition condition, ListingPageRequest pageRequest
@@ -103,6 +109,18 @@ public class ListingSearchService {
 			addressSummary,
                 wishlistId
 		);
+	}
+
+	public ListingBlockedDatesResponse getBlockedDates(Long listingId, LocalDate from, LocalDate to) {
+		if (from == null || to == null || to.isBefore(from)) {
+			throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);
+		}
+		if (!listingRepository.existsById(listingId)) {
+			throw new BusinessException(ErrorCode.LISTING_NOT_FOUND);
+		}
+
+		List<LocalDate> blockedDates = reservationDateRepository.findStayDates(listingId, from, to);
+		return ListingBlockedDatesResponse.of(listingId, from, to, blockedDates);
 	}
 
 	private ReviewSummary toReviewSummary(ListingReviewSummary summary) {

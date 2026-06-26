@@ -1,15 +1,20 @@
 package codesquad.airdnd.domain.listing;
 
+import java.time.LocalDate;
+
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import codesquad.airdnd.domain.listing.dto.request.ListingPageRequest;
 import codesquad.airdnd.domain.listing.dto.request.ListingSearchCondition;
+import codesquad.airdnd.domain.listing.dto.response.ListingBlockedDatesResponse;
 import codesquad.airdnd.domain.listing.dto.response.ListingCardResponse;
 import codesquad.airdnd.domain.listing.dto.response.ListingDetailResponse;
 import codesquad.airdnd.global.auth.CurrentMember;
@@ -44,5 +49,15 @@ public class ListingController {
 	) {
 		ListingDetailResponse listingDetail = listingSearchService.getListingDetail(guest.id(),listingsId);
 		return ResponseEntity.ok(ApiResponse.success(listingDetail));
+	}
+
+	@GetMapping("/{listingId}/blocked-dates")
+	public ResponseEntity<ApiResponse<ListingBlockedDatesResponse>> getBlockedDates(
+		@PathVariable @Min(1) Long listingId,
+		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+	) {
+		ListingBlockedDatesResponse response = listingSearchService.getBlockedDates(listingId, from, to);
+		return ResponseEntity.ok(ApiResponse.success(response));
 	}
 }

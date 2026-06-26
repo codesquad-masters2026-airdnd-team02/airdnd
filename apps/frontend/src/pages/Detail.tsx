@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '../components/Header';
@@ -8,7 +8,10 @@ import { GuestPanel } from '../components/panels/GuestPanel';
 import { toReservationRequest } from '../shared/api/reservationMapping';
 import { SaveToWishlistModal } from '../components/SaveToWishlistModal';
 import { removeWishlistItem, fetchListingWishlistId } from '../shared/api/wishlist';
-import { getHostListingDetailOptions } from '../shared/api/generated/@tanstack/react-query.gen';
+import {
+  getHostListingDetailOptions,
+  getBlockedDatesOptions,
+} from '../shared/api/generated/@tanstack/react-query.gen';
 import { AMENITY_ENUM_TO_KR } from '../shared/amenities';
 import { won } from '../shared/utils';
 import { LISTINGS } from '../shared/demoListings';
@@ -35,7 +38,7 @@ export function Detail() {
   const listing = LISTINGS.find((item) => String(item.id) === id) ?? selectedListing;
   const onChange = setSearch;
   const onBack = () => navigate('/results');
-  const onReserve = () => navigate(`/listings/${listing.id}/checkout`);
+  const onReserve = () => navigate(`/listings/${id}/checkout`);
 
   useEffect(() => {
     setSelectedListing(listing);
@@ -50,6 +53,33 @@ export function Detail() {
     enabled: Number.isFinite(listingId),
   });
   const d = detailQuery.data?.data;
+
+  // 점유(예약)된 날짜 조회. 보이는 2개월만이 아니라 더 넓게 미리 받아 페이지 이동 시 즉시 표시.
+  // 사용자가 우측으로 더 넘기면 onReachOffset → calMonths 확장 → 자동 추가 요청.
+  const [calMonths, setCalMonths] = useState(6);
+  const { from, to } = useMemo(() => {
+    const now = new Date();
+    const ymd = (dt: Date) =>
+      `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + calMonths + 1, 0); // calMonths 후의 말일
+    return { from: ymd(start), to: ymd(end) };
+  }, [calMonths]);
+
+  const blockedQuery = useQuery({
+    ...getBlockedDatesOptions({ path: { listingId }, query: { from, to } }),
+    enabled: Number.isFinite(listingId),
+    staleTime: 60_000,
+  });
+  const blockedDates = useMemo(
+    () => new Set(blockedQuery.data?.data?.blockedDates ?? []),
+    [blockedQuery.data],
+  );
+
+  // 보이는 가장 먼 월이 로드 구간 끝 근처에 닿으면 창을 넓혀 다음 구간을 선요청
+  const handleReachOffset = useCallback((maxOffset: number) => {
+    setCalMonths((m) => (maxOffset >= m - 1 ? maxOffset + 3 : m));
+  }, []);
 
   // 표시용 뷰모델: 상세 API 데이터만 사용
   const cap = d?.capacity;
@@ -79,10 +109,15 @@ export function Detail() {
     description: d?.description ?? '',
   };
 
-  const nights = 1;
-  const fee = Math.round(v.price * 0.099);
-  const tax = Math.round(v.price * 0.014);
-  const total = v.price * nights + fee + tax;
+  // 선택한 체크인~체크아웃으로 박수 계산(미선택 시 1박)
+  const nights = (() => {
+    const a = search.range?.a;
+    const b = search.range?.b;
+    if (!a || !b) return 1;
+    const n = Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+    return n > 0 ? n : 1;
+  })();
+  const total = v.price * nights;
 
   const [panel, setPanel] = useState<Panel>(null);
   const [error, setError] = useState<string | null>(null);
@@ -243,7 +278,13 @@ export function Detail() {
             />
             <DetailDescription description={v.description} />
             <DetailAmenities provided={v.amenities} />
-            <DetailCalendar value={search} onChange={onChange} location={v.loc} />
+            <DetailCalendar
+              value={search}
+              onChange={onChange}
+              location={v.loc}
+              blockedDates={blockedDates}
+              onReachOffset={handleReachOffset}
+            />
           </div>
 
           {/* Right: reservation cost card */}
@@ -309,7 +350,12 @@ export function Detail() {
 
                 {panel === 'date' && (
                   <DetailPopover width={720} right>
-                    <CalendarModal value={search} onChange={onChange} />
+                    <CalendarModal
+                      value={search}
+                      onChange={onChange}
+                      blockedDates={blockedDates}
+                      onReachOffset={handleReachOffset}
+                    />
                   </DetailPopover>
                 )}
                 {panel === 'guest' && (
@@ -357,8 +403,6 @@ export function Detail() {
               </div>
 
               <PriceRow label={`${won(v.price)} x ${nights}박`} value={won(v.price * nights)} />
-              <PriceRow label="서비스 수수료" value={won(fee)} />
-              <PriceRow label="숙박세와 수수료" value={won(tax)} />
 
               <div
                 style={{

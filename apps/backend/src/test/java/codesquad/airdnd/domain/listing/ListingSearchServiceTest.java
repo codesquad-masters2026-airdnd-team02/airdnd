@@ -245,7 +245,8 @@ class ListingSearchServiceTest {
 
 		private ListingSearchResponse searchResponse(Long id) {
 			return new ListingSearchResponse(
-				id, point(37.5, 127.0), "숙소" + id, new Capacity(2, 1, 1, 1), BigDecimal.valueOf(50000)
+				id, point(37.5, 127.0), "숙소" + id, new Capacity(2, 1, 1, 1),
+				BigDecimal.valueOf(50000), BigDecimal.valueOf(50000)
 			);
 		}
 

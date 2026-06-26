@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { Icon } from '../../../shared/Icon';
+import { PaymentStatusBadge } from './PaymentStatusBadge';
 
 export type PayStatus = 'loading' | 'success' | 'fail';
 
@@ -41,19 +41,7 @@ export function PaymentModal({ status, errorMessage, onClose }: PaymentModalProp
           boxShadow: 'var(--shadow-pop)',
         }}
       >
-        <div style={{ height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28 }}>
-          {status === 'loading' && <div className="pay-spinner" style={{ width: 64, height: 64 }} />}
-          {status === 'success' && (
-            <div className="pay-pop" style={badge('var(--brand-coral)')}>
-              <Icon name="check" size={38} color="#fff" />
-            </div>
-          )}
-          {status === 'fail' && (
-            <div className="pay-pop" style={badge('var(--ink-2)')}>
-              <Icon name="x" size={38} color="#fff" />
-            </div>
-          )}
-        </div>
+        <PaymentStatusBadge status={status} />
 
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22 }}>
           {CAPTION[status]}
@@ -90,16 +78,4 @@ export function PaymentModal({ status, errorMessage, onClose }: PaymentModalProp
     </div>,
     document.body,
   );
-}
-
-function badge(bg: string): React.CSSProperties {
-  return {
-    width: 72,
-    height: 72,
-    borderRadius: '50%',
-    background: bg,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
 }

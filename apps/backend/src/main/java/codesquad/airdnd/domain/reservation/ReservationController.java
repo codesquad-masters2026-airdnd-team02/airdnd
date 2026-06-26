@@ -1,5 +1,6 @@
 package codesquad.airdnd.domain.reservation;
 
+import codesquad.airdnd.domain.reservation.dto.request.ReservationCancelRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,8 +27,9 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class ReservationController {
 	private final ReservationService reservationService;
+    private final ReservationCancelService reservationCancelService;
 
-	@Operation(summary = "게스트 숙소 예약")
+    @Operation(summary = "게스트 숙소 예약")
 	@PostMapping("/listings/{listingId}/reservations")
 	public ResponseEntity<ApiResponse<ReservationSummary>> createReservation(
 		@CurrentMember CurrentMemberInfo guest, @PathVariable Long listingId,
@@ -59,9 +61,11 @@ public class ReservationController {
 	@Operation(summary = "게스트의 예약 취소")
 	@PostMapping("/reservations/{reservationId}/cancel")
 	public ResponseEntity<ApiResponse<Void>> cancelReservation(
-		@CurrentMember CurrentMemberInfo guest, @PathVariable Long reservationId
+		@CurrentMember CurrentMemberInfo guest,
+        @PathVariable Long reservationId,
+        @RequestBody @Valid ReservationCancelRequest request
 	) {
-		reservationService.cancelReservation(guest.id(), reservationId);
+		reservationCancelService.cancel(guest, reservationId, request);
 		return ResponseEntity.ok(ApiResponse.success());
 	}
 
@@ -71,6 +75,15 @@ public class ReservationController {
 		@CurrentMember CurrentMemberInfo memberInfo
 	) {
 		UpcomingReservationResponse reservations = reservationService.getUpcomingReservations(memberInfo.id());
+		return ResponseEntity.ok(ApiResponse.success(reservations));
+	}
+
+	@Operation(summary = "게스트 지난 여행 목록")
+	@GetMapping("/me/reservations/past")
+	public ResponseEntity<ApiResponse<UpcomingReservationResponse>> getMyPastReservations(
+		@CurrentMember CurrentMemberInfo memberInfo
+	) {
+		UpcomingReservationResponse reservations = reservationService.getPastReservations(memberInfo.id());
 		return ResponseEntity.ok(ApiResponse.success(reservations));
 	}
 }

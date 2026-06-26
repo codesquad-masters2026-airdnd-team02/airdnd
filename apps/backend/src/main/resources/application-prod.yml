@@ -16,3 +16,7 @@ toss:
 logging:
   level:
     root: info
+
+decorator:
+  datasource:
+    enabled: false

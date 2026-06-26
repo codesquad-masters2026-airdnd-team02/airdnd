@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
 import { Icon } from '../../shared/Icon';
 import { useAppState } from '../../shared/AppState';
-import { getMyReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
+import { getMyReservationsOptions, getMyPastReservationsOptions } from '../../shared/api/generated/@tanstack/react-query.gen';
 import type { ReservationSummary } from '../../shared/api/generated/types.gen';
 import { preparePayment, ApiError, UNUSABLE_RESERVATION_CODES } from '../../shared/api/payment';
 import { startCardPayment } from '../../shared/payment/toss';
@@ -45,14 +45,35 @@ function rangeLabel(a?: string, b?: string): string {
   return from || to || '날짜 미정';
 }
 
+// 리뷰 작성 마감(체크아웃 + 7일)까지 남은 일수. 지났으면 음수, 날짜 불명이면 null
+function reviewDaysLeft(checkOutDate?: string | null): number | null {
+  if (!checkOutDate) return null;
+  const co = new Date(checkOutDate);
+  if (isNaN(co.getTime())) return null;
+  const deadline = new Date(co);
+  deadline.setDate(deadline.getDate() + 7);
+  deadline.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((deadline.getTime() - today.getTime()) / 86400000);
+}
+
 export function TripsPage() {
   const query = useQuery(getMyReservationsOptions());
   const queryClient = useQueryClient();
-  const { canceledIds } = useAppState();
   const reservations = query.data?.data?.reservations ?? [];
 
   const [resumingId, setResumingId] = useState<number | null>(null);
   const [resumeError, setResumeError] = useState('');
+  // 탭: 예정된 여행 / 지난 여행
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
+
+  // 지난 여행은 별도 엔드포인트(체크아웃 지난 예약). 탭 진입 시 조회
+  const pastQuery = useQuery({
+    ...getMyPastReservationsOptions(),
+    enabled: tab === 'past',
+  });
+  const past = pastQuery.data?.data?.reservations ?? [];
 
   // PENDING 카드 클릭 → 기존 예약으로 결제 이어하기 (상세 안 거치고 prepare → 토스 결제창).
   async function handleResume(reservationId: number) {
@@ -73,80 +94,117 @@ export function TripsPage() {
     }
   }
 
-  // 상태별 그룹핑. EXPIRED 등 그 외 상태는 숨긴다(버려진 예약).
+  // 상태별 그룹핑(예정된 여행 탭). EXPIRED 등 그 외 상태는 숨긴다(버려진 예약).
   const pending: ReservationSummary[] = [];
   const upcoming: ReservationSummary[] = [];
-  const past: ReservationSummary[] = [];
   for (const r of reservations) {
-    const id = r.reservationId;
-    const canceled =
-      r.state === 'GUEST_CANCELED' ||
-      r.state === 'HOST_CANCELED' ||
-      (id != null && canceledIds.has(id));
-    if (canceled || r.state === 'COMPLETED') past.push(r);
-    else if (r.state === 'PENDING') pending.push(r);
+    if (r.state === 'PENDING') pending.push(r);
     else if (r.state === 'CONFIRMED') upcoming.push(r);
   }
-  const hasAny = pending.length + upcoming.length + past.length > 0;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
       <Header mode="minimal" />
 
       <div style={{ maxWidth: 1040, margin: '0 auto', padding: '48px 48px 80px' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 34, marginBottom: 28 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 34, marginBottom: 20 }}>
           여행
         </h1>
 
-        {query.isLoading ? (
+        {/* 탭: 예정된 여행 / 지난 여행 */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+          <TabButton active={tab === 'upcoming'} onClick={() => setTab('upcoming')}>
+            예정된 여행
+          </TabButton>
+          <TabButton active={tab === 'past'} onClick={() => setTab('past')}>
+            지난 여행
+          </TabButton>
+        </div>
+
+        {tab === 'upcoming' ? (
+          query.isLoading ? (
+            <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>불러오는 중…</div>
+          ) : query.isError ? (
+            <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>예약 정보를 불러오지 못했어요.</div>
+          ) : pending.length + upcoming.length === 0 ? (
+            <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>예정된 여행이 없어요.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+              {resumeError && (
+                <div
+                  style={{
+                    background: 'var(--surface-alt-2)',
+                    borderRadius: 12,
+                    padding: '14px 18px',
+                    fontSize: 15,
+                    color: 'var(--brand-coral)',
+                  }}
+                >
+                  {resumeError}
+                </div>
+              )}
+
+              <Section title="결제 대기" count={pending.length}>
+                {pending.map((r) => (
+                  <TripCard
+                    key={r.reservationId}
+                    reservation={r}
+                    cta="결제 이어하기"
+                    busy={resumingId === r.reservationId}
+                    onCardClick={() => r.reservationId != null && handleResume(r.reservationId)}
+                  />
+                ))}
+              </Section>
+
+              <Section title="예정된 여행" count={upcoming.length}>
+                {upcoming.map((r) => (
+                  <TripCard key={r.reservationId} reservation={r} />
+                ))}
+              </Section>
+            </div>
+          )
+        ) : pastQuery.isLoading ? (
           <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>불러오는 중…</div>
-        ) : query.isError ? (
-          <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>예약 정보를 불러오지 못했어요.</div>
-        ) : !hasAny ? (
-          <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>아직 예약한 여행이 없어요.</div>
+        ) : pastQuery.isError ? (
+          <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>지난 여행을 불러오지 못했어요.</div>
+        ) : past.length === 0 ? (
+          <div style={{ color: 'var(--ink-3)', fontSize: 16 }}>지난 여행이 없어요.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-            {resumeError && (
-              <div
-                style={{
-                  background: 'var(--surface-alt-2)',
-                  borderRadius: 12,
-                  padding: '14px 18px',
-                  fontSize: 15,
-                  color: 'var(--brand-coral)',
-                }}
-              >
-                {resumeError}
-              </div>
-            )}
-
-            <Section title="결제 대기" count={pending.length}>
-              {pending.map((r) => (
-                <TripCard
-                  key={r.reservationId}
-                  reservation={r}
-                  cta="결제 이어하기"
-                  busy={resumingId === r.reservationId}
-                  onCardClick={() => r.reservationId != null && handleResume(r.reservationId)}
-                />
-              ))}
-            </Section>
-
-            <Section title="예정된 여행" count={upcoming.length}>
-              {upcoming.map((r) => (
-                <TripCard key={r.reservationId} reservation={r} />
-              ))}
-            </Section>
-
-            <Section title="지난·취소된 여행" count={past.length}>
-              {past.map((r) => (
-                <TripCard key={r.reservationId} reservation={r} />
-              ))}
-            </Section>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {past.map((r) => (
+              <TripCard key={r.reservationId} reservation={r} />
+            ))}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: active ? '1px solid var(--ink-1)' : '1px solid var(--line-strong)',
+        borderRadius: 24,
+        background: active ? 'var(--ink-1)' : '#fff',
+        color: active ? '#fff' : 'var(--ink-1)',
+        padding: '10px 20px',
+        fontSize: 15,
+        fontWeight: 600,
+        cursor: 'pointer',
+        transition: 'background 120ms ease, border-color 120ms ease, color 120ms ease',
+      }}
+      onMouseEnter={e => {
+        if (!active) e.currentTarget.style.background = 'var(--surface-alt-2)';
+      }}
+      onMouseLeave={e => {
+        if (!active) e.currentTarget.style.background = '#fff';
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -186,6 +244,9 @@ function TripCard({
     r.state === 'HOST_CANCELED' ||
     (r.reservationId != null && canceledIds.has(r.reservationId));
   const canReview = r.state === 'COMPLETED' && !isCanceled && r.reservationId != null;
+  // 리뷰 작성 가능 잔여일(체크아웃+7일 기준). null이면 표시 생략
+  const daysLeft = canReview ? reviewDaysLeft(r.checkOutDate) : null;
+  const reviewClosed = daysLeft != null && daysLeft < 0;
   const stateLabel = busy
     ? '결제창 여는 중…'
     : isCanceled
@@ -300,25 +361,57 @@ function TripCard({
                   후기 작성 완료
                 </span>
               )}
-              {canReview && !reviewed && (
+              {canReview && !reviewed && !reviewClosed && (
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setWriteOpen(true);
                   }}
                   style={{
-                    border: '1px solid var(--ink-1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    border: '1px solid var(--line-strong)',
                     borderRadius: 10,
                     background: '#fff',
-                    padding: '12px 22px',
+                    padding: '12px 20px',
                     fontSize: 15,
                     fontWeight: 600,
                     cursor: 'pointer',
                     color: 'var(--ink-1)',
+                    transition: 'background 120ms ease, border-color 120ms ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'var(--surface-alt-2)';
+                    e.currentTarget.style.borderColor = 'var(--ink-1)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#fff';
+                    e.currentTarget.style.borderColor = 'var(--line-strong)';
                   }}
                 >
+                  <Icon name="star" size={15} color="var(--ink-1)" fill="var(--ink-1)" />
                   리뷰 쓰기
+                  {daysLeft != null && (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: 'var(--ink-3)',
+                        border: '1px solid var(--line-strong)',
+                        borderRadius: 20,
+                        padding: '1px 8px',
+                      }}
+                    >
+                      D-{daysLeft}
+                    </span>
+                  )}
                 </button>
+              )}
+              {canReview && !reviewed && reviewClosed && (
+                <span style={{ display: 'flex', alignItems: 'center', fontSize: 14, color: 'var(--ink-3)' }}>
+                  리뷰 작성 기간 종료
+                </span>
               )}
               <button
                 onClick={e => {
