@@ -6,6 +6,8 @@ interface DetailCalendarProps {
   value: SearchState;
   onChange: (v: SearchState) => void;
   location: string;
+  blockedDates?: Set<string>;
+  onReachOffset?: (maxOffset: number) => void;
 }
 
 function nightsBetween(a: string | null, b: string | null): number {
@@ -15,7 +17,7 @@ function nightsBetween(a: string | null, b: string | null): number {
 }
 
 // 레퍼런스: "N박 in 지역" + 2개월 달력. 우측 예약 카드와 동일 search 상태라 자동 동기화
-export function DetailCalendar({ value, onChange, location }: DetailCalendarProps) {
+export function DetailCalendar({ value, onChange, location, blockedDates, onReachOffset }: DetailCalendarProps) {
   const nights = nightsBetween(value.range?.a ?? null, value.range?.b ?? null);
 
   // 외부(우측 예약카드)에서 날짜가 바뀐 경우에만 remount해 동기화.
@@ -44,7 +46,13 @@ export function DetailCalendar({ value, onChange, location }: DetailCalendarProp
         {value.dates || '여행 날짜를 추가하면 정확한 요금을 확인할 수 있어요'}
       </div>
 
-      <CalendarModal key={syncKey} value={value} onChange={handleChange} />
+      <CalendarModal
+        key={syncKey}
+        value={value}
+        onChange={handleChange}
+        blockedDates={blockedDates}
+        onReachOffset={onReachOffset}
+      />
 
       {value.dates && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
