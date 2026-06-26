@@ -257,7 +257,7 @@ class ListingServiceTest {
 		}
 
 		@Test
-		@DisplayName("존재하지 않는 숙소 활성화 시 INTERNAL_SERVER_ERROR 예외가 발생한다")
+		@DisplayName("존재하지 않는 숙소 활성화 시 LISTING_NOT_FOUND 예외가 발생한다")
 		void throwsExceptionWhenListingNotFound() {
 			// given
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
@@ -266,7 +266,7 @@ class ListingServiceTest {
 			assertThatThrownBy(() -> listingService.activate(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
+				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
 		}
 	}
 
@@ -319,7 +319,7 @@ class ListingServiceTest {
 		}
 
 		@Test
-		@DisplayName("존재하지 않는 숙소 비활성화 시 INTERNAL_SERVER_ERROR 예외가 발생한다")
+		@DisplayName("존재하지 않는 숙소 비활성화 시 LISTING_NOT_FOUND 예외가 발생한다")
 		void throwsExceptionWhenListingNotFound() {
 			// given
 			given(listingRepository.findById(99L)).willReturn(Optional.empty());
@@ -328,7 +328,7 @@ class ListingServiceTest {
 			assertThatThrownBy(() -> listingService.deactivate(HOST_ID, 99L))
 				.isInstanceOf(BusinessException.class)
 				.extracting(e -> ((BusinessException) e).getErrorCode())
-				.isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR);
+				.isEqualTo(ErrorCode.LISTING_NOT_FOUND);
 		}
 	}
 

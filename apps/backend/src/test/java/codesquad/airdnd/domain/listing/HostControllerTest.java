@@ -9,9 +9,12 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,12 +30,14 @@ import codesquad.airdnd.domain.listing.entity.Amenity;
 import codesquad.airdnd.domain.listing.entity.Capacity;
 import codesquad.airdnd.domain.listing.entity.ListingState;
 import codesquad.airdnd.domain.listing.entity.RoomType;
+import codesquad.airdnd.domain.member.Member;
 import codesquad.airdnd.global.auth.AuthUtils;
 import codesquad.airdnd.global.auth.LoginArgumentResolver;
 import codesquad.airdnd.global.exception.BusinessException;
 import codesquad.airdnd.global.exception.ErrorCode;
 
 @WebMvcTest(HostController.class)
+@AutoConfigureMockMvc(addFilters = false) // 시큐리티 필터 체인 비활성화: 컨트롤러 로직만 검증하고 인증은 AuthUtils 목으로 대체
 @Import(LoginArgumentResolver.class)
 class HostControllerTest {
 
@@ -47,6 +52,14 @@ class HostControllerTest {
 
 	@MockitoBean
 	private AuthUtils authUtils;
+
+	// @CurrentMember 리졸버가 authUtils.getCurrentMember().getId()를 호출하므로, 인증된 멤버를 반환하도록 스텁한다.
+	@BeforeEach
+	void setUpCurrentMember() {
+		Member member = Member.builder().nickname("host").build();
+		ReflectionTestUtils.setField(member, "id", 1L);
+		given(authUtils.getCurrentMember()).willReturn(member);
+	}
 
 	// ===== POST /api/host/listings =====
 

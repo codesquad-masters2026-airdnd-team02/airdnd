@@ -14,9 +14,11 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { MyPage } from './pages/mypage/MyPage';
 import { WishlistPage } from './pages/wishlist/WishlistPage';
 import { WishlistDetailPage } from './pages/wishlist/WishlistDetailPage';
+import { SignupPage } from './pages/auth/SignupPage';
 import { PaymentSuccess } from './pages/payment/PaymentSuccess';
 import { PaymentFail } from './pages/payment/PaymentFail';
 import { AppStateProvider } from './shared/AppState';
+import { ToastProvider } from './shared/Toast';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -30,6 +32,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppStateProvider>
+        <ToastProvider>
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -47,11 +50,13 @@ export default function App() {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/wishlists" element={<WishlistPage />} />
           <Route path="/wishlists/:id" element={<WishlistDetailPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           {/* 토스 결제창 Redirect 도착지 (백엔드 toss.success-url / fail-url 과 일치) */}
           <Route path="/payments/success" element={<PaymentSuccess />} />
           <Route path="/payments/fail" element={<PaymentFail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </ToastProvider>
       </AppStateProvider>
     </BrowserRouter>
   );
