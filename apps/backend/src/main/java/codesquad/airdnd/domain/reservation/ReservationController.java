@@ -77,4 +77,13 @@ public class ReservationController {
 		UpcomingReservationResponse reservations = reservationService.getUpcomingReservations(memberInfo.id());
 		return ResponseEntity.ok(ApiResponse.success(reservations));
 	}
+
+	@Operation(summary = "게스트 지난 여행 목록")
+	@GetMapping("/me/reservations/past")
+	public ResponseEntity<ApiResponse<UpcomingReservationResponse>> getMyPastReservations(
+		@CurrentMember CurrentMemberInfo memberInfo
+	) {
+		UpcomingReservationResponse reservations = reservationService.getPastReservations(memberInfo.id());
+		return ResponseEntity.ok(ApiResponse.success(reservations));
+	}
 }

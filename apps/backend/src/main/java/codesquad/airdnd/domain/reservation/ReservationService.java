@@ -4,12 +4,14 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import codesquad.airdnd.global.auth.CurrentMemberInfo;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import codesquad.airdnd.domain.listing.repository.ListingImageRepository;
 import codesquad.airdnd.domain.listing.repository.ListingRepository;
 import codesquad.airdnd.domain.listing.entity.Address;
 import codesquad.airdnd.domain.listing.entity.Listing;
@@ -35,6 +37,7 @@ public class ReservationService {
 	private final ReservationDateRepository resDateRepository;
 
 	private final ListingRepository listingRepository;
+	private final ListingImageRepository listingImageRepository;
 	private final MemberRepository memberRepository;
 
 	private final RegionCodeService regionCodeService;
@@ -79,9 +82,27 @@ public class ReservationService {
 	@Transactional(readOnly = true)
 	public UpcomingReservationResponse getUpcomingReservations(Long userId) {
 		List<Reservation> upcoming = resRepository.findUpcoming(userId, LocalDate.now(clock));
+		return toResponse(upcoming);
+	}
 
-		List<ReservationSummary> list = upcoming.stream()
-			.map(this::toSummary)
+	@Transactional(readOnly = true)
+	public UpcomingReservationResponse getPastReservations(Long userId) {
+		List<Reservation> past = resRepository.findPast(userId, LocalDate.now(clock));
+		return toResponse(past);
+	}
+
+	// 예약 목록 → 응답(커버 이미지 배치 조회로 채움). 목록 조회 공통
+	private UpcomingReservationResponse toResponse(List<Reservation> reservations) {
+		List<Long> listingIds = reservations.stream()
+			.map(r -> r.getListing().getId())
+			.distinct()
+			.toList();
+		Map<Long, String> coverByListing = listingIds.isEmpty()
+			? Map.of()
+			: listingImageRepository.findCoverByListingIds(listingIds);
+
+		List<ReservationSummary> list = reservations.stream()
+			.map(r -> toSummary(r, coverByListing.get(r.getListing().getId())))
 			.toList();
 		return new UpcomingReservationResponse(list);
 	}
@@ -131,10 +152,10 @@ public class ReservationService {
 		return reservation;
 	}
 
-	private ReservationSummary toSummary(Reservation r) {
+	private ReservationSummary toSummary(Reservation r, String coverImage) {
 		Address address = r.getListing().getAddress();
 		String region = regionCodeService.getAddressSummary(address.getSidoCode(), address.getSigunguCode());
-		return ReservationSummary.from(r, region);
+		return ReservationSummary.from(r, region, coverImage);
 	}
 
     @Transactional

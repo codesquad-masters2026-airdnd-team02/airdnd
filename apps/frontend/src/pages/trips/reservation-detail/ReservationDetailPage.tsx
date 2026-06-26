@@ -1,9 +1,9 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '../../../components/Header';
 import { Icon } from '../../../shared/Icon';
 import { useAppState } from '../../../shared/AppState';
-import { listingImage } from '../../reservation/utils';
 import { getReservationOptions } from '../../../shared/api/generated/@tanstack/react-query.gen';
 import type { GuestCountsResponse } from '../../../shared/api/generated/types.gen';
 import { StayMap } from './StayMap';
@@ -64,6 +64,7 @@ export function ReservationDetailPage() {
     detail?.totalPrice != null
       ? `₩${Number(detail.totalPrice).toLocaleString('ko-KR')}`
       : '결제 정보 없음';
+  const photos = detail?.images ?? [];
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff' }}>
@@ -98,7 +99,7 @@ export function ReservationDetailPage() {
             <Icon name="arrow-left" size={22} />
           </button>
 
-          <PhotoCarousel img={listing.img} title={title} badge={isCanceled ? '취소됨' : '한 달 뒤'} />
+          <PhotoCarousel photos={photos} title={title} badge={isCanceled ? '취소됨' : '한 달 뒤'} />
 
           <h1
             style={{
@@ -174,7 +175,11 @@ export function ReservationDetailPage() {
   );
 }
 
-function PhotoCarousel({ img, title, badge }: { img: string; title: string; badge: string }) {
+function PhotoCarousel({ photos, title, badge }: { photos: string[]; title: string; badge: string }) {
+  const [idx, setIdx] = useState(0);
+  const go = (delta: number) =>
+    setIdx((i) => Math.min(photos.length - 1, Math.max(0, i + delta)));
+
   return (
     <div
       style={{
@@ -182,13 +187,27 @@ function PhotoCarousel({ img, title, badge }: { img: string; title: string; badg
         borderRadius: 16,
         overflow: 'hidden',
         aspectRatio: '3 / 2',
+        background: 'var(--surface-alt-2)',
       }}
     >
-      <img
-        src={listingImage(img)}
-        alt={title}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
+      {/* 슬라이드 트랙 */}
+      <div
+        style={{
+          display: 'flex',
+          height: '100%',
+          transform: `translateX(-${idx * 100}%)`,
+          transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {photos.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={title}
+            style={{ flex: '0 0 100%', width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ))}
+      </div>
       <span
         style={{
           position: 'absolute',
@@ -204,15 +223,43 @@ function PhotoCarousel({ img, title, badge }: { img: string; title: string; badg
       >
         {badge}
       </span>
-      <CarouselArrow side="left" />
-      <CarouselArrow side="right" />
+      {idx > 0 && <CarouselArrow side="left" onClick={() => go(-1)} />}
+      {idx < photos.length - 1 && <CarouselArrow side="right" onClick={() => go(1)} />}
+
+      {/* 점 인디케이터 */}
+      {photos.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 12,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 6,
+          }}
+        >
+          {photos.map((_, i) => (
+            <span
+              key={i}
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: i === idx ? '#fff' : 'rgba(255,255,255,0.6)',
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function CarouselArrow({ side }: { side: 'left' | 'right' }) {
+function CarouselArrow({ side, onClick }: { side: 'left' | 'right'; onClick: () => void }) {
   return (
     <button
+      onClick={onClick}
       style={{
         position: 'absolute',
         top: '50%',

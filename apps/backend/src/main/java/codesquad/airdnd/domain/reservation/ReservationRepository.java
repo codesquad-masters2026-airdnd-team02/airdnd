@@ -25,9 +25,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	List<Reservation> findUpcoming(Long userId, LocalDate now);
 
 	@Query("""
+				SELECT r FROM Reservation r
+					JOIN FETCH r.listing
+					WHERE r.guest.id = :userId
+						AND r.checkOutDate < :now
+					ORDER BY r.checkInDate DESC
+		""")
+	List<Reservation> findPast(Long userId, LocalDate now);
+
+	@Query("""
 				SELECT r
 				FROM Reservation r
 					JOIN FETCH r.listing l
+					LEFT JOIN FETCH l.images
 					JOIN FETCH l.host
 					JOIN FETCH r.guest
 				WHERE r.reservationId = :id

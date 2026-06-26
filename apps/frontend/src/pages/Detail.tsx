@@ -79,10 +79,15 @@ export function Detail() {
     description: d?.description ?? '',
   };
 
-  const nights = 1;
-  const fee = Math.round(v.price * 0.099);
-  const tax = Math.round(v.price * 0.014);
-  const total = v.price * nights + fee + tax;
+  // 선택한 체크인~체크아웃으로 박수 계산(미선택 시 1박)
+  const nights = (() => {
+    const a = search.range?.a;
+    const b = search.range?.b;
+    if (!a || !b) return 1;
+    const n = Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+    return n > 0 ? n : 1;
+  })();
+  const total = v.price * nights;
 
   const [panel, setPanel] = useState<Panel>(null);
   const [error, setError] = useState<string | null>(null);
@@ -357,8 +362,6 @@ export function Detail() {
               </div>
 
               <PriceRow label={`${won(v.price)} x ${nights}박`} value={won(v.price * nights)} />
-              <PriceRow label="서비스 수수료" value={won(fee)} />
-              <PriceRow label="숙박세와 수수료" value={won(tax)} />
 
               <div
                 style={{
