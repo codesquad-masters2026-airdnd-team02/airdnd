@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { confirmPayment, type PaymentConfirmResult } from '../../shared/api/payment';
+import { PaymentStatusBadge } from '../reservation/components/PaymentStatusBadge';
 
 /**
  * 토스 결제창이 결제 요청 성공 후 리다이렉트하는 페이지.
@@ -54,32 +56,32 @@ export function PaymentSuccess() {
 
   if (status === 'loading') {
     return (
-      <div style={wrapStyle}>
-        <div style={{ fontSize: 40 }}>⏳</div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginTop: 16 }}>결제 승인 중…</h1>
+      <PageShell>
+        <PaymentStatusBadge status="loading" />
+        <h1 style={captionStyle}>결제 승인 중…</h1>
         <p style={{ color: 'var(--ink-3)', marginTop: 8 }}>잠시만 기다려 주세요.</p>
-      </div>
+      </PageShell>
     );
   }
 
   if (status === 'fail') {
     return (
-      <div style={wrapStyle}>
-        <div style={{ fontSize: 48 }}>⚠️</div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: '16px 0 4px' }}>결제 승인에 실패했어요</h1>
-        <p style={{ color: 'var(--brand-coral)', marginBottom: 24 }}>{error}</p>
+      <PageShell>
+        <PaymentStatusBadge status="fail" />
+        <h1 style={captionStyle}>결제 승인에 실패했어요</h1>
+        <p style={{ color: 'var(--brand-coral)', marginTop: 12, marginBottom: 24 }}>{error}</p>
         <button style={primaryBtn} onClick={() => navigate('/')}>홈으로</button>
-      </div>
+      </PageShell>
     );
   }
 
   // success
   const r = result!;
   return (
-    <div style={wrapStyle}>
-      <div style={{ fontSize: 48 }}>✅</div>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: '16px 0 4px' }}>결제가 완료됐어요</h1>
-      <p style={{ color: 'var(--ink-3)', marginBottom: 24 }}>예약이 확정되었습니다.</p>
+    <PageShell>
+      <PaymentStatusBadge status="success" />
+      <h1 style={captionStyle}>결제가 완료됐어요</h1>
+      <p style={{ color: 'var(--ink-3)', marginTop: 8, marginBottom: 24 }}>예약이 확정되었습니다.</p>
 
       <dl style={{ textAlign: 'left', margin: '0 0 28px' }}>
         <Row label="결제 금액" value={`${r.amount.toLocaleString()}원`} />
@@ -95,9 +97,50 @@ export function PaymentSuccess() {
         </button>
         <button style={ghostBtn} onClick={() => navigate('/')}>홈으로</button>
       </div>
-    </div>
+    </PageShell>
   );
 }
+
+// 결제 시작 로딩 모달과 동일한 오버레이 모달(dim 배경 + 중앙 카드)
+function PageShell({ children }: { children: React.ReactNode }) {
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.45)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 250,
+        padding: 24,
+      }}
+    >
+      <div
+        className="popover-enter"
+        style={{
+          background: '#fff',
+          borderRadius: 20,
+          width: 440,
+          maxWidth: '100%',
+          padding: '56px 40px',
+          textAlign: 'center',
+          boxShadow: 'var(--shadow-pop)',
+          fontFamily: 'var(--font-sans)',
+        }}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+const captionStyle = {
+  fontFamily: 'var(--font-display)',
+  fontWeight: 700,
+  fontSize: 22,
+} as const;
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -107,14 +150,6 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-const wrapStyle = {
-  maxWidth: 480,
-  margin: '0 auto',
-  padding: '80px 24px',
-  textAlign: 'center',
-  fontFamily: 'var(--font-sans)',
-} as const;
 
 const primaryBtn = {
   height: 48,
