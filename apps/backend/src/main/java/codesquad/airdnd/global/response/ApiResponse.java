@@ -1,4 +1,4 @@
-package codesquad.airdnd.global;
+package codesquad.airdnd.global.response;
 
 import java.util.List;
 

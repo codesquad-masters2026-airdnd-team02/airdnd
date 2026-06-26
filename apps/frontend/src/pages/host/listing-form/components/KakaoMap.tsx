@@ -1,30 +1,9 @@
 import { useEffect, useRef } from 'react';
 import mapPin from '../../../../assets/map-pin.svg';
+import { loadMapSdk } from '../../../../shared/map';
 
-let sdkPromise: Promise<void> | null = null;
-
-export function loadKakaoMapsSDK(): Promise<void> {
-  if (sdkPromise) return sdkPromise;
-
-  sdkPromise = new Promise((resolve, reject) => {
-    // 이미 초기화된 경우
-    if (window.kakao?.maps?.services) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_JS_KEY}&libraries=services&autoload=false`;
-    script.onload = () => window.kakao.maps.load(() => resolve());
-    script.onerror = () => {
-      sdkPromise = null;
-      reject(new Error('Kakao Maps SDK 로드 실패'));
-    };
-    document.head.appendChild(script);
-  });
-
-  return sdkPromise;
-}
+// 기존 호출부 호환용 별칭. SDK 로더는 추상화 레이어(shared/map)로 일원화.
+export const loadKakaoMapsSDK = loadMapSdk;
 
 interface KakaoMapProps {
   address: string;

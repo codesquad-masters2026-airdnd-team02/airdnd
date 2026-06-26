@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation, Navigate } from 'react-router-dom'
 import { SlimHeader } from './components/SlimHeader';
 import { listingImage, nightsOf } from './utils';
 import { won } from '../../shared/utils';
-import { LISTINGS } from '../Results';
+import { LISTINGS } from '../../shared/demoListings';
 import { useAppState } from '../../shared/AppState';
 
 export function StayPending() {

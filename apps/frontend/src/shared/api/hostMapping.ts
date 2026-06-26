@@ -54,7 +54,7 @@ export function toHostListing(s: HostListingSummary): HostListing {
     beds: s.capacity?.beds ?? 0,
     bathrooms: s.capacity?.bathrooms ?? 0,
     amenities: [],
-    imageUrls: [],
+    imageUrls: s.coverImage ? [s.coverImage] : [],
     active: s.state === 'APPROVED',
     state: s.state,
   };

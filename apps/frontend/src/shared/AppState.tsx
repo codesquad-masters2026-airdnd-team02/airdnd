@@ -1,12 +1,14 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { LISTINGS } from '../pages/Results';
+import { LISTINGS } from './demoListings';
 import type { SearchState, Listing } from '../types';
 
 const DEFAULT_SEARCH: SearchState = {
+  destination: '',
+  region: null,
   dates: '',
   range: null,
-  price: null,
-  priceLabel: '',
+  priceMin: null,
+  priceMax: null,
   guests: { adult: 1, child: 0, infant: 0, pet: 0 },
   guestLabel: '',
 };

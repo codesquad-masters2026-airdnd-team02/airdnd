@@ -1,7 +1,5 @@
 package codesquad.airdnd.domain.reservation;
 
-import codesquad.airdnd.domain.reservation.dto.request.ReservationCancelRequest;
-import codesquad.airdnd.domain.reservation.dto.response.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import codesquad.airdnd.domain.reservation.dto.request.CreateReservationRequest;
-import codesquad.airdnd.global.ApiResponse;
+import codesquad.airdnd.domain.reservation.dto.response.CancelPreview;
+import codesquad.airdnd.domain.reservation.dto.response.ReservationDetailResponse;
+import codesquad.airdnd.domain.reservation.dto.response.ReservationSummary;
+import codesquad.airdnd.domain.reservation.dto.response.UpcomingReservationResponse;
+import codesquad.airdnd.global.response.ApiResponse;
 import codesquad.airdnd.global.auth.CurrentMember;
 import codesquad.airdnd.global.auth.CurrentMemberInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,9 +26,8 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class ReservationController {
 	private final ReservationService reservationService;
-    private final ReservationCancelService reservationCancelService;
 
-    @Operation(summary = "게스트 숙소 예약")
+	@Operation(summary = "게스트 숙소 예약")
 	@PostMapping("/listings/{listingId}/reservations")
 	public ResponseEntity<ApiResponse<ReservationSummary>> createReservation(
 		@CurrentMember CurrentMemberInfo guest, @PathVariable Long listingId,
@@ -57,12 +58,11 @@ public class ReservationController {
 
 	@Operation(summary = "게스트의 예약 취소")
 	@PostMapping("/reservations/{reservationId}/cancel")
-	public ResponseEntity<ApiResponse<RefundResponse>> cancelReservation(
-            @CurrentMember CurrentMemberInfo guest,
-            @PathVariable Long reservationId,
-            @RequestBody @Valid ReservationCancelRequest request
-            ) {
-		return ResponseEntity.ok(ApiResponse.success(reservationCancelService.cancel(guest, reservationId, request)));
+	public ResponseEntity<ApiResponse<Void>> cancelReservation(
+		@CurrentMember CurrentMemberInfo guest, @PathVariable Long reservationId
+	) {
+		reservationService.cancelReservation(guest.id(), reservationId);
+		return ResponseEntity.ok(ApiResponse.success());
 	}
 
 	@Operation(summary = "게스트 예약 목록")

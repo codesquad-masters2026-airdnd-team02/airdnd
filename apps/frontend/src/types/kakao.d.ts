@@ -11,6 +11,25 @@ declare global {
     getLevel(): number;
     setLevel(level: number, options?: { animate?: boolean | { duration?: number } }): void;
     setZoomable(zoomable: boolean): void;
+    setCenter(latlng: KakaoLatLng): void;
+    panTo(latlng: KakaoLatLng): void;
+    setBounds(bounds: KakaoLatLngBounds): void;
+    getBounds(): KakaoLatLngBounds;
+  }
+
+  interface KakaoLatLngBounds {
+    extend(latlng: KakaoLatLng): void;
+    getSouthWest(): KakaoLatLng;
+    getNorthEast(): KakaoLatLng;
+  }
+
+  interface KakaoCustomOverlay {
+    setZIndex(zIndex: number): void;
+    setMap(map: KakaoMap | null): void;
+  }
+
+  interface KakaoCircle {
+    setMap(map: KakaoMap | null): void;
   }
 
   interface Window {
@@ -36,6 +55,7 @@ declare global {
           options: { center: KakaoLatLng; level: number }
         ) => KakaoMap;
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
+        LatLngBounds: new () => KakaoLatLngBounds;
         Marker: new (options: { map?: KakaoMap; position: KakaoLatLng }) => unknown;
         CustomOverlay: new (options: {
           map?: KakaoMap;
@@ -44,9 +64,20 @@ declare global {
           xAnchor?: number;
           yAnchor?: number;
           zIndex?: number;
-        }) => unknown;
+        }) => KakaoCustomOverlay;
+        Circle: new (options: {
+          center: KakaoLatLng;
+          radius: number;
+          strokeWeight?: number;
+          strokeColor?: string;
+          strokeOpacity?: number;
+          strokeStyle?: string;
+          fillColor?: string;
+          fillOpacity?: number;
+        }) => KakaoCircle;
         event: {
           addListener(target: unknown, type: string, callback: () => void): void;
+          removeListener(target: unknown, type: string, callback: () => void): void;
         };
         services: {
           Geocoder: new () => {

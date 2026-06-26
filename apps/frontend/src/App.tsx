@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Home } from './pages/Home';
-import { Results } from './pages/Results';
+import { Results } from './pages/listing/ListingSearchPage';
 import { Detail } from './pages/Detail';
 import { Checkout } from './pages/reservation/Checkout';
 import { StayPending } from './pages/reservation/StayPending';
