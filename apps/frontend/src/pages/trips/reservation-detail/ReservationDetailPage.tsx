@@ -157,7 +157,7 @@ export function ReservationDetailPage() {
             {!isCanceled && <MenuRow icon="building-2" title="내 숙소" sub={title} />}
           </div>
 
-          <ReservationDetailsSection guestSummary={guests} reservationId={reservationId} />
+          <ReservationDetailsSection guestSummary={guests} reservationId={reservationId} canceled={isCanceled} />
           {!isCanceled && <GettingThereSection address={addressDetail} />}
           {!isCanceled && <RulesSection listingId={detail?.listingId ?? listing.id} />}
           <HostSection hostName={hostName} hostProfileUrl={hostProfileUrl} amountPaid={amountPaid} />

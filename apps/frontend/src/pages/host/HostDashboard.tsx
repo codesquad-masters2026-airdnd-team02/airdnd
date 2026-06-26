@@ -41,12 +41,12 @@ export function HostDashboard() {
     const listingsId = Number(id);
     if (target.active) {
       deactivate.mutate(
-        { path: { listingsId }, query: { host: HOST_STUB } },
+        { path: { listingsId }, query: { memberInfo: HOST_STUB } },
         { onSuccess: () => refetch() },
       );
     } else {
       activate.mutate(
-        { path: { listingsId }, query: { host: HOST_STUB } },
+        { path: { listingsId }, query: { memberInfo: HOST_STUB } },
         {
           onSuccess: () => refetch(),
           onError: () => alert('활성화에 실패했습니다. 관리자 승인이 필요한 숙소입니다.'),

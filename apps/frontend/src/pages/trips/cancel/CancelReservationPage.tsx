@@ -7,15 +7,15 @@ import { useAppState } from '../../../shared/AppState';
 import {
   getReservationOptions,
   cancelPreviewOptions,
-  cancelReservationMutation,
 } from '../../../shared/api/generated/@tanstack/react-query.gen';
 import type { CurrentMemberInfo, GuestCountsResponse } from '../../../shared/api/generated/types.gen';
+import { cancelReservation as cancelReservationApi } from '../../../shared/api/reservation';
 import { CancelSummaryCard } from './CancelSummaryCard';
-import { SelectReasonStep, SendMessageStep, ConfirmStep } from './steps';
+import { SelectReasonStep, ConfirmStep, CANCEL_REASONS } from './steps';
 
 const MEMBER_STUB = {} as CurrentMemberInfo;
 
-const STEPS = ['사유 선택', '메시지 작성', '취소 확인'];
+const STEPS = ['사유 선택', '취소 확인'];
 
 function shortDate(s?: string): string {
   if (!s) return '';
@@ -47,12 +47,17 @@ export function CancelReservationPage() {
   const detail = detailQuery.data?.data;
 
   const previewQuery = useQuery({
-    ...cancelPreviewOptions({ path: { reservationId } }),
+    ...cancelPreviewOptions({ path: { reservationId }, query: { guest: MEMBER_STUB } }),
     enabled,
   });
   const refund = previewQuery.data?.data?.refundAmount ?? detail?.totalPrice;
 
-  const cancelMutation = useMutation(cancelReservationMutation());
+  const cancelMutation = useMutation({
+    mutationFn: () => {
+      const label = CANCEL_REASONS.find((r) => r.value === reason)?.label ?? reason;
+      return cancelReservationApi(reservationId, label);
+    },
+  });
 
   const title = detail?.listingTitle ?? listing.title;
   const hostName = detail?.hostName ?? 'airdnd';
@@ -63,10 +68,9 @@ export function CancelReservationPage() {
       ? `${shortDate(detail.checkInDate)} ~ ${shortDate(detail.checkOutDate)}`
       : '날짜 미정';
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [reason, setReason] = useState('');
   const [dateChoice, setDateChoice] = useState<'yes' | 'no' | null>(null);
-  const [message, setMessage] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
 
   const canContinue =
@@ -74,24 +78,21 @@ export function CancelReservationPage() {
 
   const onBack = () => {
     if (step === 1) navigate(`/trips/reservation/${reservationId}`);
-    else setStep((s) => (s - 1) as 1 | 2 | 3);
+    else setStep((s) => (s - 1) as 1 | 2);
   };
 
   const onNext = () => {
-    if (step < 3) setStep((s) => (s + 1) as 1 | 2 | 3);
+    if (step < 2) setStep((s) => (s + 1) as 1 | 2);
   };
 
   const onConfirm = () => {
-    cancelMutation.mutate(
-      { path: { reservationId }, query: { guest: MEMBER_STUB } },
-      {
-        onSuccess: () => {
-          cancelReservation(reservationId); // 즉시 UI 반영
-          queryClient.invalidateQueries();
-          navigate(`/trips/reservation/${reservationId}`);
-        },
+    cancelMutation.mutate(undefined, {
+      onSuccess: () => {
+        cancelReservation(reservationId); // 즉시 UI 반영
+        queryClient.invalidateQueries();
+        navigate(`/trips/reservation/${reservationId}`);
       },
-    );
+    });
   };
 
   return (
@@ -119,10 +120,7 @@ export function CancelReservationPage() {
                 setDateChoice={setDateChoice}
               />
             )}
-            {step === 2 && (
-              <SendMessageStep hostName={hostName} message={message} setMessage={setMessage} />
-            )}
-            {step === 3 && <ConfirmStep total={total} refund={refund} />}
+            {step === 2 && <ConfirmStep total={total} refund={refund} />}
           </div>
 
           <Footer
@@ -286,19 +284,19 @@ function Footer({
   onNext,
   onConfirm,
 }: {
-  step: 1 | 2 | 3;
+  step: 1 | 2;
   canContinue: boolean;
   confirming: boolean;
   onBack: () => void;
   onNext: () => void;
   onConfirm: () => void;
 }) {
-  const isLast = step === 3;
+  const isLast = step === 2;
   return (
     <div style={{ marginTop: 32 }}>
       {/* 진행 바 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {[1, 2, 3].map((n) => (
+        {[1, 2].map((n) => (
           <div
             key={n}
             style={{
@@ -329,7 +327,7 @@ function Footer({
           <Icon name="chevron-left" size={18} /> 뒤로
         </button>
 
-        <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>{step}/3</span>
+        <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>{step}/2</span>
 
         {isLast ? (
           <button
